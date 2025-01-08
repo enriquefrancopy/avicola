@@ -10,13 +10,6 @@ from .models import Pago, Factura, Caja
 @login_required
 def pagos_dashboard(request):
     """Dashboard principal del módulo de pagos"""
-    # Obtener estadísticas de pagos
-    total_pagos_clientes = Pago.objects.filter(cliente__isnull=False).count()
-    total_pagos_proveedores = Pago.objects.filter(proveedor__isnull=False).count()
-    
-    # Pagos recientes
-    pagos_recientes = Pago.objects.select_related('cliente', 'proveedor', 'usuario').order_by('-fecha')[:10]
-    
     # Facturas pendientes
     facturas_pendientes_clientes = Factura.objects.filter(
         tipo='venta', 
@@ -32,9 +25,6 @@ def pagos_dashboard(request):
     caja_activa = Caja.obtener_caja_activa()
     
     context = {
-        'total_pagos_clientes': total_pagos_clientes,
-        'total_pagos_proveedores': total_pagos_proveedores,
-        'pagos_recientes': pagos_recientes,
         'facturas_pendientes_clientes': facturas_pendientes_clientes,
         'facturas_pendientes_proveedores': facturas_pendientes_proveedores,
         'caja_activa': caja_activa,

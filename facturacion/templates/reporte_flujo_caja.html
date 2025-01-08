@@ -1,0 +1,340 @@
+{% extends 'base.html' %}
+{% load humanize custom_filters %}
+
+{% block title %}{{ titulo }} - Avícola CVA{% endblock %}
+
+{% block page_title %}{{ titulo }}{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Inicio</a></li>
+<li class="breadcrumb-item"><a href="{% url 'reportes_dashboard' %}">Reportes</a></li>
+<li class="breadcrumb-item active">{{ titulo }}</li>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  <!-- Filtros -->
+  <div class="card shadow mb-4">
+    <div class="card-header bg-primary text-white">
+      <h5 class="mb-0"><i class="bi bi-funnel"></i> Filtros</h5>
+    </div>
+    <div class="card-body">
+      <form method="get" class="row g-3">
+        <div class="col-md-4">
+          <label for="fecha_inicio" class="form-label">Fecha Inicio</label>
+          <input type="date" class="form-control" id="fecha_inicio" name="fecha_inicio" value="{{ fecha_inicio }}">
+        </div>
+        <div class="col-md-4">
+          <label for="fecha_fin" class="form-label">Fecha Fin</label>
+          <input type="date" class="form-control" id="fecha_fin" name="fecha_fin" value="{{ fecha_fin }}">
+        </div>
+        <div class="col-md-4 d-flex align-items-end">
+          <button type="submit" class="btn btn-primary me-2">
+            <i class="bi bi-search"></i> Filtrar
+          </button>
+          <a href="{% url 'reporte_flujo_caja' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-clockwise"></i> Limpiar
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Resumen -->
+  <div class="row mb-4">
+    <div class="col-md-3">
+      <div class="card bg-success text-white">
+        <div class="card-body text-center">
+          <h4 class="card-title">Gs. {{ total_ingresos|intcomma_dot }}</h4>
+          <p class="card-text">Total Ingresos</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card bg-danger text-white">
+        <div class="card-body text-center">
+          <h4 class="card-title">Gs. {{ total_egresos|intcomma_dot }}</h4>
+          <p class="card-text">Total Egresos</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card {% if flujo_neto >= 0 %}bg-primary{% else %}bg-warning{% endif %} text-white">
+        <div class="card-body text-center">
+          <h4 class="card-title">Gs. {{ flujo_neto|intcomma_dot }}</h4>
+          <p class="card-text">Flujo Neto</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card bg-info text-white">
+        <div class="card-body text-center">
+          <h4 class="card-title">{{ cantidad_ingresos|intcomma_dot }}</h4>
+          <p class="card-text">Transacciones</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Gráfico de Flujo -->
+  <div class="card shadow mb-4">
+    <div class="card-header bg-primary text-white">
+      <h5 class="mb-0"><i class="bi bi-graph-up"></i> Flujo de Caja Diario</h5>
+    </div>
+    <div class="card-body">
+      <canvas id="graficoFlujo" width="400" height="200"></canvas>
+    </div>
+  </div>
+
+  <!-- Días con Más Ingresos -->
+  <div class="card shadow mb-4">
+    <div class="card-header bg-success text-white">
+      <h5 class="mb-0"><i class="bi bi-trophy"></i> Días con Más Ingresos</h5>
+    </div>
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-striped table-hover">
+          <thead class="table-success">
+            <tr>
+              <th>Fecha</th>
+              <th>Ingresos</th>
+              <th>Egresos</th>
+              <th>Flujo Neto</th>
+              <th>Transacciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for dia in dias_mas_ingresos %}
+            <tr>
+              <td><strong>{{ dia.fecha|date:"d/m/Y" }}</strong></td>
+              <td class="text-success">Gs. {{ dia.ingresos|intcomma_dot }}</td>
+              <td class="text-danger">Gs. {{ dia.egresos|intcomma_dot }}</td>
+              <td class="{% if dia.flujo_neto >= 0 %}text-success{% else %}text-danger{% endif %}">
+                Gs. {{ dia.flujo_neto|intcomma_dot }}
+              </td>
+              <td>{{ dia.cantidad_ingresos|intcomma_dot }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="5" class="text-center text-muted">No hay datos para mostrar</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Días con Más Egresos -->
+  <div class="card shadow mb-4">
+    <div class="card-header bg-danger text-white">
+      <h5 class="mb-0"><i class="bi bi-exclamation-triangle"></i> Días con Más Egresos</h5>
+    </div>
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-striped table-hover">
+          <thead class="table-danger">
+            <tr>
+              <th>Fecha</th>
+              <th>Ingresos</th>
+              <th>Egresos</th>
+              <th>Flujo Neto</th>
+              <th>Transacciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for dia in dias_mas_egresos %}
+            <tr>
+              <td><strong>{{ dia.fecha|date:"d/m/Y" }}</strong></td>
+              <td class="text-success">Gs. {{ dia.ingresos|intcomma_dot }}</td>
+              <td class="text-danger">Gs. {{ dia.egresos|intcomma_dot }}</td>
+              <td class="{% if dia.flujo_neto >= 0 %}text-success{% else %}text-danger{% endif %}">
+                Gs. {{ dia.flujo_neto|intcomma_dot }}
+              </td>
+              <td>{{ dia.cantidad_ingresos|intcomma_dot }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="5" class="text-center text-muted">No hay datos para mostrar</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Gastos por Categoría -->
+  <div class="card shadow mb-4">
+    <div class="card-header bg-info text-white">
+      <h5 class="mb-0"><i class="bi bi-pie-chart"></i> Gastos por Categoría</h5>
+    </div>
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-striped table-hover">
+          <thead class="table-info">
+            <tr>
+              <th>Categoría</th>
+              <th>Total Gastos</th>
+              <th>Cantidad</th>
+              <th>Promedio</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for gasto in gastos_por_categoria %}
+            <tr>
+              <td><strong>{{ gasto.categoria|title }}</strong></td>
+              <td class="text-info">Gs. {{ gasto.total|intcomma_dot }}</td>
+              <td>{{ gasto.cantidad|intcomma_dot }}</td>
+              <td>Gs. {{ gasto.total|div:gasto.cantidad|floatformat:0|intcomma_dot }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="4" class="text-center text-muted">No hay gastos registrados</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Detalle Diario -->
+  <div class="card shadow mb-4">
+    <div class="card-header bg-secondary text-white">
+      <h5 class="mb-0"><i class="bi bi-calendar3"></i> Detalle Diario</h5>
+    </div>
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-striped table-hover" id="tablaDetalle">
+          <thead class="table-secondary">
+            <tr>
+              <th>Fecha</th>
+              <th>Ingresos</th>
+              <th>Egresos</th>
+              <th>Flujo Neto</th>
+              <th>Transacciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for dia in detalle_diario %}
+            <tr>
+              <td><strong>{{ dia.fecha|date:"d/m/Y" }}</strong></td>
+              <td class="text-success">Gs. {{ dia.ingresos|intcomma_dot }}</td>
+              <td class="text-danger">Gs. {{ dia.egresos|intcomma_dot }}</td>
+              <td class="{% if dia.flujo_neto >= 0 %}text-success{% else %}text-danger{% endif %}">
+                Gs. {{ dia.flujo_neto|intcomma_dot }}
+              </td>
+              <td>{{ dia.cantidad_ingresos|intcomma_dot }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="5" class="text-center text-muted">No hay datos para mostrar</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Botones de Acción -->
+  <div class="text-center mb-4">
+    <a href="{% url 'exportar_flujo_caja_excel' %}?fecha_inicio={{ fecha_inicio }}&fecha_fin={{ fecha_fin }}" class="btn btn-success me-2">
+      <i class="bi bi-file-earmark-excel"></i> Exportar a Excel
+    </a>
+    <a href="{% url 'reportes_dashboard' %}" class="btn btn-secondary">
+      <i class="bi bi-arrow-left"></i> Volver a Reportes
+    </a>
+  </div>
+</div>
+
+<style>
+.card {
+  transition: transform 0.2s ease-in-out;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+}
+
+.table th {
+  font-weight: 600;
+}
+
+.badge {
+  font-size: 0.85em;
+}
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Datos para el gráfico
+  const fechas = [{% for dia in detalle_diario %}'{{ dia.fecha|date:"d/m" }}'{% if not forloop.last %}, {% endif %}{% endfor %}];
+  const ingresos = [{% for dia in detalle_diario %}{{ dia.ingresos }}{% if not forloop.last %}, {% endif %}{% endfor %}];
+  const egresos = [{% for dia in detalle_diario %}{{ dia.egresos }}{% if not forloop.last %}, {% endif %}{% endfor %}];
+  const flujoNeto = [{% for dia in detalle_diario %}{{ dia.flujo_neto }}{% if not forloop.last %}, {% endif %}{% endfor %}];
+
+  // Crear gráfico
+  const ctx = document.getElementById('graficoFlujo').getContext('2d');
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: fechas,
+      datasets: [{
+        label: 'Ingresos (Gs.)',
+        data: ingresos,
+        borderColor: 'rgb(75, 192, 192)',
+        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+        tension: 0.1,
+        yAxisID: 'y'
+      }, {
+        label: 'Egresos (Gs.)',
+        data: egresos,
+        borderColor: 'rgb(255, 99, 132)',
+        backgroundColor: 'rgba(255, 99, 132, 0.2)',
+        tension: 0.1,
+        yAxisID: 'y'
+      }, {
+        label: 'Flujo Neto (Gs.)',
+        data: flujoNeto,
+        borderColor: 'rgb(54, 162, 235)',
+        backgroundColor: 'rgba(54, 162, 235, 0.2)',
+        tension: 0.1,
+        yAxisID: 'y'
+      }]
+    },
+    options: {
+      responsive: true,
+      interaction: {
+        mode: 'index',
+        intersect: false,
+      },
+      scales: {
+        y: {
+          type: 'linear',
+          display: true,
+          position: 'left',
+          title: {
+            display: true,
+            text: 'Monto (Gs.)'
+          }
+        }
+      }
+    }
+  });
+
+  // Inicializar DataTable si está disponible
+  if (typeof $.fn.DataTable !== 'undefined') {
+    $('#tablaDetalle').DataTable({
+      "language": {
+        "url": "//cdn.datatables.net/plug-ins/1.10.24/i18n/Spanish.json"
+      },
+      "pageLength": 25,
+      "order": [[0, "desc"]] // Ordenar por fecha descendente
+    });
+  }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,332 @@
+{% extends 'base.html' %}
+{% load humanize custom_filters %}
+
+{% block title %}{{ titulo }} - Avícola CVA{% endblock %}
+
+{% block page_title %}{{ titulo }}{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Inicio</a></li>
+<li class="breadcrumb-item"><a href="{% url 'reportes_dashboard' %}">Reportes</a></li>
+<li class="breadcrumb-item active">{{ titulo }}</li>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  <!-- Filtros -->
+  <div class="card shadow mb-4">
+    <div class="card-header bg-primary text-white">
+      <h5 class="mb-0"><i class="bi bi-funnel"></i> Filtros</h5>
+    </div>
+    <div class="card-body">
+      <form method="get" class="row g-3">
+        <div class="col-md-4">
+          <label for="fecha_inicio" class="form-label">Fecha Inicio</label>
+          <input type="date" class="form-control" id="fecha_inicio" name="fecha_inicio" value="{{ fecha_inicio }}">
+        </div>
+        <div class="col-md-4">
+          <label for="fecha_fin" class="form-label">Fecha Fin</label>
+          <input type="date" class="form-control" id="fecha_fin" name="fecha_fin" value="{{ fecha_fin }}">
+        </div>
+        <div class="col-md-4 d-flex align-items-end">
+          <button type="submit" class="btn btn-primary me-2">
+            <i class="bi bi-search"></i> Filtrar
+          </button>
+          <a href="{% url 'reporte_eficiencia_operativa' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-clockwise"></i> Limpiar
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Métricas Principales -->
+  <div class="row mb-4">
+    <div class="col-md-3">
+      <div class="card bg-primary text-white">
+        <div class="card-body text-center">
+          <h4 class="card-title">{{ eficiencia_cobranzas|floatformat:1 }}%</h4>
+          <p class="card-text">Eficiencia en Cobranzas</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card bg-success text-white">
+        <div class="card-body text-center">
+          <h4 class="card-title">{{ facturas_pagadas|intcomma_dot }}</h4>
+          <p class="card-text">Facturas Pagadas</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card bg-warning text-white">
+        <div class="card-body text-center">
+          <h4 class="card-title">{{ facturas_pendientes|intcomma_dot }}</h4>
+          <p class="card-text">Facturas Pendientes</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card bg-info text-white">
+        <div class="card-body text-center">
+          <h4 class="card-title">{{ productos_stock_bajo|length|intcomma_dot }}</h4>
+          <p class="card-text">Productos Stock Bajo</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Rotación de Inventario -->
+  <div class="card shadow mb-4">
+    <div class="card-header bg-success text-white">
+      <h5 class="mb-0"><i class="bi bi-arrow-repeat"></i> Rotación de Inventario</h5>
+    </div>
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-striped table-hover">
+          <thead class="table-success">
+            <tr>
+              <th>Producto</th>
+              <th>Stock Actual</th>
+              <th>Ventas del Período</th>
+              <th>Rotación</th>
+              <th>Estado</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in productos_rotacion|slice:":10" %}
+            <tr>
+              <td><strong>{{ item.producto.nombre }}</strong></td>
+              <td>{{ item.stock_promedio|intcomma_dot }}</td>
+              <td>{{ item.ventas_periodo|intcomma_dot }}</td>
+              <td>
+                <span class="badge {% if item.rotacion >= 2 %}bg-success{% elif item.rotacion >= 1 %}bg-warning{% else %}bg-danger{% endif %}">
+                  {{ item.rotacion|floatformat:2 }}
+                </span>
+              </td>
+              <td>
+                {% if item.producto.stock == 0 %}
+                  <span class="badge bg-danger">Agotado</span>
+                {% elif item.producto.stock < item.producto.stock_minimo %}
+                  <span class="badge bg-warning">Stock Crítico</span>
+                {% else %}
+                  <span class="badge bg-success">Normal</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="5" class="text-center text-muted">No hay datos para mostrar</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Productos con Problemas de Stock -->
+  <div class="row mb-4">
+    <!-- Productos Agotados -->
+    <div class="col-md-6">
+      <div class="card shadow h-100">
+        <div class="card-header bg-danger text-white">
+          <h5 class="mb-0"><i class="bi bi-exclamation-triangle"></i> Productos Agotados</h5>
+        </div>
+        <div class="card-body">
+          {% if productos_agotados %}
+            <div class="list-group list-group-flush">
+              {% for producto in productos_agotados %}
+              <div class="list-group-item d-flex justify-content-between align-items-center">
+                <div>
+                  <h6 class="mb-1">{{ producto.nombre }}</h6>
+                  <small class="text-muted">Stock mínimo: {{ producto.stock_minimo }}</small>
+                </div>
+                <span class="badge bg-danger rounded-pill">Agotado</span>
+              </div>
+              {% endfor %}
+            </div>
+          {% else %}
+            <p class="text-muted text-center">No hay productos agotados</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Productos con Stock Bajo -->
+    <div class="col-md-6">
+      <div class="card shadow h-100">
+        <div class="card-header bg-warning text-white">
+          <h5 class="mb-0"><i class="bi bi-exclamation-circle"></i> Productos con Stock Bajo</h5>
+        </div>
+        <div class="card-body">
+          {% if productos_stock_bajo %}
+            <div class="list-group list-group-flush">
+              {% for producto in productos_stock_bajo %}
+              <div class="list-group-item d-flex justify-content-between align-items-center">
+                <div>
+                  <h6 class="mb-1">{{ producto.nombre }}</h6>
+                  <small class="text-muted">Stock: {{ producto.stock }} / Mínimo: {{ producto.stock_minimo }}</small>
+                </div>
+                <span class="badge bg-warning rounded-pill">{{ producto.stock }}</span>
+              </div>
+              {% endfor %}
+            </div>
+          {% else %}
+            <p class="text-muted text-center">No hay productos con stock bajo</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Análisis de Gastos por Categoría -->
+  <div class="card shadow mb-4">
+    <div class="card-header bg-info text-white">
+      <h5 class="mb-0"><i class="bi bi-pie-chart"></i> Gastos por Categoría</h5>
+    </div>
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-striped table-hover">
+          <thead class="table-info">
+            <tr>
+              <th>Categoría</th>
+              <th>Total Gastos</th>
+              <th>Cantidad</th>
+              <th>Promedio</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for gasto in gastos_categoria %}
+            <tr>
+              <td><strong>{{ gasto.categoria|title }}</strong></td>
+              <td class="text-info">Gs. {{ gasto.total|intcomma_dot }}</td>
+              <td>{{ gasto.cantidad|intcomma_dot }}</td>
+              <td>Gs. {{ gasto.total|div:gasto.cantidad|floatformat:0|intcomma_dot }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="4" class="text-center text-muted">No hay gastos registrados</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tendencias de Ventas por Día de la Semana -->
+  <div class="card shadow mb-4">
+    <div class="card-header bg-secondary text-white">
+      <h5 class="mb-0"><i class="bi bi-calendar3"></i> Ventas por Día de la Semana</h5>
+    </div>
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-striped table-hover">
+          <thead class="table-secondary">
+            <tr>
+              <th>Día</th>
+              <th>Total Ventas</th>
+              <th>Cantidad Facturas</th>
+              <th>Promedio por Factura</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for dia in ventas_por_dia %}
+            <tr>
+              <td><strong>{{ dia.dia }}</strong></td>
+              <td class="text-secondary">Gs. {{ dia.total_ventas|intcomma_dot }}</td>
+              <td>{{ dia.cantidad_facturas|intcomma_dot }}</td>
+              <td>
+                {% if dia.cantidad_facturas > 0 %}
+                  Gs. {{ dia.total_ventas|div:dia.cantidad_facturas|floatformat:0|intcomma_dot }}
+                {% else %}
+                  Gs. 0
+                {% endif %}
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="4" class="text-center text-muted">No hay datos para mostrar</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Resumen de Eficiencia -->
+  <div class="card shadow mb-4">
+    <div class="card-header bg-primary text-white">
+      <h5 class="mb-0"><i class="bi bi-speedometer2"></i> Resumen de Eficiencia</h5>
+    </div>
+    <div class="card-body">
+      <div class="row">
+        <div class="col-md-6">
+          <h6>Métricas de Cobranza</h6>
+          <ul class="list-unstyled">
+            <li><strong>Total Facturas:</strong> {{ total_facturas|intcomma_dot }}</li>
+            <li><strong>Facturas Pagadas:</strong> {{ facturas_pagadas|intcomma_dot }}</li>
+            <li><strong>Facturas Pendientes:</strong> {{ facturas_pendientes|intcomma_dot }}</li>
+            <li><strong>Eficiencia:</strong> {{ eficiencia_cobranzas|floatformat:1 }}%</li>
+          </ul>
+        </div>
+        <div class="col-md-6">
+          <h6>Métricas de Inventario</h6>
+          <ul class="list-unstyled">
+            <li><strong>Productos Agotados:</strong> {{ productos_agotados|length|intcomma_dot }}</li>
+            <li><strong>Productos Stock Bajo:</strong> {{ productos_stock_bajo|length|intcomma_dot }}</li>
+            <li><strong>Productos Analizados:</strong> {{ productos_rotacion|length|intcomma_dot }}</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Botones de Acción -->
+  <div class="text-center mb-4">
+    <a href="{% url 'reportes_dashboard' %}" class="btn btn-secondary">
+      <i class="bi bi-arrow-left"></i> Volver a Reportes
+    </a>
+  </div>
+</div>
+
+<style>
+.card {
+  transition: transform 0.2s ease-in-out;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+}
+
+.table th {
+  font-weight: 600;
+}
+
+.badge {
+  font-size: 0.85em;
+}
+
+.list-group-item {
+  border-left: none;
+  border-right: none;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Inicializar DataTable si está disponible
+  if (typeof $.fn.DataTable !== 'undefined') {
+    $('.table').DataTable({
+      "language": {
+        "url": "//cdn.datatables.net/plug-ins/1.10.24/i18n/Spanish.json"
+      },
+      "pageLength": 25
+    });
+  }
+});
+</script>
+{% endblock %}
+

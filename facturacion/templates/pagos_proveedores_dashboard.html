@@ -130,7 +130,7 @@
               <thead class="table-dark">
                 <tr>
                   <th>Proveedor</th>
-                  <th>RIF</th>
+                  <th>RUC</th>
                   <th>Saldo Pendiente</th>
                   <th>Facturas Pendientes</th>
                   <th>Acciones</th>
@@ -142,7 +142,7 @@
                   <td>
                     <strong>{{ proveedor.nombre }}</strong>
                   </td>
-                  <td>{{ proveedor.rif }}</td>
+                  <td>{{ proveedor.ruc }}</td>
                   <td class="text-danger fw-bold">Gs. {{ proveedor.saldo|floatformat:0|intcomma_dot }}</td>
                   <td>
                     <span class="badge bg-danger">{{ proveedor.facturas_pendientes_count }}</span>

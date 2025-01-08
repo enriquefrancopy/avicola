@@ -1,0 +1,389 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load humanize custom_filters %}
+
+{% block title %}Caja {{ caja.fecha|date:"d/m/Y" }} - Avícola CVA{% endblock %}
+
+{% block page_title %}Caja {{ caja.fecha|date:"d/m/Y" }}{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Inicio</a></li>
+<li class="breadcrumb-item"><a href="{% url 'caja_list' %}">Control de Caja</a></li>
+<li class="breadcrumb-item active">Caja {{ caja.fecha|date:"d/m/Y" }}</li>
+{% endblock %}
+
+{% block content %}
+<!-- Información de la caja -->
+<div class="row mb-4">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h3 class="card-title">
+          <i class="bi bi-cash-stack"></i> 
+          Información de Caja - {{ caja.fecha|date:"d/m/Y" }}
+        </h3>
+        <div class="d-flex gap-2">
+          {% if not caja.cerrada %}
+            <a href="{% url 'gasto_crear' caja.id %}" class="btn btn-warning">
+              <i class="bi bi-receipt"></i> Registrar Gasto
+            </a>
+            <a href="{% url 'movimiento_crear' caja.id %}" class="btn btn-info">
+              <i class="bi bi-arrow-left-right"></i> Movimiento Manual
+            </a>
+            <a href="{% url 'caja_cerrar' caja.id %}" class="btn btn-danger">
+              <i class="bi bi-lock"></i> Cerrar Caja
+            </a>
+          {% endif %}
+          <a href="{% url 'caja_list' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Volver
+          </a>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-3">
+            <div class="info-box bg-primary">
+              <span class="info-box-icon"><i class="bi bi-cash-coin"></i></span>
+              <div class="info-box-content">
+                <span class="info-box-text">Saldo Inicial</span>
+                <span class="info-box-number">Gs. {{ caja.saldo_inicial|intcomma_dot }}</span>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="info-box bg-success">
+              <span class="info-box-icon"><i class="bi bi-plus-circle"></i></span>
+              <div class="info-box-content">
+                <span class="info-box-text">Total Ingresos</span>
+                <span class="info-box-number">Gs. {{ total_ingresos|intcomma_dot }}</span>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="info-box bg-danger">
+              <span class="info-box-icon"><i class="bi bi-dash-circle"></i></span>
+              <div class="info-box-content">
+                <span class="info-box-text">Total Egresos</span>
+                <span class="info-box-number">Gs. {{ total_egresos|intcomma_dot }}</span>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="info-box {% if caja.cerrada %}bg-info{% else %}bg-warning{% endif %}">
+              <span class="info-box-icon"><i class="bi bi-calculator"></i></span>
+              <div class="info-box-content">
+                <span class="info-box-text">Saldo Final</span>
+                <span class="info-box-number">Gs. {{ caja.saldo_final|intcomma_dot }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        {% if caja.cerrada %}
+        <div class="row mt-3">
+          <div class="col-md-6">
+            <div class="info-box bg-info">
+              <span class="info-box-icon"><i class="bi bi-hand-holding-usd"></i></span>
+              <div class="info-box-content">
+                <span class="info-box-text">Saldo Real</span>
+                <span class="info-box-number">Gs. {{ caja.saldo_real|intcomma_dot }}</span>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="info-box {% if caja.diferencia == 0 %}bg-success{% elif caja.diferencia > 0 %}bg-warning{% else %}bg-danger{% endif %}">
+              <span class="info-box-icon"><i class="bi bi-exclamation-triangle"></i></span>
+              <div class="info-box-content">
+                <span class="info-box-text">Diferencia</span>
+                <span class="info-box-number">
+                  {% if caja.diferencia == 0 %}
+                    Sin diferencia
+                  {% elif caja.diferencia > 0 %}
+                    +Gs. {{ caja.diferencia|intcomma_dot }}
+                  {% else %}
+                    Gs. {{ caja.diferencia|intcomma_dot }}
+                  {% endif %}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Denominaciones -->
+{% if denominaciones_apertura or denominaciones_cierre %}
+<div class="row mb-4">
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">
+          <i class="bi bi-cash-stack"></i> Denominaciones de Apertura
+        </h3>
+      </div>
+      <div class="card-body">
+        {% if denominaciones_apertura %}
+          <div class="table-responsive">
+            <table class="table table-sm">
+              <thead>
+                <tr>
+                  <th>Denominación</th>
+                  <th>Cantidad</th>
+                  <th>Subtotal</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for denominacion in denominaciones_apertura %}
+                <tr>
+                  <td>{{ denominacion.get_valor_display }}</td>
+                  <td>{{ denominacion.cantidad }}</td>
+                  <td class="text-end">Gs. {{ denominacion.subtotal|intcomma_dot }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <p class="text-muted">No hay denominaciones de apertura registradas.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  
+  {% if denominaciones_cierre %}
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">
+          <i class="bi bi-cash-stack"></i> Denominaciones de Cierre
+        </h3>
+      </div>
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="table table-sm">
+            <thead>
+              <tr>
+                <th>Denominación</th>
+                <th>Cantidad</th>
+                <th>Subtotal</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for denominacion in denominaciones_cierre %}
+              <tr>
+                <td>{{ denominacion.get_valor_display }}</td>
+                <td>{{ denominacion.cantidad }}</td>
+                <td class="text-end">Gs. {{ denominacion.subtotal|intcomma_dot }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endif %}
+
+<!-- Movimientos -->
+<div class="row">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">
+          <i class="bi bi-arrow-left-right"></i> Movimientos de Caja
+        </h3>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-striped">
+            <thead>
+              <tr>
+                <th>Hora</th>
+                <th>Tipo</th>
+                <th>Categoría</th>
+                <th>Descripción</th>
+                <th>Monto</th>
+                <th>Usuario</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for movimiento in movimientos %}
+              <tr>
+                <td>{{ movimiento.fecha|date:"H:i" }}</td>
+                <td>
+                  {% if movimiento.tipo == 'ingreso' %}
+                    <span class="badge bg-success">Ingreso</span>
+                  {% else %}
+                    <span class="badge bg-danger">Egreso</span>
+                  {% endif %}
+                </td>
+                <td>{{ movimiento.get_categoria_display }}</td>
+                <td>{{ movimiento.descripcion }}</td>
+                <td class="text-end">
+                  {% if movimiento.tipo == 'ingreso' %}
+                    <span class="text-success">+Gs. {{ movimiento.monto|intcomma_dot }}</span>
+                  {% else %}
+                    <span class="text-danger">-Gs. {{ movimiento.monto|intcomma_dot }}</span>
+                  {% endif %}
+                </td>
+                <td>{{ movimiento.usuario.username }}</td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="6" class="text-center text-muted">
+                  No hay movimientos registrados
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Gastos del Día -->
+{% if gastos %}
+<div class="row mt-4">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">
+          <i class="bi bi-receipt"></i> Gastos del Día
+          <span class="badge bg-warning ms-2">{{ gastos.count }}</span>
+        </h3>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-striped">
+            <thead>
+              <tr>
+                <th>Hora</th>
+                <th>Categoría</th>
+                <th>Descripción</th>
+                <th>Monto</th>
+                <th>Usuario</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for gasto in gastos %}
+              <tr>
+                <td>{{ gasto.fecha|date:"H:i" }}</td>
+                <td>
+                  <span class="badge bg-info">{{ gasto.get_categoria_display }}</span>
+                </td>
+                <td>{{ gasto.descripcion|truncatechars:50 }}</td>
+                <td class="text-end">
+                  <span class="text-danger fw-bold">Gs. {{ gasto.monto|intcomma_dot }}</span>
+                </td>
+                <td>{{ gasto.usuario.username }}</td>
+                <td>
+                  <button class="btn btn-sm btn-outline-info" onclick="verDetalleGasto({{ gasto.id }})">
+                    <i class="bi bi-eye"></i> Ver
+                  </button>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        
+        <div class="card-footer">
+          <div class="row">
+            <div class="col-md-6">
+              <strong>Total Gastos: Gs. {{ total_gastos|intcomma_dot }}</strong>
+            </div>
+            <div class="col-md-6 text-end">
+              <small class="text-muted">{{ gastos.count }} gasto{{ gastos.count|pluralize:"s" }} registrado{{ gastos.count|pluralize:"s" }}</small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- Resumen por categoría -->
+{% if movimientos_por_categoria %}
+<div class="row mt-4">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">
+          <i class="bi bi-pie-chart"></i> Resumen por Categoría
+        </h3>
+      </div>
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="table table-sm">
+            <thead>
+              <tr>
+                <th>Categoría</th>
+                <th>Cantidad</th>
+                <th>Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for item in movimientos_por_categoria %}
+              <tr>
+                <td>{{ item.categoria|title }}</td>
+                <td>{{ item.cantidad }}</td>
+                <td class="text-end">Gs. {{ item.total|intcomma_dot }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- Modal para detalles del gasto -->
+<div class="modal fade" id="modalDetalleGasto" tabindex="-1" aria-labelledby="modalDetalleGastoLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="modalDetalleGastoLabel">
+          <i class="bi bi-receipt"></i> Detalle del Gasto
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body" id="modalDetalleGastoBody">
+        <!-- El contenido se cargará dinámicamente -->
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function verDetalleGasto(gastoId) {
+  // Mostrar loading
+  $('#modalDetalleGastoBody').html('<div class="text-center"><i class="bi bi-hourglass-split"></i> Cargando...</div>');
+  $('#modalDetalleGasto').modal('show');
+  
+  // Cargar detalles del gasto via AJAX
+  $.get(`/api/gastos/${gastoId}/detalle/`)
+    .done(function(data) {
+      $('#modalDetalleGastoBody').html(data);
+    })
+    .fail(function() {
+      $('#modalDetalleGastoBody').html('<div class="alert alert-danger">Error al cargar los detalles del gasto.</div>');
+    });
+}
+</script>
+{% endblock %}

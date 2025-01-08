@@ -74,7 +74,7 @@
                 {% endif %}
               </td>
               <td>
-                <span class="badge bg-secondary">{{ proveedor.rif }}</span>
+                <span class="badge bg-secondary">{{ proveedor.ruc }}</span>
               </td>
               <td>
                 {% if proveedor.telefono %}
@@ -159,8 +159,8 @@
             <input type="text" class="form-control" id="nombre{{ proveedor.id }}" name="nombre" value="{{ proveedor.nombre }}" required>
           </div>
           <div class="mb-3">
-            <label for="rif{{ proveedor.id }}" class="form-label">RUC</label>
-            <input type="text" class="form-control" id="rif{{ proveedor.id }}" name="rif" value="{{ proveedor.rif }}" required>
+                          <label for="ruc{{ proveedor.id }}" class="form-label">RUC</label>
+                            <input type="text" class="form-control" id="ruc{{ proveedor.id }}" name="ruc" value="{{ proveedor.ruc }}" required>
           </div>
           <div class="mb-3">
             <label for="direccion{{ proveedor.id }}" class="form-label">Dirección</label>
@@ -285,8 +285,8 @@
             <input type="text" class="form-control" id="nombre" name="nombre" required>
           </div>
           <div class="mb-3">
-            <label for="rif" class="form-label">RUC</label>
-            <input type="text" class="form-control" id="rif" name="rif" required>
+                          <label for="ruc" class="form-label">RUC</label>
+              <input type="text" class="form-control" id="ruc" name="ruc" required>
           </div>
           <div class="mb-3">
             <label for="direccion" class="form-label">Dirección</label>

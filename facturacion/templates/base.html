@@ -241,57 +241,87 @@
                    <p>Inicio</p>
                  </a>
                </li>
+               {% if usuario_permisos.productos.ver %}
                <li class="nav-item">
                  <a href="{% url 'productos_list' %}" class="nav-link {% if 'producto' in request.resolver_match.url_name %}active{% endif %}">
                    <i class="nav-icon bi bi-box-seam"></i>
                    <p>Productos</p>
                  </a>
                </li>
+               {% endif %}
+               {% if usuario_permisos.proveedores.ver %}
                <li class="nav-item">
                  <a href="{% url 'proveedores_list' %}" class="nav-link {% if 'proveedor' in request.resolver_match.url_name %}active{% endif %}">
                    <i class="nav-icon bi bi-people"></i>
                    <p>Proveedores</p>
                  </a>
                </li>
+               {% endif %}
+               {% if usuario_permisos.clientes.ver %}
+               <li class="nav-item">
+                 <a href="{% url 'clientes_list' %}" class="nav-link {% if 'cliente' in request.resolver_match.url_name %}active{% endif %}">
+                   <i class="nav-icon bi bi-person-lines-fill"></i>
+                   <p>Clientes</p>
+                 </a>
+               </li>
+               {% endif %}
+               {% if usuario_permisos.facturas_venta.ver or usuario_permisos.facturas_compra.ver %}
               <li class="nav-item">
                 <a href="{% url 'factura_list' %}" class="nav-link {% if 'factura' in request.resolver_match.url_name %}active{% endif %}">
                   <i class="nav-icon bi bi-receipt"></i>
                   <p>Facturas</p>
                 </a>
               </li>
-
+              {% endif %}
+              {% if usuario_permisos.stock.ver %}
               <li class="nav-item">
                 <a href="{% url 'stock_movimientos' %}" class="nav-link {% if 'stock' in request.resolver_match.url_name %}active{% endif %}">
                   <i class="nav-icon bi bi-arrow-left-right"></i>
                   <p>Movimientos de Stock</p>
                 </a>
               </li>
+              {% endif %}
+              {% if usuario_permisos.caja.ver %}
               <li class="nav-item">
                 <a href="{% url 'caja_list' %}" class="nav-link {% if 'caja' in request.resolver_match.url_name %}active{% endif %}">
                   <i class="nav-icon bi bi-cash-stack"></i>
                   <p>Control de Caja</p>
                 </a>
               </li>
+              {% endif %}
+              {% if usuario_permisos.pagos.ver %}
               <li class="nav-item">
                 <a href="{% url 'pagos_dashboard' %}" class="nav-link {% if 'pagos' in request.resolver_match.url_name %}active{% endif %}">
                   <i class="nav-icon bi bi-credit-card"></i>
                   <p>Pagos</p>
                 </a>
               </li>
+              {% endif %}
               <li class="nav-header">ADMINISTRACIÓN</li>
+              {% if usuario_permisos.configuracion.ver %}
               <li class="nav-item">
                 <a href="{% url 'configuracion_panel' %}" class="nav-link {% if 'configuracion' in request.resolver_match.url_name %}active{% endif %}">
                   <i class="nav-icon bi bi-gear"></i>
                   <p>Configuración</p>
                 </a>
               </li>
-
+              {% if user.is_superuser %}
+              <li class="nav-item">
+                <a href="{% url 'backup_supabase' %}" class="nav-link">
+                  <i class="nav-icon bi bi-cloud-upload"></i>
+                  <p>Backup a Supabase</p>
+                </a>
+              </li>
+              {% endif %}
+              {% endif %}
+              {% if usuario_permisos.reportes.ver %}
               <li class="nav-item">
                 <a href="{% url 'reportes_dashboard' %}" class="nav-link {% if 'reporte' in request.resolver_match.url_name %}active{% endif %}">
                   <i class="nav-icon bi bi-file-earmark-text"></i>
                   <p>Reportes</p>
                 </a>
               </li>
+              {% endif %}
             </ul>
             <!--end::Sidebar Menu-->
           </nav>
@@ -393,6 +423,46 @@
     ></script>
     <!--end::Third Party Plugin(ApexCharts)-->
     {% block extra_js %}{% endblock %}
+    
+    <!-- Script para selección automática de texto en campos -->
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        // Seleccionar automáticamente el texto en campos de entrada
+        const inputs = document.querySelectorAll('input[type="text"], input[type="number"], input[type="email"], input[type="tel"], input[type="password"], textarea');
+        
+        inputs.forEach(function(input) {
+          input.addEventListener('click', function() {
+            // Solo seleccionar si el campo tiene contenido y no está en modo de solo lectura
+            if (this.value && !this.readOnly) {
+              this.select();
+            }
+          });
+          
+          // También seleccionar al hacer focus (para navegación por teclado)
+          input.addEventListener('focus', function() {
+            if (this.value && !this.readOnly) {
+              this.select();
+            }
+          });
+        });
+        
+        // Para campos de fecha y otros tipos especiales
+        const dateInputs = document.querySelectorAll('input[type="date"], input[type="datetime-local"]');
+        dateInputs.forEach(function(input) {
+          input.addEventListener('click', function() {
+            if (this.value && !this.readOnly) {
+              this.select();
+            }
+          });
+          
+          input.addEventListener('focus', function() {
+            if (this.value && !this.readOnly) {
+              this.select();
+            }
+          });
+        });
+      });
+    </script>
     <!--end::Script-->
   </body>
   <!--end::Body-->

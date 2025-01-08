@@ -3,8 +3,9 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db.models import Sum, Count
 from django.utils import timezone
+from django.http import JsonResponse
 from datetime import date
-from .models import Caja, Denominacion, MovimientoCaja, Gasto
+from .models import Caja, Denominacion, MovimientoCaja, Gasto, Factura, Pago
 
 @login_required
 def caja_abrir(request):
@@ -15,6 +16,12 @@ def caja_abrir(request):
     if caja_existente:
         messages.warning(request, 'Ya existe una caja abierta para hoy.')
         return redirect('caja_ver', caja_id=caja_existente.id)
+    
+    # Verificar si hay una caja abierta de días anteriores
+    caja_anterior_abierta = Caja.objects.filter(cerrada=False).exclude(fecha=date.today()).first()
+    if caja_anterior_abierta:
+        messages.error(request, f'Hay una caja abierta del {caja_anterior_abierta.fecha.strftime("%d/%m/%Y")} que debe ser cerrada antes de abrir una nueva caja.')
+        return redirect('caja_cerrar', caja_id=caja_anterior_abierta.id)
     
     if request.method == 'POST':
         try:
@@ -175,6 +182,36 @@ def caja_cerrar(request, caja_id):
     # Calcular saldo final esperado
     caja.calcular_saldo_final()
     
+    # Calcular ventas del día
+    from datetime import datetime
+    from django.db.models import Sum, Count
+    
+    # Obtener ventas del día de la caja (facturas pagadas)
+    ventas_del_dia = Factura.objects.filter(
+        fecha__date=caja.fecha,
+        tipo='venta',
+        estado='pagada'
+    ).aggregate(
+        total_ventas=Sum('total'),
+        cantidad_facturas=Count('id')
+    )
+    
+    # Obtener pagos a proveedores del día
+    pagos_proveedores = Pago.objects.filter(
+        fecha__date=caja.fecha,
+        proveedor__isnull=False
+    ).aggregate(
+        total_pagos=Sum('monto_total')
+    )
+    
+    # Obtener gastos del día
+    gastos_del_dia = Gasto.objects.filter(
+        fecha__date=caja.fecha,
+        caja=caja
+    ).aggregate(
+        total_gastos=Sum('monto')
+    )
+    
     # Preparar denominaciones para el formulario
     denominaciones = []
     for valor, label in Denominacion.VALOR_CHOICES:
@@ -187,6 +224,9 @@ def caja_cerrar(request, caja_id):
     context = {
         'caja': caja,
         'denominaciones': denominaciones,
+        'ventas_del_dia': ventas_del_dia,
+        'pagos_proveedores': pagos_proveedores,
+        'gastos_del_dia': gastos_del_dia,
     }
     
     return render(request, 'caja_cerrar.html', context)
@@ -196,7 +236,62 @@ def caja_list(request):
     """Listar todas las cajas"""
     cajas = Caja.objects.all().order_by('-fecha')
     
+    # Validar caja activa del día actual
+    caja_actual, necesita_cierre = Caja.validar_caja_activa_hoy()
+    
+    # Si hay una caja abierta de días anteriores, redirigir al cierre
+    if necesita_cierre:
+        messages.error(request, f'Hay una caja abierta del {caja_actual.fecha.strftime("%d/%m/%Y")} que debe ser cerrada antes de continuar.')
+        return redirect('caja_cerrar', caja_id=caja_actual.id)
+    
     context = {
         'cajas': cajas,
+        'caja_actual': caja_actual,
     }
     return render(request, 'caja_list.html', context)
+
+@login_required
+def gasto_detalle_ajax(request, gasto_id):
+    """Vista AJAX para mostrar detalles de un gasto en modal"""
+    try:
+        gasto = get_object_or_404(Gasto, id=gasto_id)
+        
+        # Renderizar solo el contenido del modal usando un template simple
+        html_content = f"""
+        <div class="row">
+            <div class="col-md-6">
+                <h6><i class="bi bi-calendar"></i> Fecha y Hora</h6>
+                <p class="mb-3">{gasto.fecha.strftime('%d/%m/%Y %H:%M')}</p>
+                
+                <h6><i class="bi bi-tag"></i> Categoría</h6>
+                <p class="mb-3">
+                    <span class="badge bg-info">{gasto.get_categoria_display()}</span>
+                </p>
+                
+                <h6><i class="bi bi-person"></i> Registrado por</h6>
+                <p class="mb-3">{gasto.usuario.get_full_name() or gasto.usuario.username}</p>
+            </div>
+            <div class="col-md-6">
+                <h6><i class="bi bi-currency-dollar"></i> Monto</h6>
+                <p class="mb-3">
+                    <span class="h4 text-danger fw-bold">Gs. {gasto.monto:,}</span>
+                </p>
+                
+                <h6><i class="bi bi-cash-stack"></i> Caja</h6>
+                <p class="mb-3">{gasto.caja.fecha.strftime('%d/%m/%Y')}</p>
+            </div>
+        </div>
+        
+        <div class="row mt-3">
+            <div class="col-12">
+                <h6><i class="bi bi-file-text"></i> Descripción</h6>
+                <div class="alert alert-light">
+                    {gasto.descripcion or 'Sin descripción'}
+                </div>
+            </div>
+        </div>
+        """
+        
+        return JsonResponse({'html': html_content})
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)

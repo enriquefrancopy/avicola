@@ -33,45 +33,12 @@
         </div>
       </div>
       <div class="card-body">
-        <!-- Estadísticas -->
+        <!-- Estado de Caja Actual -->
         <div class="row mb-4">
-          <div class="col-lg-3 col-6">
-            <div class="small-box bg-info">
+          <div class="col-12">
+            <div class="small-box {% if caja_actual %}bg-success{% else %}bg-warning{% endif %}">
               <div class="inner">
-                <h3>{{ total_cajas }}</h3>
-                <p>Total de Cajas</p>
-              </div>
-              <div class="icon">
-                <i class="bi bi-cash-stack"></i>
-              </div>
-            </div>
-          </div>
-          <div class="col-lg-3 col-6">
-            <div class="small-box bg-success">
-              <div class="inner">
-                <h3>{{ cajas_cerradas }}</h3>
-                <p>Cajas Cerradas</p>
-              </div>
-              <div class="icon">
-                <i class="bi bi-check-circle"></i>
-              </div>
-            </div>
-          </div>
-          <div class="col-lg-3 col-6">
-            <div class="small-box bg-warning">
-              <div class="inner">
-                <h3>{{ cajas_abiertas }}</h3>
-                <p>Cajas Abiertas</p>
-              </div>
-              <div class="icon">
-                <i class="bi bi-exclamation-triangle"></i>
-              </div>
-            </div>
-          </div>
-          <div class="col-lg-3 col-6">
-            <div class="small-box bg-primary">
-              <div class="inner">
-                <h3>{% if caja_actual %}Sí{% else %}No{% endif %}</h3>
+                <h3>{% if caja_actual %}Abierta{% else %}Cerrada{% endif %}</h3>
                 <p>Caja de Hoy</p>
               </div>
               <div class="icon">

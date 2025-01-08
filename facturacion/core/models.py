@@ -44,7 +44,6 @@ class Proveedor(models.Model):
 class Cliente(models.Model):
     nombre = models.CharField(max_length=200)
     ruc = models.CharField(max_length=20, unique=True)
-    direccion = models.TextField()
     telefono = models.CharField(max_length=20)
     email = models.EmailField()
     saldo = models.IntegerField(default=0)
@@ -102,9 +101,15 @@ class Factura(models.Model):
             ultima_factura = Factura.objects.filter(tipo=self.tipo).order_by('-numero').first()
             if ultima_factura:
                 try:
-                    ultimo_numero = int(ultima_factura.numero)
-                    self.numero = str(ultimo_numero + 1).zfill(6)
-                except ValueError:
+                    # Intentar extraer solo los dígitos del número
+                    import re
+                    numeros = re.findall(r'\d+', ultima_factura.numero)
+                    if numeros:
+                        ultimo_numero = int(numeros[-1])  # Tomar el último grupo de dígitos
+                        self.numero = str(ultimo_numero + 1).zfill(6)
+                    else:
+                        self.numero = '000001'
+                except (ValueError, IndexError):
                     self.numero = '000001'
             else:
                 self.numero = '000001'
@@ -593,6 +598,37 @@ class Caja(models.Model):
         return caja
     
     @classmethod
+    def validar_caja_activa_hoy(cls):
+        """
+        Valida que la caja activa sea del día actual.
+        Retorna (caja_activa, necesita_cierre) donde:
+        - caja_activa: la caja activa (puede ser None)
+        - necesita_cierre: True si hay una caja abierta de días anteriores
+        """
+        fecha_hoy = timezone.now().date()
+        
+        # Buscar caja activa para hoy
+        caja_hoy = cls.objects.filter(
+            fecha=fecha_hoy,
+            cerrada=False
+        ).first()
+        
+        # Buscar caja activa de días anteriores
+        caja_anterior = cls.objects.filter(
+            cerrada=False
+        ).exclude(fecha=fecha_hoy).first()
+        
+        if caja_anterior:
+            # Hay una caja abierta de días anteriores
+            return caja_anterior, True
+        elif caja_hoy:
+            # Hay una caja abierta para hoy
+            return caja_hoy, False
+        else:
+            # No hay caja abierta
+            return None, False
+    
+    @classmethod
     def obtener_ultimo_saldo_cierre(cls):
         """
         Obtener el saldo final de la última caja cerrada
@@ -724,3 +760,72 @@ class Gasto(models.Model):
                 observacion=self.observacion
             )
             self._movimiento_creado = True
+
+
+class PermisoUsuario(models.Model):
+    """Modelo para definir permisos de módulos por usuario"""
+    MODULO_CHOICES = [
+        ('dashboard', 'Dashboard'),
+        ('productos', 'Productos'),
+        ('proveedores', 'Proveedores'),
+        ('clientes', 'Clientes'),
+        ('facturas_venta', 'Facturas de Venta'),
+        ('facturas_compra', 'Facturas de Compra'),
+        ('pagos', 'Pagos'),
+        ('stock', 'Stock'),
+        ('caja', 'Control de Caja'),
+        ('reportes', 'Reportes'),
+        ('configuracion', 'Configuración'),
+        ('notificaciones', 'Notificaciones'),
+    ]
+    
+    usuario = models.ForeignKey(User, on_delete=models.CASCADE, related_name='permisos')
+    modulo = models.CharField(max_length=20, choices=MODULO_CHOICES)
+    puede_ver = models.BooleanField(default=True)
+    puede_crear = models.BooleanField(default=False)
+    puede_editar = models.BooleanField(default=False)
+    puede_eliminar = models.BooleanField(default=False)
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    fecha_actualizacion = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = 'Permiso de Usuario'
+        verbose_name_plural = 'Permisos de Usuario'
+        unique_together = ['usuario', 'modulo']
+        ordering = ['usuario', 'modulo']
+    
+    def __str__(self):
+        return f"{self.usuario.username} - {self.get_modulo_display()}"
+    
+    @classmethod
+    def tiene_permiso(cls, usuario, modulo, accion='ver'):
+        """Verificar si un usuario tiene permiso para una acción específica en un módulo"""
+        try:
+            permiso = cls.objects.get(usuario=usuario, modulo=modulo)
+            if accion == 'ver':
+                return permiso.puede_ver
+            elif accion == 'crear':
+                return permiso.puede_crear
+            elif accion == 'editar':
+                return permiso.puede_editar
+            elif accion == 'eliminar':
+                return permiso.puede_eliminar
+            return False
+        except cls.DoesNotExist:
+            return False
+    
+    @classmethod
+    def crear_permisos_por_defecto(cls, usuario):
+        """Crear permisos por defecto para un usuario nuevo"""
+        modulos = [choice[0] for choice in cls.MODULO_CHOICES]
+        for modulo in modulos:
+            cls.objects.get_or_create(
+                usuario=usuario,
+                modulo=modulo,
+                defaults={
+                    'puede_ver': True,
+                    'puede_crear': False,
+                    'puede_editar': False,
+                    'puede_eliminar': False
+                }
+            )

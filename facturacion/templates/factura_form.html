@@ -233,8 +233,8 @@
             <input type="text" class="form-control" id="nuevo_nombre" required>
           </div>
           <div class="mb-3">
-            <label for="nuevo_rif" class="form-label">RIF/RUC *</label>
-            <input type="text" class="form-control" id="nuevo_rif" required>
+                                    <label for="nuevo_ruc" class="form-label">RUC *</label>
+                        <input type="text" class="form-control" id="nuevo_ruc" required>
           </div>
           <div class="mb-3">
             <label for="nuevo_direccion" class="form-label">Dirección</label>
@@ -277,8 +277,8 @@
             <input type="text" class="form-control" id="nuevo_cliente_nombre" required>
           </div>
           <div class="mb-3">
-            <label for="nuevo_cliente_rif" class="form-label">RIF/RUC *</label>
-            <input type="text" class="form-control" id="nuevo_cliente_rif" required>
+                                    <label for="nuevo_cliente_ruc" class="form-label">RUC *</label>
+                        <input type="text" class="form-control" id="nuevo_cliente_ruc" required>
           </div>
           <div class="mb-3">
             <label for="nuevo_cliente_direccion" class="form-label">Dirección</label>
@@ -341,7 +341,7 @@ waitForJQuery(function() {
               data.forEach(function(proveedor) {
                 results.append(`
                   <a class="dropdown-item" href="#" data-id="${proveedor.id}" data-nombre="${proveedor.nombre}">
-                    ${proveedor.nombre} (${proveedor.rif})
+                    ${proveedor.nombre} (${proveedor.ruc})
                   </a>
                 `);
               });
@@ -385,7 +385,7 @@ waitForJQuery(function() {
         const busqueda = $('#proveedor_search').val();
         if (busqueda) {
           if (/[0-9]/.test(busqueda) && /[A-Za-z]/.test(busqueda)) {
-            $('#nuevo_rif').val(busqueda);
+                            $('#nuevo_ruc').val(busqueda);
           } else {
             $('#nuevo_nombre').val(busqueda);
           }
@@ -413,7 +413,7 @@ waitForJQuery(function() {
               data.forEach(function(cliente) {
                 results.append(`
                   <a class="dropdown-item" href="#" data-id="${cliente.id}" data-nombre="${cliente.nombre}">
-                    ${cliente.nombre} (${cliente.rif})
+                    ${cliente.nombre} (${cliente.ruc})
                   </a>
                 `);
               });
@@ -456,7 +456,7 @@ waitForJQuery(function() {
         const busqueda = $('#cliente_search').val();
         if (busqueda) {
           if (/[0-9]/.test(busqueda) && /[A-Za-z]/.test(busqueda)) {
-            $('#nuevo_cliente_rif').val(busqueda);
+                            $('#nuevo_cliente_ruc').val(busqueda);
           } else {
             $('#nuevo_cliente_nombre').val(busqueda);
           }
@@ -639,13 +639,13 @@ waitForJQuery(function() {
     // Guardar nuevo proveedor
     $('#btnGuardarProveedor').click(function() {
       const nombre = $('#nuevo_nombre').val().trim();
-      const rif = $('#nuevo_rif').val().trim();
+              const ruc = $('#nuevo_ruc').val().trim();
       const direccion = $('#nuevo_direccion').val().trim();
       const telefono = $('#nuevo_telefono').val().trim();
       const email = $('#nuevo_email').val().trim();
       
-      if (!nombre || !rif) {
-        alert('El nombre y RIF son obligatorios');
+      if (!nombre || !ruc) {
+        alert('El nombre y RUC son obligatorios');
         return;
       }
       
@@ -654,7 +654,7 @@ waitForJQuery(function() {
         method: 'POST',
         data: {
           nombre: nombre,
-          rif: rif,
+          ruc: ruc,
           direccion: direccion,
           telefono: telefono,
           email: email,
@@ -680,17 +680,17 @@ waitForJQuery(function() {
     });
     
     // Guardar nuevo cliente
-    $('#btnGuardarCliente').click(function() {
-      const nombre = $('#nuevo_cliente_nombre').val().trim();
-      const rif = $('#nuevo_cliente_rif').val().trim();
-      const direccion = $('#nuevo_cliente_direccion').val().trim();
-      const telefono = $('#nuevo_cliente_telefono').val().trim();
-      const email = $('#nuevo_cliente_email').val().trim();
-      
-      if (!nombre || !rif) {
-        alert('El nombre y RIF son obligatorios');
-        return;
-      }
+            $('#btnGuardarCliente').click(function() {
+            const nombre = $('#nuevo_cliente_nombre').val().trim();
+            const ruc = $('#nuevo_cliente_ruc').val().trim();
+            const direccion = $('#nuevo_cliente_direccion').val().trim();
+            const telefono = $('#nuevo_cliente_telefono').val().trim();
+            const email = $('#nuevo_cliente_email').val().trim();
+
+            if (!nombre || !ruc) {
+                alert('El nombre y RUC son obligatorios');
+                return;
+            }
       
       // Validar formato de email si se proporciona
       if (email && !email.includes('@')) {
@@ -708,7 +708,7 @@ waitForJQuery(function() {
         method: 'POST',
         data: {
           nombre: nombre,
-          rif: rif,
+          ruc: ruc,
           direccion: direccion,
           telefono: telefono,
           email: email,

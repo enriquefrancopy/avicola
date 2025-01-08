@@ -1,0 +1,265 @@
+{% extends 'base.html' %}
+{% load humanize custom_filters %}
+
+{% block title %}{{ titulo }} - Avícola CVA{% endblock %}
+
+{% block page_title %}{{ titulo }}{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Inicio</a></li>
+<li class="breadcrumb-item"><a href="{% url 'reportes_dashboard' %}">Reportes</a></li>
+<li class="breadcrumb-item active">{{ titulo }}</li>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  <!-- Filtros -->
+  <div class="card shadow mb-4">
+    <div class="card-header bg-primary text-white">
+      <h5 class="mb-0"><i class="bi bi-funnel"></i> Filtros</h5>
+    </div>
+    <div class="card-body">
+      <form method="get" class="row g-3">
+        <div class="col-md-4">
+          <label for="fecha_inicio" class="form-label">Fecha Inicio</label>
+          <input type="date" class="form-control" id="fecha_inicio" name="fecha_inicio" value="{{ fecha_inicio }}">
+        </div>
+        <div class="col-md-4">
+          <label for="fecha_fin" class="form-label">Fecha Fin</label>
+          <input type="date" class="form-control" id="fecha_fin" name="fecha_fin" value="{{ fecha_fin }}">
+        </div>
+        <div class="col-md-4 d-flex align-items-end">
+          <button type="submit" class="btn btn-primary me-2">
+            <i class="bi bi-search"></i> Filtrar
+          </button>
+          <a href="{% url 'reporte_rentabilidad_productos' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-clockwise"></i> Limpiar
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Resumen -->
+  <div class="row mb-4">
+    <div class="col-md-3">
+      <div class="card bg-primary text-white">
+        <div class="card-body text-center">
+          <h4 class="card-title">{{ productos_rentabilidad|length }}</h4>
+          <p class="card-text">Productos Analizados</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card bg-success text-white">
+        <div class="card-body text-center">
+          <h4 class="card-title">{{ top_rentables|length }}</h4>
+          <p class="card-text">Productos Más Rentables</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card bg-warning text-white">
+        <div class="card-body text-center">
+          <h4 class="card-title">{{ menos_rentables|length }}</h4>
+          <p class="card-text">Productos Menos Rentables</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card bg-info text-white">
+        <div class="card-body text-center">
+          <h4 class="card-title">
+            {% if productos_rentabilidad %}
+              {{ productos_rentabilidad|length|add:"-1" }}
+            {% else %}
+              0
+            {% endif %}
+          </h4>
+          <p class="card-text">Productos con Ventas</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Productos Más Rentables -->
+  <div class="card shadow mb-4">
+    <div class="card-header bg-success text-white">
+      <h5 class="mb-0"><i class="bi bi-trophy"></i> Productos Más Rentables</h5>
+    </div>
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-striped table-hover">
+          <thead class="table-success">
+            <tr>
+              <th>Producto</th>
+              <th>Total Ventas</th>
+              <th>Cantidad Vendida</th>
+              <th>Precio Promedio Venta</th>
+              <th>Costo</th>
+              <th>Margen Bruto</th>
+              <th>% Rentabilidad</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in top_rentables %}
+            <tr>
+              <td><strong>{{ item.producto.nombre }}</strong></td>
+              <td>Gs. {{ item.total_ventas|intcomma_dot }}</td>
+              <td>{{ item.cantidad_vendida|intcomma_dot }}</td>
+              <td>Gs. {{ item.precio_promedio_venta|intcomma_dot }}</td>
+              <td>Gs. {{ item.producto.costo|intcomma_dot }}</td>
+              <td class="text-success">Gs. {{ item.margen_bruto|intcomma_dot }}</td>
+              <td>
+                <span class="badge bg-success">{{ item.porcentaje_rentabilidad|floatformat:1 }}%</span>
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="7" class="text-center text-muted">No hay datos para mostrar</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Productos Menos Rentables -->
+  <div class="card shadow mb-4">
+    <div class="card-header bg-warning text-white">
+      <h5 class="mb-0"><i class="bi bi-exclamation-triangle"></i> Productos Menos Rentables</h5>
+    </div>
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-striped table-hover">
+          <thead class="table-warning">
+            <tr>
+              <th>Producto</th>
+              <th>Total Ventas</th>
+              <th>Cantidad Vendida</th>
+              <th>Precio Promedio Venta</th>
+              <th>Costo</th>
+              <th>Margen Bruto</th>
+              <th>% Rentabilidad</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in menos_rentables %}
+            <tr>
+              <td><strong>{{ item.producto.nombre }}</strong></td>
+              <td>Gs. {{ item.total_ventas|intcomma_dot }}</td>
+              <td>{{ item.cantidad_vendida|intcomma_dot }}</td>
+              <td>Gs. {{ item.precio_promedio_venta|intcomma_dot }}</td>
+              <td>Gs. {{ item.producto.costo|intcomma_dot }}</td>
+              <td class="text-danger">Gs. {{ item.margen_bruto|intcomma_dot }}</td>
+              <td>
+                <span class="badge bg-danger">{{ item.porcentaje_rentabilidad|floatformat:1 }}%</span>
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="7" class="text-center text-muted">No hay datos para mostrar</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Lista Completa de Productos -->
+  <div class="card shadow mb-4">
+    <div class="card-header bg-primary text-white">
+      <h5 class="mb-0"><i class="bi bi-list-ul"></i> Lista Completa de Productos</h5>
+    </div>
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-striped table-hover" id="tablaProductos">
+          <thead class="table-primary">
+            <tr>
+              <th>Producto</th>
+              <th>Total Ventas</th>
+              <th>Cantidad Vendida</th>
+              <th>Facturas</th>
+              <th>Precio Promedio Venta</th>
+              <th>Costo</th>
+              <th>Margen Bruto</th>
+              <th>% Rentabilidad</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in productos_rentabilidad %}
+            <tr>
+              <td><strong>{{ item.producto.nombre }}</strong></td>
+              <td>Gs. {{ item.total_ventas|intcomma_dot }}</td>
+              <td>{{ item.cantidad_vendida|intcomma_dot }}</td>
+              <td>{{ item.cantidad_facturas|intcomma_dot }}</td>
+              <td>Gs. {{ item.precio_promedio_venta|intcomma_dot }}</td>
+              <td>Gs. {{ item.producto.costo|intcomma_dot }}</td>
+              <td class="{% if item.margen_bruto >= 0 %}text-success{% else %}text-danger{% endif %}">
+                Gs. {{ item.margen_bruto|intcomma_dot }}
+              </td>
+              <td>
+                {% if item.porcentaje_rentabilidad >= 20 %}
+                  <span class="badge bg-success">{{ item.porcentaje_rentabilidad|floatformat:1 }}%</span>
+                {% elif item.porcentaje_rentabilidad >= 10 %}
+                  <span class="badge bg-warning">{{ item.porcentaje_rentabilidad|floatformat:1 }}%</span>
+                {% else %}
+                  <span class="badge bg-danger">{{ item.porcentaje_rentabilidad|floatformat:1 }}%</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="8" class="text-center text-muted">No hay datos para mostrar</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Botones de Acción -->
+  <div class="text-center mb-4">
+    <a href="{% url 'reportes_dashboard' %}" class="btn btn-secondary">
+      <i class="bi bi-arrow-left"></i> Volver a Reportes
+    </a>
+  </div>
+</div>
+
+<style>
+.card {
+  transition: transform 0.2s ease-in-out;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+}
+
+.table th {
+  font-weight: 600;
+}
+
+.badge {
+  font-size: 0.85em;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Inicializar DataTable si está disponible
+  if (typeof $.fn.DataTable !== 'undefined') {
+    $('#tablaProductos').DataTable({
+      "language": {
+        "url": "//cdn.datatables.net/plug-ins/1.10.24/i18n/Spanish.json"
+      },
+      "pageLength": 25,
+      "order": [[7, "desc"]] // Ordenar por rentabilidad descendente
+    });
+  }
+});
+</script>
+{% endblock %}
+

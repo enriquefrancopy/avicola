@@ -1,0 +1,200 @@
+{% extends 'base.html' %}
+{% load humanize custom_filters %}
+
+{% block title %}{{ titulo }} - Avícola CVA{% endblock %}
+
+{% block page_title %}{{ titulo }}{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Inicio</a></li>
+<li class="breadcrumb-item"><a href="{% url 'configuracion_panel' %}">Configuración</a></li>
+<li class="breadcrumb-item"><a href="{% url 'permisos_usuarios_list' %}">Permisos de Usuarios</a></li>
+<li class="breadcrumb-item active">{{ titulo }}</li>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  <!-- Header -->
+  <div class="card shadow mb-4">
+    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+      <h4 class="mb-0"><i class="bi bi-shield-lock"></i> {{ titulo }}</h4>
+      <div>
+        <a href="{% url 'permisos_usuario_reset' usuario.id %}" class="btn btn-outline-warning me-2"
+           onclick="return confirm('¿Estás seguro de que quieres resetear los permisos de {{ usuario.get_full_name|default:usuario.username }}?')">
+          <i class="bi bi-arrow-clockwise"></i> Resetear Permisos
+        </a>
+        <a href="{% url 'permisos_usuarios_list' %}" class="btn btn-outline-light">
+          <i class="bi bi-arrow-left"></i> Volver
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Información del Usuario -->
+  <div class="card shadow mb-4">
+    <div class="card-header bg-info text-white">
+      <h5 class="mb-0"><i class="bi bi-person"></i> Información del Usuario</h5>
+    </div>
+    <div class="card-body">
+      <div class="row">
+        <div class="col-md-6">
+          <p><strong>Nombre:</strong> {{ usuario.get_full_name|default:"No especificado" }}</p>
+          <p><strong>Usuario:</strong> @{{ usuario.username }}</p>
+        </div>
+        <div class="col-md-6">
+          <p><strong>Email:</strong> {{ usuario.email|default:"No especificado" }}</p>
+          <p><strong>Estado:</strong> 
+            {% if usuario.is_active %}
+              <span class="badge bg-success">Activo</span>
+            {% else %}
+              <span class="badge bg-danger">Inactivo</span>
+            {% endif %}
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Formulario de Permisos -->
+  <form method="post">
+    {% csrf_token %}
+    <div class="card shadow">
+      <div class="card-header bg-success text-white">
+        <h5 class="mb-0"><i class="bi bi-gear"></i> Configuración de Permisos</h5>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          {% for modulo, nombre in modulos %}
+            <div class="col-md-6 col-lg-4 mb-4">
+              <div class="card h-100">
+                <div class="card-header bg-light">
+                  <h6 class="mb-0">{{ nombre }}</h6>
+                </div>
+                <div class="card-body">
+                  {% with permiso=permisos|get_item:modulo %}
+                    <div class="form-check mb-2">
+                      <input class="form-check-input" type="checkbox" id="{{ modulo }}_ver" name="{{ modulo }}_ver"
+                             {% if permiso and permiso.puede_ver %}checked{% endif %}>
+                      <label class="form-check-label" for="{{ modulo }}_ver">
+                        <i class="bi bi-eye text-success"></i> <strong>Ver</strong>
+                      </label>
+                    </div>
+                    <div class="form-check mb-2">
+                      <input class="form-check-input" type="checkbox" id="{{ modulo }}_crear" name="{{ modulo }}_crear"
+                             {% if permiso and permiso.puede_crear %}checked{% endif %}>
+                      <label class="form-check-label" for="{{ modulo }}_crear">
+                        <i class="bi bi-plus text-primary"></i> <strong>Crear</strong>
+                      </label>
+                    </div>
+                    <div class="form-check mb-2">
+                      <input class="form-check-input" type="checkbox" id="{{ modulo }}_editar" name="{{ modulo }}_editar"
+                             {% if permiso and permiso.puede_editar %}checked{% endif %}>
+                      <label class="form-check-label" for="{{ modulo }}_editar">
+                        <i class="bi bi-pencil text-warning"></i> <strong>Editar</strong>
+                      </label>
+                    </div>
+                    <div class="form-check">
+                      <input class="form-check-input" type="checkbox" id="{{ modulo }}_eliminar" name="{{ modulo }}_eliminar"
+                             {% if permiso and permiso.puede_eliminar %}checked{% endif %}>
+                      <label class="form-check-label" for="{{ modulo }}_eliminar">
+                        <i class="bi bi-trash text-danger"></i> <strong>Eliminar</strong>
+                      </label>
+                    </div>
+                  {% endwith %}
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Botones de Acción -->
+    <div class="text-center mt-4 mb-4">
+      <button type="submit" class="btn btn-primary btn-lg me-3">
+        <i class="bi bi-check-circle"></i> Guardar Permisos
+      </button>
+      <a href="{% url 'permisos_usuarios_list' %}" class="btn btn-secondary btn-lg">
+        <i class="bi bi-x-circle"></i> Cancelar
+      </a>
+    </div>
+  </form>
+
+  <!-- Leyenda -->
+  <div class="card shadow mt-4">
+    <div class="card-header bg-light">
+      <h5 class="mb-0"><i class="bi bi-info-circle"></i> Información sobre Permisos</h5>
+    </div>
+    <div class="card-body">
+      <div class="row">
+        <div class="col-md-6">
+          <h6>Niveles de Permisos:</h6>
+          <ul class="list-unstyled">
+            <li><i class="bi bi-eye text-success"></i> <strong>Ver:</strong> Acceso básico al módulo</li>
+            <li><i class="bi bi-plus text-primary"></i> <strong>Crear:</strong> Puede crear nuevos registros</li>
+            <li><i class="bi bi-pencil text-warning"></i> <strong>Editar:</strong> Puede modificar registros existentes</li>
+            <li><i class="bi bi-trash text-danger"></i> <strong>Eliminar:</strong> Puede eliminar registros</li>
+          </ul>
+        </div>
+        <div class="col-md-6">
+          <h6>Notas Importantes:</h6>
+          <ul class="list-unstyled">
+            <li><i class="bi bi-exclamation-triangle text-warning"></i> Los permisos son acumulativos</li>
+            <li><i class="bi bi-info-circle text-info"></i> Si se desactiva "Ver", se desactivan todos los demás</li>
+            <li><i class="bi bi-shield-check text-success"></i> Los superusuarios tienen todos los permisos</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.card {
+  transition: transform 0.2s ease-in-out;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+}
+
+.form-check-input:checked {
+  background-color: #198754;
+  border-color: #198754;
+}
+
+.form-check-label {
+  cursor: pointer;
+  user-select: none;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Lógica para manejar dependencias entre permisos
+  const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+  
+  checkboxes.forEach(checkbox => {
+    checkbox.addEventListener('change', function() {
+      const name = this.name;
+      const modulo = name.split('_')[0];
+      const accion = name.split('_')[1];
+      
+      if (accion === 'ver' && !this.checked) {
+        // Si se desactiva "ver", desactivar todos los demás permisos del módulo
+        const otrosPermisos = document.querySelectorAll(`input[name^="${modulo}_"]:not([name="${modulo}_ver"])`);
+        otrosPermisos.forEach(permiso => {
+          permiso.checked = false;
+        });
+      } else if (accion !== 'ver' && this.checked) {
+        // Si se activa cualquier otro permiso, activar "ver"
+        const verCheckbox = document.getElementById(`${modulo}_ver`);
+        if (verCheckbox) {
+          verCheckbox.checked = true;
+        }
+      }
+    });
+  });
+});
+</script>
+{% endblock %}

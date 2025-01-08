@@ -8,6 +8,7 @@ from django.db import models
 from django.forms import modelformset_factory
 from .models import Producto, Proveedor, Cliente, Factura, DetalleFactura, Pago, PagoFactura, Notificacion, MovimientoStock, ConfiguracionSistema, Caja, Gasto, MovimientoCaja, Denominacion
 from .forms import ProductoForm, ProductoCrearForm, ProveedorForm, ClienteForm, FacturaForm, DetalleFacturaFormSet, PagoForm, PagoMultipleForm, AsignacionPagoForm, PagoFacturaFormSet
+from .decorators import puede_ver_modulo, puede_crear_modulo, puede_editar_modulo, puede_eliminar_modulo
 
 @login_required
 def dashboard(request):
@@ -84,6 +85,22 @@ def dashboard(request):
     productos_stock_alto_count = Producto.objects.filter(activo=True, stock__gt=F('stock_minimo')).count()
     productos_stock_alto = Producto.objects.filter(activo=True, stock__gt=F('stock_minimo'))
     
+    # Productos más vendidos (últimos 30 días)
+    productos_vendidos = DetalleFactura.objects.filter(
+        factura__fecha__gte=hoy - timedelta(days=30),
+        factura__tipo='venta'
+    ).values('producto__nombre').annotate(
+        cantidad_vendida=Sum('cantidad')
+    ).order_by('-cantidad_vendida')[:5]
+    
+    # Top clientes por compras (últimos 30 días)
+    clientes_compras = Factura.objects.filter(
+        fecha__gte=hoy - timedelta(days=30),
+        tipo='venta'
+    ).values('cliente__nombre').annotate(
+        total_compras=Sum('total')
+    ).order_by('-total_compras')[:5]
+    
     # Obtener alertas del sistema
     alertas = obtener_alertas_stock(request)
     
@@ -132,6 +149,10 @@ def dashboard(request):
             stock__gt=F('stock_minimo'), 
             stock__lte=F('stock_minimo') * 2
         ).count(),
+        
+        # Datos para las nuevas secciones
+        'productos_vendidos': productos_vendidos,
+        'clientes_compras': clientes_compras,
     }
     
     return render(request, 'dashboard.html', context)
@@ -211,6 +232,7 @@ def dashboard_data(request):
         })
 
 @login_required
+@puede_ver_modulo('productos')
 def productos_list(request):
     """Lista de productos"""
     # Filtros
@@ -232,6 +254,8 @@ def productos_list(request):
             productos = productos.filter(stock=F('stock_minimo'))
         elif estado == 'critico':
             productos = productos.filter(stock__lt=F('stock_minimo'))
+        elif estado == 'agotado':
+            productos = productos.filter(stock=0)
     
     return render(request, 'productos_list.html', {
         'productos': productos,
@@ -384,7 +408,7 @@ def proveedores_list(request):
     
     if q:
         proveedores = proveedores.filter(
-            Q(nombre__icontains=q) | Q(rif__icontains=q) | Q(email__icontains=q)
+            Q(nombre__icontains=q) | Q(ruc__icontains=q) | Q(email__icontains=q)
         )
     
     if estado:
@@ -450,6 +474,106 @@ def proveedor_reactivar(request, pk):
         return redirect('proveedores_list')
     return redirect('proveedores_list')
 
+# ============================================================================
+# VISTAS DE CLIENTES
+# ============================================================================
+
+@login_required
+def clientes_list(request):
+    """Lista de clientes"""
+    clientes = Cliente.objects.filter(activo=True).order_by('nombre')
+    
+    # Filtros
+    search = request.GET.get('search', '')
+    if search:
+        clientes = clientes.filter(
+            Q(nombre__icontains=search) |
+            Q(ruc__icontains=search) |
+            Q(telefono__icontains=search) |
+            Q(email__icontains=search)
+        )
+    
+    context = {
+        'clientes': clientes,
+        'search': search,
+    }
+    return render(request, 'clientes_list.html', context)
+
+@login_required
+def cliente_crear(request):
+    """Crear nuevo cliente"""
+    if request.method == 'POST':
+        form = ClienteForm(request.POST)
+        if form.is_valid():
+            cliente = form.save()
+            messages.success(request, f'Cliente "{cliente.nombre}" creado correctamente.')
+            return redirect('clientes_list')
+    else:
+        form = ClienteForm()
+    
+    context = {
+        'form': form,
+        'title': 'Crear Cliente',
+        'action': 'Crear'
+    }
+    return render(request, 'cliente_form.html', context)
+
+@login_required
+def cliente_editar(request, pk):
+    """Editar cliente existente"""
+    try:
+        cliente = Cliente.objects.get(pk=pk, activo=True)
+    except Cliente.DoesNotExist:
+        messages.error(request, 'Cliente no encontrado.')
+        return redirect('clientes_list')
+    
+    if request.method == 'POST':
+        form = ClienteForm(request.POST, instance=cliente)
+        if form.is_valid():
+            cliente = form.save()
+            messages.success(request, f'Cliente "{cliente.nombre}" actualizado correctamente.')
+            return redirect('clientes_list')
+    else:
+        form = ClienteForm(instance=cliente)
+    
+    context = {
+        'form': form,
+        'cliente': cliente,
+        'title': 'Editar Cliente',
+        'action': 'Actualizar'
+    }
+    return render(request, 'cliente_form.html', context)
+
+@login_required
+def cliente_eliminar(request, pk):
+    """Eliminar cliente (marcar como inactivo)"""
+    try:
+        cliente = Cliente.objects.get(pk=pk, activo=True)
+        cliente.activo = False
+        cliente.save()
+        messages.success(request, f'Cliente "{cliente.nombre}" eliminado correctamente.')
+    except Cliente.DoesNotExist:
+        messages.error(request, 'Cliente no encontrado.')
+    
+    return redirect('clientes_list')
+
+@login_required
+def cliente_reactivar(request, pk):
+    """Reactivar un cliente eliminado"""
+    try:
+        cliente = Cliente.objects.get(pk=pk, activo=False)
+        cliente.activo = True
+        cliente.save()
+        messages.success(request, f'Cliente "{cliente.nombre}" reactivado correctamente.')
+    except Cliente.DoesNotExist:
+        messages.error(request, 'Cliente no encontrado.')
+    
+    return redirect('clientes_list')
+
+# ============================================================================
+# VISTAS DE FACTURAS
+# ============================================================================
+
 @login_required
 def factura_list(request):
     """Lista de facturas"""
@@ -460,6 +584,7 @@ def factura_list(request):
     q = request.GET.get('q', '')
     desde = request.GET.get('desde', '')
     hasta = request.GET.get('hasta', '')
+    estado = request.GET.get('estado', '')
     
     if q:
         if tipo == 'compra':
@@ -477,12 +602,16 @@ def factura_list(request):
     if hasta:
         facturas = facturas.filter(fecha__lte=hasta)
     
-    facturas = facturas.order_by('-fecha')
+    if estado:
+        facturas = facturas.filter(estado=estado)
+    
+    facturas = facturas.order_by('-numero')
     
     return render(request, 'factura_list.html', {
         'facturas': facturas,
         'tipo_actual': tipo,
-        'tipos': [('compra', 'Compras'), ('venta', 'Ventas')]
+        'tipos': [('compra', 'Compras'), ('venta', 'Ventas')],
+        'estados': [('', 'Todos los estados'), ('pendiente', 'Pendiente'), ('pagada', 'Pagada'), ('anulada', 'Anulada')]
     })
 
 @login_required
@@ -814,8 +943,16 @@ def factura_pagos(request, pk):
     factura = get_object_or_404(Factura, pk=pk)
     pagos_facturas = factura.pagos_facturas.select_related('pago', 'pago__usuario').all()
     
-    # Obtener caja activa del día
-    caja_activa = Caja.obtener_caja_activa()
+    # Validar caja activa del día actual
+    caja_activa, necesita_cierre = Caja.validar_caja_activa_hoy()
+    
+    if necesita_cierre:
+        messages.error(request, f'Hay una caja abierta del {caja_activa.fecha.strftime("%d/%m/%Y")} que debe ser cerrada antes de realizar pagos.')
+        return redirect('caja_cerrar', caja_id=caja_activa.id)
+    
+    if not caja_activa:
+        messages.error(request, 'No hay una caja abierta. Debe abrir una caja antes de realizar pagos.')
+        return redirect('caja_abrir')
     
     if request.method == 'POST':
         form = PagoForm(request.POST, factura=factura)
@@ -1189,8 +1326,16 @@ def pago_crear(request, factura_id):
     """Crear un nuevo pago"""
     factura = get_object_or_404(Factura, pk=factura_id)
     
-    # Obtener caja activa del día
-    caja_activa = Caja.obtener_caja_activa()
+    # Validar caja activa del día actual
+    caja_activa, necesita_cierre = Caja.validar_caja_activa_hoy()
+    
+    if necesita_cierre:
+        messages.error(request, f'Hay una caja abierta del {caja_activa.fecha.strftime("%d/%m/%Y")} que debe ser cerrada antes de realizar pagos.')
+        return redirect('caja_cerrar', caja_id=caja_activa.id)
+    
+    if not caja_activa:
+        messages.error(request, 'No hay una caja abierta. Debe abrir una caja antes de realizar pagos.')
+        return redirect('caja_abrir')
     
     if request.method == 'POST':
         form = PagoForm(request.POST, factura=factura)
@@ -1292,13 +1437,13 @@ def buscar_proveedores(request):
     
     try:
         if len(q) >= 2:
-            # Buscar por nombre o RIF (ignorando mayúsculas/minúsculas)
+            # Buscar por nombre o RUC (ignorando mayúsculas/minúsculas)
             proveedores = Proveedor.objects.filter(
-                Q(nombre__icontains=q) | Q(rif__icontains=q),
+                Q(nombre__icontains=q) | Q(ruc__icontains=q),
                 activo=True
             ).order_by('nombre')[:10]
             
-            data = [{'id': p.id, 'nombre': p.nombre, 'rif': p.rif} for p in proveedores]
+            data = [{'id': p.id, 'nombre': p.nombre, 'ruc': p.ruc} for p in proveedores]
             print(f"Encontrados {len(data)} proveedores")
             return JsonResponse(data, safe=False)
         else:
@@ -1314,10 +1459,10 @@ def buscar_clientes(request):
     q = request.GET.get('q', '')
     if len(q) >= 2:
         clientes = Cliente.objects.filter(
-            Q(nombre__icontains=q) | Q(rif__icontains=q),
+            Q(nombre__icontains=q) | Q(ruc__icontains=q),
             activo=True
         )[:10]
-        data = [{'id': c.id, 'nombre': c.nombre, 'rif': c.rif} for c in clientes]
+        data = [{'id': c.id, 'nombre': c.nombre, 'ruc': c.ruc} for c in clientes]
         return JsonResponse(data, safe=False)
     return JsonResponse([], safe=False)
 
@@ -1370,7 +1515,7 @@ def proveedor_crear_ajax(request):
     if request.method == 'POST':
         try:
             nombre = request.POST.get('nombre', '').strip()
-            rif = request.POST.get('rif', '').strip()
+            ruc = request.POST.get('ruc', '').strip()
             direccion = request.POST.get('direccion', '').strip()
             telefono = request.POST.get('telefono', '').strip()
             email = request.POST.get('email', '').strip()
@@ -1379,17 +1524,17 @@ def proveedor_crear_ajax(request):
             if not nombre:
                 return JsonResponse({'success': False, 'error': 'El nombre es obligatorio'})
             
-            if not rif:
-                return JsonResponse({'success': False, 'error': 'El RIF es obligatorio'})
+            if not ruc:
+                return JsonResponse({'success': False, 'error': 'El RUC es obligatorio'})
             
-            # Verificar si ya existe un proveedor con ese RIF
-            if Proveedor.objects.filter(rif=rif).exists():
-                return JsonResponse({'success': False, 'error': 'Ya existe un proveedor con ese RIF'})
+            # Verificar si ya existe un proveedor con ese RUC
+            if Proveedor.objects.filter(ruc=ruc).exists():
+                return JsonResponse({'success': False, 'error': 'Ya existe un proveedor con ese RUC'})
             
             # Crear el proveedor
             proveedor = Proveedor.objects.create(
                 nombre=nombre,
-                rif=rif,
+                ruc=ruc,
                 direccion=direccion,
                 telefono=telefono,
                 email=email,
@@ -1401,7 +1546,7 @@ def proveedor_crear_ajax(request):
                 'proveedor': {
                     'id': proveedor.id,
                     'nombre': proveedor.nombre,
-                    'rif': proveedor.rif
+                    'ruc': proveedor.ruc
                 }
             })
             
@@ -1417,7 +1562,7 @@ def cliente_crear_ajax(request):
     if request.method == 'POST':
         try:
             nombre = request.POST.get('nombre', '').strip()
-            rif = request.POST.get('rif', '').strip()
+            ruc = request.POST.get('ruc', '').strip()
             direccion = request.POST.get('direccion', '').strip()
             telefono = request.POST.get('telefono', '').strip()
             email = request.POST.get('email', '').strip()
@@ -1426,12 +1571,12 @@ def cliente_crear_ajax(request):
             if not nombre:
                 return JsonResponse({'success': False, 'error': 'El nombre es obligatorio'})
             
-            if not rif:
-                return JsonResponse({'success': False, 'error': 'El RIF es obligatorio'})
+            if not ruc:
+                return JsonResponse({'success': False, 'error': 'El RUC es obligatorio'})
             
-            # Verificar si ya existe un cliente con ese RIF
-            if Cliente.objects.filter(rif=rif).exists():
-                return JsonResponse({'success': False, 'error': 'Ya existe un cliente con ese RIF'})
+            # Verificar si ya existe un cliente con ese RUC
+            if Cliente.objects.filter(ruc=ruc).exists():
+                return JsonResponse({'success': False, 'error': 'Ya existe un cliente con ese RUC'})
             
             # Validar email si se proporciona
             if email and '@' not in email:
@@ -1439,12 +1584,12 @@ def cliente_crear_ajax(request):
             
             # Si no se proporciona email, usar uno por defecto
             if not email:
-                email = f'{rif.lower()}@cliente.local'
+                email = f'{ruc.lower()}@cliente.local'
             
             # Crear el cliente
             cliente = Cliente.objects.create(
                 nombre=nombre,
-                rif=rif,
+                ruc=ruc,
                 direccion=direccion,
                 telefono=telefono,
                 email=email,
@@ -1456,7 +1601,7 @@ def cliente_crear_ajax(request):
                 'cliente': {
                     'id': cliente.id,
                     'nombre': cliente.nombre,
-                    'rif': cliente.rif
+                    'ruc': cliente.ruc
                 }
             })
             
@@ -1671,7 +1816,7 @@ def exportar_proveedores_excel(request):
     proveedores = Proveedor.objects.all()
     if q:
         proveedores = proveedores.filter(
-            Q(nombre__icontains=q) | Q(rif__icontains=q)
+            Q(nombre__icontains=q) | Q(ruc__icontains=q)
         )
     if estado:
         if estado == 'activo':
@@ -1706,7 +1851,7 @@ def exportar_proveedores_excel(request):
     # Datos
     for row, proveedor in enumerate(proveedores, 2):
         ws.cell(row=row, column=1, value=proveedor.nombre)
-        ws.cell(row=row, column=2, value=proveedor.rif)
+        ws.cell(row=row, column=2, value=proveedor.ruc)
         ws.cell(row=row, column=3, value=proveedor.direccion or '')
         ws.cell(row=row, column=4, value=proveedor.telefono or '')
         ws.cell(row=row, column=5, value=proveedor.email or '')
@@ -2305,6 +2450,27 @@ def configuracion_temas(request):
     
     return render(request, 'configuracion_temas.html', context)
 
+
+@login_required
+def backup_supabase_view(request):
+    """
+    Ejecuta el comando de backup para sincronizar la base local con Supabase.
+    Solo accesible para superusuarios para evitar usos accidentales.
+    """
+    if not request.user.is_superuser:
+        messages.error(request, 'No tienes permisos para ejecutar el respaldo a Supabase.')
+        return redirect('configuracion_panel')
+
+    from django.core.management import call_command
+
+    try:
+        call_command('backup_supabase')
+        messages.success(request, 'Respaldo a Supabase iniciado correctamente.')
+    except Exception as e:
+        messages.error(request, f'Error al ejecutar el respaldo a Supabase: {e}')
+
+    return redirect('configuracion_panel')
+
 # ============================================================================
 # REPORTES AVANZADOS
 # ============================================================================
@@ -2453,6 +2619,17 @@ def reporte_clientes_proveedores(request):
 @login_required
 def pago_multiple_crear(request):
     """Crear un pago que puede asignarse a múltiples facturas"""
+    # Validar caja activa del día actual
+    caja_activa, necesita_cierre = Caja.validar_caja_activa_hoy()
+    
+    if necesita_cierre:
+        messages.error(request, f'Hay una caja abierta del {caja_activa.fecha.strftime("%d/%m/%Y")} que debe ser cerrada antes de realizar pagos.')
+        return redirect('caja_cerrar', caja_id=caja_activa.id)
+    
+    if not caja_activa:
+        messages.error(request, 'No hay una caja abierta. Debe abrir una caja antes de realizar pagos.')
+        return redirect('caja_abrir')
+    
     proveedor_id = request.GET.get('proveedor')
     cliente_id = request.GET.get('cliente')
     
@@ -2771,6 +2948,17 @@ def pagos_proveedores_dashboard(request):
 @login_required
 def pago_proveedor_crear(request):
     """Crear pago específico para proveedores"""
+    # Validar caja activa del día actual
+    caja_activa, necesita_cierre = Caja.validar_caja_activa_hoy()
+    
+    if necesita_cierre:
+        messages.error(request, f'Hay una caja abierta del {caja_activa.fecha.strftime("%d/%m/%Y")} que debe ser cerrada antes de realizar pagos.')
+        return redirect('caja_cerrar', caja_id=caja_activa.id)
+    
+    if not caja_activa:
+        messages.error(request, 'No hay una caja abierta. Debe abrir una caja antes de realizar pagos.')
+        return redirect('caja_abrir')
+    
     proveedor = None
     factura_especifica = None
     facturas_pendientes = []
@@ -3156,15 +3344,31 @@ def reporte_pagos_proveedores(request):
     # Estadísticas generales
     total_pagos = pagos.count()
     total_monto_pagado = pagos.aggregate(total=Sum('monto_total'))['total'] or 0
-    total_asignado = pagos.aggregate(total=Sum('monto_asignado'))['total'] or 0
+    
+    # Calcular total asignado usando PagoFactura
+    total_asignado = PagoFactura.objects.filter(
+        pago__in=pagos
+    ).aggregate(total=Sum('monto'))['total'] or 0
     total_disponible = total_monto_pagado - total_asignado
     
     # Estadísticas por proveedor
-    stats_por_proveedor = pagos.values('proveedor__nombre').annotate(
+    stats_por_proveedor = []
+    for pago in pagos.values('proveedor__nombre').annotate(
         total_pagado=Sum('monto_total'),
-        total_asignado=Sum('monto_asignado'),
         cantidad_pagos=Count('id')
-    ).order_by('-total_pagado')
+    ).order_by('-total_pagado'):
+        # Calcular total asignado por proveedor
+        total_asignado_proveedor = PagoFactura.objects.filter(
+            pago__proveedor__nombre=pago['proveedor__nombre'],
+            pago__in=pagos
+        ).aggregate(total=Sum('monto'))['total'] or 0
+        
+        stats_por_proveedor.append({
+            'proveedor__nombre': pago['proveedor__nombre'],
+            'total_pagado': pago['total_pagado'],
+            'total_asignado': total_asignado_proveedor,
+            'cantidad_pagos': pago['cantidad_pagos']
+        })
     
     # Estadísticas por tipo de pago
     stats_por_tipo = pagos.values('tipo').annotate(
@@ -3173,12 +3377,17 @@ def reporte_pagos_proveedores(request):
     ).order_by('-total')
     
     # Estadísticas por mes
-    stats_por_mes = pagos.extra(
-        select={'mes': "DATE_TRUNC('month', fecha)"}
-    ).values('mes').annotate(
+    stats_por_mes = []
+    for pago in pagos.values('fecha').annotate(
         total=Sum('monto_total'),
         cantidad=Count('id')
-    ).order_by('mes')
+    ).order_by('fecha'):
+        mes_key = pago['fecha'].strftime('%Y-%m')
+        stats_por_mes.append({
+            'mes': pago['fecha'].strftime('%B %Y'),
+            'total': pago['total'],
+            'cantidad': pago['cantidad']
+        })
     
     # Top 10 pagos más grandes
     top_pagos = pagos.order_by('-monto_total')[:10]
@@ -6446,133 +6655,412 @@ def reporte_caja(request):
 
 
 # ============================================================================
-# PAGOS
+
+@login_required
+def caja_list(request):
+    """Lista de cajas"""
+    cajas = Caja.objects.select_related('usuario_apertura', 'usuario_cierre').order_by('-fecha')
+    
+    # Estadísticas generales
+    total_cajas = cajas.count()
+    cajas_abiertas = cajas.filter(cerrada=False).count()
+    cajas_cerradas = cajas.filter(cerrada=True).count()
+    
+    # Caja actual (hoy)
+    from datetime import date
+    caja_actual = cajas.filter(fecha=date.today()).first()
+    
+    context = {
+        'cajas': cajas,
+        'total_cajas': total_cajas,
+        'cajas_abiertas': cajas_abiertas,
+        'cajas_cerradas': cajas_cerradas,
+        'caja_actual': caja_actual,
+    }
+    
+    return render(request, 'caja_list.html', context)
+
+
+@login_required
+def caja_abrir(request):
+    """Abrir caja del día con denominaciones"""
+    from datetime import date
+    
+    # Verificar si ya existe una caja para hoy
+    caja_existente = Caja.objects.filter(fecha=date.today()).first()
+    if caja_existente:
+        messages.warning(request, 'Ya existe una caja abierta para hoy.')
+        return redirect('caja_ver', caja_id=caja_existente.id)
+    
+    if request.method == 'POST':
+        try:
+            # Crear la caja
+            caja = Caja.objects.create(
+                fecha=date.today(),
+                saldo_inicial=0,  # Se calculará automáticamente
+                usuario_apertura=request.user
+            )
+            
+            # Procesar denominaciones
+            denominaciones_creadas = []
+            total_calculado = 0
+            
+            for valor in Denominacion.VALOR_CHOICES:
+                cantidad = request.POST.get(f'denominacion_{valor[0]}', 0)
+                try:
+                    cantidad = int(cantidad)
+                    if cantidad > 0:
+                        denominacion = Denominacion.objects.create(
+                            caja=caja,
+                            valor=valor[0],
+                            cantidad=cantidad
+                        )
+                        denominaciones_creadas.append(denominacion)
+                        total_calculado += valor[0] * cantidad
+                except ValueError:
+                    continue
+            
+            # Calcular saldo inicial basado en denominaciones
+            caja.calcular_saldo_inicial_denominaciones()
+            caja.save()
+            
+            messages.success(request, f'Caja abierta con saldo inicial de Gs. {caja.saldo_inicial:,}')
+            return redirect('caja_ver', caja_id=caja.id)
+            
+        except Exception as e:
+            messages.error(request, f'Error al abrir la caja: {str(e)}')
+    
+    # Preparar denominaciones para el formulario
+    denominaciones = []
+    for valor, label in Denominacion.VALOR_CHOICES:
+        denominaciones.append({
+            'valor': valor,
+            'label': label,
+            'cantidad': 0
+        })
+    
+    context = {
+        'fecha_actual': date.today(),
+        'denominaciones': denominaciones,
+    }
+    return render(request, 'caja_abrir.html', context)
+
+
+@login_required
+def caja_ver(request, caja_id):
+    """Ver detalles de una caja"""
+    caja = get_object_or_404(Caja, id=caja_id)
+    
+    # Obtener movimientos
+    movimientos = caja.movimientos.select_related('usuario').order_by('-fecha')
+    
+    # Obtener gastos
+    gastos = caja.gastos.select_related('usuario').order_by('-fecha')
+    
+    # Obtener denominaciones
+    denominaciones = caja.denominaciones.all().order_by('-valor')
+    
+    # Calcular totales
+    total_ingresos = movimientos.filter(tipo='ingreso').aggregate(total=Sum('monto'))['total'] or 0
+    total_egresos = movimientos.filter(tipo='egreso').aggregate(total=Sum('monto'))['total'] or 0
+    total_gastos = gastos.aggregate(total=Sum('monto'))['total'] or 0
+    
+    # Agrupar movimientos por categoría
+    movimientos_por_categoria = movimientos.values('categoria').annotate(
+        total=Sum('monto'),
+        cantidad=Count('id')
+    ).order_by('-total')
+    
+    context = {
+        'caja': caja,
+        'movimientos': movimientos,
+        'gastos': gastos,
+        'denominaciones': denominaciones,
+        'total_ingresos': total_ingresos,
+        'total_egresos': total_egresos,
+        'total_gastos': total_gastos,
+        'movimientos_por_categoria': movimientos_por_categoria,
+    }
+    
+    return render(request, 'caja_ver.html', context)
+
+
+@login_required
+def caja_cerrar(request, caja_id):
+    """Cerrar caja con arqueo"""
+    caja = get_object_or_404(Caja, id=caja_id)
+    
+    if caja.cerrada:
+        messages.warning(request, 'Esta caja ya está cerrada.')
+        return redirect('caja_ver', caja_id=caja.id)
+    
+    if request.method == 'POST':
+        saldo_real = request.POST.get('saldo_real', 0)
+        observaciones = request.POST.get('observaciones', '')
+        
+        try:
+            saldo_real = int(saldo_real)
+            caja.cerrar_caja(saldo_real, request.user, observaciones)
+            messages.success(request, 'Caja cerrada exitosamente.')
+            return redirect('caja_ver', caja_id=caja.id)
+        except ValueError:
+            messages.error(request, 'El saldo real debe ser un número válido.')
+    
+    # Calcular saldo final esperado
+    caja.calcular_saldo_final()
+    
+    context = {
+        'caja': caja,
+    }
+    
+    return render(request, 'caja_cerrar.html', context)
+
+
+@login_required
+def gasto_crear(request, caja_id):
+    """Crear un nuevo gasto"""
+    caja = get_object_or_404(Caja, id=caja_id)
+    
+    if caja.cerrada:
+        messages.error(request, 'No se pueden agregar gastos a una caja cerrada.')
+        return redirect('caja_ver', caja_id=caja.id)
+    
+    if request.method == 'POST':
+        categoria = request.POST.get('categoria')
+        descripcion = request.POST.get('descripcion')
+        monto = request.POST.get('monto')
+        comprobante = request.POST.get('comprobante', '')
+        observacion = request.POST.get('observacion', '')
+        
+        try:
+            monto = int(monto)
+            if monto <= 0:
+                raise ValueError("El monto debe ser mayor a 0")
+            
+            gasto = Gasto.objects.create(
+                caja=caja,
+                categoria=categoria,
+                descripcion=descripcion,
+                monto=monto,
+                comprobante=comprobante,
+                observacion=observacion,
+                usuario=request.user
+            )
+            
+            messages.success(request, f'Gasto registrado: {descripcion} - Gs. {monto:,}')
+            return redirect('caja_ver', caja_id=caja.id)
+            
+        except ValueError as e:
+            messages.error(request, f'Error: {str(e)}')
+    
+    context = {
+        'caja': caja,
+        'categorias': Gasto.CATEGORIA_CHOICES,
+    }
+    
+    return render(request, 'gasto_crear.html', context)
+
+
+@login_required
+def gasto_editar(request, gasto_id):
+    """Editar un gasto"""
+    gasto = get_object_or_404(Gasto, id=gasto_id)
+    
+    if gasto.caja.cerrada:
+        messages.error(request, 'No se pueden editar gastos de una caja cerrada.')
+        return redirect('caja_ver', caja_id=gasto.caja.id)
+    
+    if request.method == 'POST':
+        categoria = request.POST.get('categoria')
+        descripcion = request.POST.get('descripcion')
+        monto = request.POST.get('monto')
+        comprobante = request.POST.get('comprobante', '')
+        observacion = request.POST.get('observacion', '')
+        
+        try:
+            monto = int(monto)
+            if monto <= 0:
+                raise ValueError("El monto debe ser mayor a 0")
+            
+            gasto.categoria = categoria
+            gasto.descripcion = descripcion
+            gasto.monto = monto
+            gasto.comprobante = comprobante
+            gasto.observacion = observacion
+            gasto.save()
+            
+            messages.success(request, 'Gasto actualizado exitosamente.')
+            return redirect('caja_ver', caja_id=gasto.caja.id)
+            
+        except ValueError as e:
+            messages.error(request, f'Error: {str(e)}')
+    
+    context = {
+        'gasto': gasto,
+        'categorias': Gasto.CATEGORIA_CHOICES,
+    }
+    
+    return render(request, 'gasto_editar.html', context)
+
+
+@login_required
+def gasto_eliminar(request, gasto_id):
+    """Eliminar un gasto"""
+    gasto = get_object_or_404(Gasto, id=gasto_id)
+    
+    if gasto.caja.cerrada:
+        messages.error(request, 'No se pueden eliminar gastos de una caja cerrada.')
+        return redirect('caja_ver', caja_id=gasto.caja.id)
+    
+    if request.method == 'POST':
+        caja_id = gasto.caja.id
+        gasto.delete()
+        messages.success(request, 'Gasto eliminado exitosamente.')
+        return redirect('caja_ver', caja_id=caja_id)
+    
+    context = {
+        'gasto': gasto,
+    }
+    
+    return render(request, 'gasto_eliminar.html', context)
+
+
+@login_required
+def movimiento_crear(request, caja_id):
+    """Crear un movimiento manual de caja"""
+    caja = get_object_or_404(Caja, id=caja_id)
+    
+    if caja.cerrada:
+        messages.error(request, 'No se pueden agregar movimientos a una caja cerrada.')
+        return redirect('caja_ver', caja_id=caja.id)
+    
+    if request.method == 'POST':
+        tipo = request.POST.get('tipo')
+        categoria = request.POST.get('categoria')
+        monto = request.POST.get('monto')
+        descripcion = request.POST.get('descripcion')
+        referencia = request.POST.get('referencia', '')
+        observacion = request.POST.get('observacion', '')
+        
+        try:
+            monto = int(monto)
+            if monto <= 0:
+                raise ValueError("El monto debe ser mayor a 0")
+            
+            movimiento = MovimientoCaja.registrar_movimiento(
+                caja=caja,
+                tipo=tipo,
+                categoria=categoria,
+                monto=monto,
+                descripcion=descripcion,
+                usuario=request.user,
+                referencia=referencia,
+                observacion=observacion
+            )
+            
+            messages.success(request, f'Movimiento registrado: {descripcion} - Gs. {monto:,}')
+            return redirect('caja_ver', caja_id=caja.id)
+            
+        except ValueError as e:
+            messages.error(request, f'Error: {str(e)}')
+    
+    context = {
+        'caja': caja,
+        'tipos': MovimientoCaja.TIPO_CHOICES,
+        'categorias': MovimientoCaja.CATEGORIA_CHOICES,
+    }
+    
+    return render(request, 'movimiento_crear.html', context)
+
+
+@login_required
+def reporte_caja(request):
+    """Reporte de caja por período"""
+    from datetime import datetime, timedelta
+    
+    # Parámetros de filtro
+    fecha_inicio = request.GET.get('fecha_inicio', (datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d'))
+    fecha_fin = request.GET.get('fecha_fin', datetime.now().strftime('%Y-%m-%d'))
+    
+    try:
+        fecha_inicio_dt = datetime.strptime(fecha_inicio, '%Y-%m-%d').date()
+        fecha_fin_dt = datetime.strptime(fecha_fin, '%Y-%m-%d').date()
+    except ValueError:
+        fecha_inicio_dt = (datetime.now() - timedelta(days=30)).date()
+        fecha_fin_dt = datetime.now().date()
+    
+    # Obtener cajas del período
+    cajas = Caja.objects.filter(
+        fecha__gte=fecha_inicio_dt,
+        fecha__lte=fecha_fin_dt
+    ).select_related('usuario_apertura', 'usuario_cierre').order_by('-fecha')
+    
+    # Estadísticas generales
+    total_cajas = cajas.count()
+    cajas_abiertas = cajas.filter(cerrada=False).count()
+    cajas_cerradas = cajas.filter(cerrada=True).count()
+    
+    # Totales financieros
+    total_saldo_inicial = cajas.aggregate(total=Sum('saldo_inicial'))['total'] or 0
+    total_saldo_final = cajas.aggregate(total=Sum('saldo_final'))['total'] or 0
+    total_saldo_real = cajas.aggregate(total=Sum('saldo_real'))['total'] or 0
+    total_diferencia = cajas.aggregate(total=Sum('diferencia'))['total'] or 0
+    
+    # Obtener todos los movimientos del período
+    movimientos = MovimientoCaja.objects.filter(
+        caja__fecha__gte=fecha_inicio_dt,
+        caja__fecha__lte=fecha_fin_dt
+    ).select_related('caja', 'usuario')
+    
+    # Estadísticas por categoría
+    stats_por_categoria = movimientos.values('categoria').annotate(
+        total=Sum('monto'),
+        cantidad=Count('id')
+    ).order_by('-total')
+    
+    # Estadísticas por tipo
+    stats_por_tipo = movimientos.values('tipo').annotate(
+        total=Sum('monto'),
+        cantidad=Count('id')
+    ).order_by('-total')
+    
+    # Top gastos
+    top_gastos = Gasto.objects.filter(
+        caja__fecha__gte=fecha_inicio_dt,
+        caja__fecha__lte=fecha_fin_dt
+    ).select_related('caja', 'usuario').order_by('-monto')[:10]
+    
+    context = {
+        'cajas': cajas,
+        'fecha_inicio': fecha_inicio,
+        'fecha_fin': fecha_fin,
+        
+        # Estadísticas
+        'total_cajas': total_cajas,
+        'cajas_abiertas': cajas_abiertas,
+        'cajas_cerradas': cajas_cerradas,
+        'total_saldo_inicial': total_saldo_inicial,
+        'total_saldo_final': total_saldo_final,
+        'total_saldo_real': total_saldo_real,
+        'total_diferencia': total_diferencia,
+        
+        # Datos para análisis
+        'stats_por_categoria': stats_por_categoria,
+        'stats_por_tipo': stats_por_tipo,
+        'top_gastos': top_gastos,
+    }
+    
+    return render(request, 'reporte_caja.html', context)
+
+
+
+
 # ============================================================================
 
 @login_required
-def pagos_dashboard(request):
-    """Dashboard principal del módulo de pagos"""
-    # Obtener estadísticas de pagos
-    total_pagos_clientes = Pago.objects.filter(factura__tipo='venta').count()
-    total_pagos_proveedores = Pago.objects.filter(factura__tipo='compra').count()
+def caja_list(request):
+    """Lista de cajas"""
+    cajas = Caja.objects.select_related('usuario_apertura', 'usuario_cierre').order_by('-fecha')
     
-    # Pagos recientes
-    pagos_recientes = Pago.objects.select_related('factura', 'usuario').order_by('-fecha')[:10]
-    
-    # Facturas pendientes
-    facturas_pendientes_clientes = Factura.objects.filter(
-        tipo='venta', 
-        estado='pendiente'
-    ).select_related('cliente').order_by('-fecha')[:5]
-    
-    facturas_pendientes_proveedores = Factura.objects.filter(
-        tipo='compra', 
-        estado='pendiente'
-    ).select_related('proveedor').order_by('-fecha')[:5]
-    
-    # Caja activa
-    caja_activa = Caja.obtener_caja_activa()
-    
-    context = {
-        'total_pagos_clientes': total_pagos_clientes,
-        'total_pagos_proveedores': total_pagos_proveedores,
-        'pagos_recientes': pagos_recientes,
-        'facturas_pendientes_clientes': facturas_pendientes_clientes,
-        'facturas_pendientes_proveedores': facturas_pendientes_proveedores,
-        'caja_activa': caja_activa,
-    }
-    
-    return render(request, 'pagos_dashboard.html', context)
-
-@login_required
-def pagos_clientes_list(request):
-    """Lista de pagos de clientes (facturas de venta)"""
-    # Obtener facturas de venta con pagos
-    facturas_venta = Factura.objects.filter(
-        tipo='venta'
-    ).select_related('cliente').prefetch_related('pagos').order_by('-fecha')
-    
-    # Filtros
-    q = request.GET.get('q', '')
-    estado = request.GET.get('estado', '')
-    desde = request.GET.get('desde', '')
-    hasta = request.GET.get('hasta', '')
-    
-    if q:
-        facturas_venta = facturas_venta.filter(
-            Q(cliente__nombre__icontains=q) | 
-            Q(numero__icontains=q) |
-            Q(cliente__ruc__icontains=q)
-        )
-    
-    if estado:
-        facturas_venta = facturas_venta.filter(estado=estado)
-    
-    if desde:
-        facturas_venta = facturas_venta.filter(fecha__date__gte=desde)
-    
-    if hasta:
-        facturas_venta = facturas_venta.filter(fecha__date__lte=hasta)
-    
-    # Paginación
-    from django.core.paginator import Paginator
-    paginator = Paginator(facturas_venta, 20)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
-    
-    context = {
-        'facturas': page_obj,
-        'tipo': 'venta',
-        'titulo': 'Pagos de Clientes',
-        'subtitulo': 'Facturas de Venta - Gestión de Cobros',
-    }
-    
-    return render(request, 'pagos_list.html', context)
-
-@login_required
-def pagos_proveedores_list(request):
-    """Lista de pagos a proveedores (facturas de compra)"""
-    # Obtener facturas de compra con pagos
-    facturas_compra = Factura.objects.filter(
-        tipo='compra'
-    ).select_related('proveedor').prefetch_related('pagos').order_by('-fecha')
-    
-    # Filtros
-    q = request.GET.get('q', '')
-    estado = request.GET.get('estado', '')
-    desde = request.GET.get('desde', '')
-    hasta = request.GET.get('hasta', '')
-    
-    if q:
-        facturas_compra = facturas_compra.filter(
-            Q(proveedor__nombre__icontains=q) | 
-            Q(numero__icontains=q) |
-            Q(proveedor__ruc__icontains=q)
-        )
-    
-    if estado:
-        facturas_compra = facturas_compra.filter(estado=estado)
-    
-    if desde:
-        facturas_compra = facturas_compra.filter(fecha__date__gte=desde)
-    
-    if hasta:
-        facturas_compra = facturas_compra.filter(fecha__date__lte=hasta)
-    
-    # Paginación
-    from django.core.paginator import Paginator
-    paginator = Paginator(facturas_compra, 20)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
-    
-    context = {
-        'facturas': page_obj,
-        'tipo': 'compra',
-        'titulo': 'Pagos a Proveedores',
-        'subtitulo': 'Facturas de Compra - Gestión de Pagos',
-    }
-    
-    return render(request, 'pagos_list.html', context)
-
-
-
+    # Estadísticas generales
+    total_cajas = cajas.count()

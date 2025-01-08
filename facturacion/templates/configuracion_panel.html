@@ -156,6 +156,50 @@
   </div>
 </div>
 
+<!-- Sección de Gestión de Usuarios -->
+<div class="row mt-4">
+  <div class="col-12">
+    <div class="card shadow">
+      <div class="card-header bg-warning text-dark">
+        <h5 class="mb-0"><i class="bi bi-people"></i> Gestión de Usuarios y Permisos</h5>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-6">
+            <div class="card border-primary">
+              <div class="card-header bg-primary text-white">
+                <h6 class="mb-0"><i class="bi bi-shield-lock"></i> Permisos de Usuarios</h6>
+              </div>
+              <div class="card-body">
+                <p class="text-muted">Gestiona los permisos de acceso de los usuarios a los diferentes módulos del sistema.</p>
+                <div class="text-end">
+                  <a href="{% url 'permisos_usuarios_list' %}" class="btn btn-primary">
+                    <i class="bi bi-gear"></i> Gestionar Permisos
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="card border-info">
+              <div class="card-header bg-info text-white">
+                <h6 class="mb-0"><i class="bi bi-info-circle"></i> Información</h6>
+              </div>
+              <div class="card-body">
+                <ul class="list-unstyled mb-0">
+                  <li><i class="bi bi-check-circle text-success"></i> Control granular de permisos</li>
+                  <li><i class="bi bi-check-circle text-success"></i> Permisos por módulo y acción</li>
+                  <li><i class="bi bi-check-circle text-success"></i> Superusuarios con acceso total</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
 function guardarConfiguracion(clave, valor, categoria) {
   const formData = new FormData();

@@ -32,6 +32,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'core.middleware.PermisosMiddleware',  # Middleware de permisos
 ]
 
 ROOT_URLCONF = 'config.urls'
@@ -49,6 +50,7 @@ TEMPLATES = [
                 'django.contrib.messages.context_processors.messages',
                 'core.context_processors.alertas_globales',
                 'core.context_processors.configuracion_global',
+                'core.context_processors.permisos_usuario',
             ],
         },
     },
@@ -56,12 +58,30 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'config.wsgi.application'
 
-# Database
+# Database  
+
 DATABASES = {
+    # Base local rápida
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'avicola',
+        'USER': 'postgres',
+        'PASSWORD': 'master',
+        'HOST': 'localhost',
+        'PORT': '5432',
+    },
+    # Copia online en Supabase (ajusta USER/PASSWORD/NAME/PORT si hace falta)
+    'supabase': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'postgres',
+        'USER': 'postgres.dnzajyskdadltngemzsg',
+        'PASSWORD': 'SJhFYJqD7GDetrBr',
+        'HOST': 'aws-0-us-west-2.pooler.supabase.com',
+        'PORT': '6543',
+        'OPTIONS': {
+            'sslmode': 'require',
+        },
+    },
 }
 
 # Password validation
@@ -104,6 +124,11 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'dashboard'
 LOGOUT_REDIRECT_URL = 'login'
+
+# Configuración de sesiones
+SESSION_COOKIE_AGE = 1209600  # 14 días en segundos (máximo tiempo de sesión)
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False  # False significa que la sesión no expira al cerrar el navegador
+SESSION_SAVE_EVERY_REQUEST = True  # Guardar la sesión en cada request para mantenerla activa
 
 # ============================================================================
 # CONFIGURACIÓN DE EMAIL

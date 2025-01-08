@@ -13,192 +13,197 @@
 <div class="container-fluid mt-4">
   <!-- Header -->
   <div class="card shadow mb-4">
-    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+    <div class="card-header bg-primary text-white">
       <h4 class="mb-0"><i class="bi bi-graph-up"></i> Reportes Avanzados</h4>
-      <div class="d-flex ms-auto justify-content-end">
-        <a href="{% url 'reporte_ventas_detallado' %}" class="btn btn-outline-light me-2">
-          <i class="bi bi-receipt"></i> Ventas Detallado
-        </a>
-        <a href="{% url 'reporte_productos_analisis' %}" class="btn btn-outline-light me-2">
-          <i class="bi bi-box-seam"></i> Análisis Productos
-        </a>
-        <a href="{% url 'reporte_clientes_proveedores' %}" class="btn btn-outline-light me-2">
-          <i class="bi bi-people"></i> Clientes/Proveedores
-        </a>
-        <a href="{% url 'reporte_pagos_proveedores' %}" class="btn btn-outline-light me-2">
-          <i class="bi bi-credit-card"></i> Pagos Proveedores
-        </a>
-        <div class="d-flex justify-content-end w-100 ms-3">
-          <a href="{% url 'dashboard' %}" class="btn btn-outline-light">
-            <i class="bi bi-arrow-left"></i> Volver
-          </a>
-        </div>
-      </div>
     </div>
     <div class="card-body">
       <p class="text-muted mb-0">
-        Análisis completo del negocio con estadísticas detalladas y métricas clave.
+        Accede a reportes especializados para análisis financiero, ventas, productos y gestión de clientes/proveedores.
       </p>
     </div>
   </div>
 
-  <!-- Estadísticas Rápidas -->
-  <div class="row mb-4">
-    <div class="col-md-3">
-      <div class="card bg-gradient-primary text-white">
-        <div class="card-body text-center">
-          <h3 class="mb-0">Gs. {{ total_ventas|floatformat:0|intcomma_dot }}</h3>
-          <p class="mb-0">Total Ventas</p>
-        </div>
-      </div>
-    </div>
-    <div class="col-md-3">
-      <div class="card bg-gradient-success text-white">
-        <div class="card-body text-center">
-          <h3 class="mb-0">{{ total_facturas }}</h3>
-          <p class="mb-0">Total Facturas</p>
-        </div>
-      </div>
-    </div>
-    <div class="col-md-3">
-      <div class="card bg-gradient-info text-white">
-        <div class="card-body text-center">
-          <h3 class="mb-0">{{ productos_activos }}</h3>
-          <p class="mb-0">Productos Activos</p>
-        </div>
-      </div>
-    </div>
-    <div class="col-md-3">
-      <div class="card bg-gradient-warning text-white">
-        <div class="card-body text-center">
-          <h3 class="mb-0">Gs. {{ valor_inventario|floatformat:0|intcomma_dot }}</h3>
-          <p class="mb-0">Valor Inventario</p>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Gráficos y Tablas -->
+  <!-- Tarjetas de Reportes -->
   <div class="row">
-    <!-- Productos Más Vendidos -->
-    <div class="col-lg-6 mb-4">
-      <div class="card shadow">
-        <div class="card-header bg-success text-white">
-          <h5 class="mb-0"><i class="bi bi-bar-chart"></i> Productos Más Vendidos</h5>
-        </div>
-        <div class="card-body">
-          {% if productos_vendidos %}
-            <div class="table-responsive">
-              <table class="table table-sm">
-                <thead>
-                  <tr>
-                    <th>Producto</th>
-                    <th class="text-end">Cantidad Vendida</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {% for producto in productos_vendidos %}
-                  <tr>
-                    <td>{{ producto.producto__nombre }}</td>
-                    <td class="text-end">{{ producto.cantidad_vendida }}</td>
-                  </tr>
-                  {% endfor %}
-                </tbody>
-              </table>
-            </div>
-          {% else %}
-            <p class="text-muted text-center">No hay datos de ventas disponibles</p>
-          {% endif %}
-        </div>
-      </div>
-    </div>
-
-    <!-- Top Clientes -->
-    <div class="col-lg-6 mb-4">
-      <div class="card shadow">
-        <div class="card-header bg-info text-white">
-          <h5 class="mb-0"><i class="bi bi-people"></i> Top Clientes</h5>
-        </div>
-        <div class="card-body">
-          {% if clientes_compras %}
-            <div class="table-responsive">
-              <table class="table table-sm">
-                <thead>
-                  <tr>
-                    <th>Cliente</th>
-                    <th class="text-end">Total Compras</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {% for cliente in clientes_compras %}
-                  <tr>
-                    <td>{{ cliente.cliente__nombre }}</td>
-                    <td class="text-end">Gs. {{ cliente.total_compras|floatformat:0|intcomma_dot }}</td>
-                  </tr>
-                  {% endfor %}
-                </tbody>
-              </table>
-            </div>
-          {% else %}
-            <p class="text-muted text-center">No hay datos de clientes disponibles</p>
-          {% endif %}
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Resumen de Métricas -->
-  <div class="row">
-    <div class="col-12">
-      <div class="card shadow">
-        <div class="card-header bg-dark text-white">
-          <h5 class="mb-0"><i class="bi bi-table"></i> Resumen de Métricas</h5>
-        </div>
-        <div class="card-body">
-          <div class="row">
-            <div class="col-md-3 text-center">
-              <div class="border rounded p-3">
-                <h4 class="text-primary">{{ total_facturas }}</h4>
-                <p class="text-muted mb-0">Facturas Totales</p>
-              </div>
-            </div>
-            <div class="col-md-3 text-center">
-              <div class="border rounded p-3">
-                <h4 class="text-success">Gs. {{ total_ventas|floatformat:0|intcomma_dot }}</h4>
-                <p class="text-muted mb-0">Ventas Totales</p>
-              </div>
-            </div>
-            <div class="col-md-3 text-center">
-              <div class="border rounded p-3">
-                <h4 class="text-info">{{ productos_activos }}</h4>
-                <p class="text-muted mb-0">Productos Activos</p>
-              </div>
-            </div>
-            <div class="col-md-3 text-center">
-              <div class="border rounded p-3">
-                <h4 class="text-danger">Gs. {{ valor_inventario|floatformat:0|intcomma_dot }}</h4>
-                <p class="text-muted mb-0">Valor Inventario</p>
-              </div>
-            </div>
+    <!-- Flujo de Caja -->
+    <div class="col-lg-4 mb-4">
+      <div class="card shadow h-100">
+        <div class="card-body text-center">
+          <div class="mb-3">
+            <i class="bi bi-cash-stack text-primary" style="font-size: 3rem;"></i>
           </div>
+          <h5 class="card-title">Flujo de Caja</h5>
+          <p class="card-text text-muted">Análisis completo de ingresos vs egresos con desglose diario y estadísticas detalladas.</p>
+          <a href="{% url 'reporte_flujo_caja' %}" class="btn btn-primary">
+            <i class="bi bi-arrow-right"></i> Ver Reporte
+          </a>
         </div>
       </div>
     </div>
+
+    <!-- Ventas Detallado -->
+    <div class="col-lg-4 mb-4">
+      <div class="card shadow h-100">
+        <div class="card-body text-center">
+          <div class="mb-3">
+            <i class="bi bi-receipt text-success" style="font-size: 3rem;"></i>
+          </div>
+          <h5 class="card-title">Ventas Detallado</h5>
+          <p class="card-text text-muted">Reporte completo de ventas con filtros por fecha, tipo de factura y análisis de tendencias.</p>
+          <a href="{% url 'reporte_ventas_detallado' %}" class="btn btn-success">
+            <i class="bi bi-arrow-right"></i> Ver Reporte
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Análisis Productos -->
+    <div class="col-lg-4 mb-4">
+      <div class="card shadow h-100">
+        <div class="card-body text-center">
+          <div class="mb-3">
+            <i class="bi bi-box-seam text-info" style="font-size: 3rem;"></i>
+          </div>
+          <h5 class="card-title">Análisis Productos</h5>
+          <p class="card-text text-muted">Análisis de productos más vendidos, stock bajo, agotados y rendimiento por categoría.</p>
+          <a href="{% url 'reporte_productos_analisis' %}" class="btn btn-info">
+            <i class="bi bi-arrow-right"></i> Ver Reporte
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Clientes/Proveedores -->
+    <div class="col-lg-4 mb-4">
+      <div class="card shadow h-100">
+        <div class="card-body text-center">
+          <div class="mb-3">
+            <i class="bi bi-people text-warning" style="font-size: 3rem;"></i>
+          </div>
+          <h5 class="card-title">Clientes/Proveedores</h5>
+          <p class="card-text text-muted">Análisis completo de clientes y proveedores con estadísticas de compras y pagos.</p>
+          <a href="{% url 'reporte_clientes_proveedores' %}" class="btn btn-warning">
+            <i class="bi bi-arrow-right"></i> Ver Reporte
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pagos Proveedores -->
+    <div class="col-lg-4 mb-4">
+      <div class="card shadow h-100">
+        <div class="card-body text-center">
+          <div class="mb-3">
+            <i class="bi bi-credit-card text-danger" style="font-size: 3rem;"></i>
+          </div>
+          <h5 class="card-title">Pagos Proveedores</h5>
+          <p class="card-text text-muted">Control y seguimiento de pagos a proveedores con análisis de saldos y vencimientos.</p>
+          <a href="{% url 'reporte_pagos_proveedores' %}" class="btn btn-danger">
+            <i class="bi bi-arrow-right"></i> Ver Reporte
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Rentabilidad Productos -->
+    <div class="col-lg-4 mb-4">
+      <div class="card shadow h-100">
+        <div class="card-body text-center">
+          <div class="mb-3">
+            <i class="bi bi-graph-up-arrow text-success" style="font-size: 3rem;"></i>
+          </div>
+          <h5 class="card-title">Rentabilidad Productos</h5>
+          <p class="card-text text-muted">Análisis de margen bruto y rentabilidad por producto con comparativas.</p>
+          <a href="{% url 'reporte_rentabilidad_productos' %}" class="btn btn-success">
+            <i class="bi bi-arrow-right"></i> Ver Reporte
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tendencias Ventas -->
+    <div class="col-lg-4 mb-4">
+      <div class="card shadow h-100">
+        <div class="card-body text-center">
+          <div class="mb-3">
+            <i class="bi bi-arrow-up-circle text-primary" style="font-size: 3rem;"></i>
+          </div>
+          <h5 class="card-title">Tendencias Ventas</h5>
+          <p class="card-text text-muted">Análisis de tendencias de ventas con patrones temporales y predicciones.</p>
+          <a href="{% url 'reporte_tendencias_ventas' %}" class="btn btn-primary">
+            <i class="bi bi-arrow-right"></i> Ver Reporte
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Análisis Clientes -->
+    <div class="col-lg-4 mb-4">
+      <div class="card shadow h-100">
+        <div class="card-body text-center">
+          <div class="mb-3">
+            <i class="bi bi-person-lines-fill text-info" style="font-size: 3rem;"></i>
+          </div>
+          <h5 class="card-title">Análisis Clientes</h5>
+          <p class="card-text text-muted">Segmentación de clientes, frecuencia de compra y análisis de comportamiento.</p>
+          <a href="{% url 'reporte_analisis_clientes' %}" class="btn btn-info">
+            <i class="bi bi-arrow-right"></i> Ver Reporte
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Eficiencia Operativa -->
+    <div class="col-lg-4 mb-4">
+      <div class="card shadow h-100">
+        <div class="card-body text-center">
+          <div class="mb-3">
+            <i class="bi bi-speedometer2 text-warning" style="font-size: 3rem;"></i>
+          </div>
+          <h5 class="card-title">Eficiencia Operativa</h5>
+          <p class="card-text text-muted">Métricas de rotación de inventario, cobranzas y optimización de procesos.</p>
+          <a href="{% url 'reporte_eficiencia_operativa' %}" class="btn btn-warning">
+            <i class="bi bi-arrow-right"></i> Ver Reporte
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Botón Volver -->
+  <div class="text-center mt-4">
+    <a href="{% url 'dashboard' %}" class="btn btn-secondary">
+      <i class="bi bi-arrow-left"></i> Volver al Dashboard
+    </a>
   </div>
 </div>
 
 <style>
-.bg-gradient-primary {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+.card {
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
 }
-.bg-gradient-success {
-  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
 }
-.bg-gradient-info {
-  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+
+.card-body {
+  padding: 2rem 1.5rem;
 }
-.bg-gradient-warning {
-  background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+
+.btn {
+  border-radius: 25px;
+  padding: 0.5rem 1.5rem;
+  font-weight: 500;
+}
+
+.bi {
+  transition: transform 0.2s ease-in-out;
+}
+
+.card:hover .bi {
+  transform: scale(1.1);
 }
 </style>
 {% endblock %} 

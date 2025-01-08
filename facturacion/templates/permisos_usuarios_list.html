@@ -1,0 +1,163 @@
+{% extends 'base.html' %}
+{% load humanize custom_filters %}
+
+{% block title %}{{ titulo }} - Avícola CVA{% endblock %}
+
+{% block page_title %}{{ titulo }}{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Inicio</a></li>
+<li class="breadcrumb-item"><a href="{% url 'configuracion_panel' %}">Configuración</a></li>
+<li class="breadcrumb-item active">{{ titulo }}</li>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  <!-- Header -->
+  <div class="card shadow mb-4">
+    <div class="card-header bg-primary text-white d-flex justify-content-end align-items-center">
+      <h4 class="mb-0 me-auto"><i class="bi bi-shield-lock"></i> {{ titulo }}</h4>
+      <div>
+        <a href="{% url 'crear_permisos_por_defecto' %}" class="btn btn-outline-light me-2">
+          <i class="bi bi-plus-circle"></i> Crear Permisos por Defecto
+        </a>
+        <a href="{% url 'configuracion_panel' %}" class="btn btn-outline-light">
+          <i class="bi bi-arrow-left"></i> Volver
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabla de Usuarios y Permisos -->
+  <div class="card shadow">
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-striped table-hover">
+          <thead class="table-primary">
+            <tr>
+              <th>Usuario</th>
+              <th>Email</th>
+              <th>Estado</th>
+              {% for modulo, nombre in modulos %}
+                <th class="text-center">{{ nombre }}</th>
+              {% endfor %}
+              <th class="text-center">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for usuario in usuarios %}
+            <tr>
+              <td>
+                <strong>{{ usuario.get_full_name|default:usuario.username }}</strong>
+                <br>
+                <small class="text-muted">@{{ usuario.username }}</small>
+              </td>
+              <td>{{ usuario.email|default:"-" }}</td>
+              <td>
+                {% if usuario.is_active %}
+                  <span class="badge bg-success">Activo</span>
+                {% else %}
+                  <span class="badge bg-danger">Inactivo</span>
+                {% endif %}
+              </td>
+              {% for modulo, nombre in modulos %}
+                <td class="text-center">
+                  {% with permiso=usuario.permisos_dict|get_item:modulo %}
+                    {% if permiso %}
+                      <div class="btn-group-vertical btn-group-sm" role="group">
+                        <button type="button" class="btn btn-sm {% if permiso.puede_ver %}btn-success{% else %}btn-outline-secondary{% endif %}" 
+                                title="Ver" disabled>
+                          <i class="bi bi-eye"></i>
+                        </button>
+                        <button type="button" class="btn btn-sm {% if permiso.puede_crear %}btn-primary{% else %}btn-outline-secondary{% endif %}" 
+                                title="Crear" disabled>
+                          <i class="bi bi-plus"></i>
+                        </button>
+                        <button type="button" class="btn btn-sm {% if permiso.puede_editar %}btn-warning{% else %}btn-outline-secondary{% endif %}" 
+                                title="Editar" disabled>
+                          <i class="bi bi-pencil"></i>
+                        </button>
+                        <button type="button" class="btn btn-sm {% if permiso.puede_eliminar %}btn-danger{% else %}btn-outline-secondary{% endif %}" 
+                                title="Eliminar" disabled>
+                          <i class="bi bi-trash"></i>
+                        </button>
+                      </div>
+                    {% else %}
+                      <span class="text-muted">Sin permisos</span>
+                    {% endif %}
+                  {% endwith %}
+                </td>
+              {% endfor %}
+              <td class="text-center">
+                <div class="btn-group" role="group">
+                  <a href="{% url 'permisos_usuario_editar' usuario.id %}" class="btn btn-sm btn-primary" title="Editar Permisos">
+                    <i class="bi bi-pencil-square"></i>
+                  </a>
+                  <a href="{% url 'permisos_usuario_reset' usuario.id %}" class="btn btn-sm btn-warning" title="Resetear Permisos"
+                     onclick="return confirm('¿Estás seguro de que quieres resetear los permisos de {{ usuario.get_full_name|default:usuario.username }}?')">
+                    <i class="bi bi-arrow-clockwise"></i>
+                  </a>
+                </div>
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="{{ modulos|length|add:4 }}" class="text-center text-muted">
+                No hay usuarios registrados
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Leyenda -->
+  <div class="card shadow mt-4">
+    <div class="card-header bg-light">
+      <h5 class="mb-0"><i class="bi bi-info-circle"></i> Leyenda de Permisos</h5>
+    </div>
+    <div class="card-body">
+      <div class="row">
+        <div class="col-md-6">
+          <h6>Acciones:</h6>
+          <ul class="list-unstyled">
+            <li><i class="bi bi-eye text-success"></i> <strong>Ver:</strong> Puede acceder al módulo</li>
+            <li><i class="bi bi-plus text-primary"></i> <strong>Crear:</strong> Puede crear nuevos registros</li>
+            <li><i class="bi bi-pencil text-warning"></i> <strong>Editar:</strong> Puede modificar registros</li>
+            <li><i class="bi bi-trash text-danger"></i> <strong>Eliminar:</strong> Puede eliminar registros</li>
+          </ul>
+        </div>
+        <div class="col-md-6">
+          <h6>Módulos:</h6>
+          <ul class="list-unstyled">
+            {% for modulo, nombre in modulos %}
+              <li><strong>{{ nombre }}:</strong> {{ modulo }}</li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.btn-group-vertical .btn {
+  margin-bottom: 2px;
+}
+
+.btn-group-vertical .btn:last-child {
+  margin-bottom: 0;
+}
+
+.table th {
+  font-size: 0.9rem;
+  vertical-align: middle;
+}
+
+.table td {
+  vertical-align: middle;
+}
+</style>
+{% endblock %}

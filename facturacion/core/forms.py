@@ -156,8 +156,9 @@ class ProveedorForm(forms.ModelForm):
     
     def clean_direccion(self):
         direccion = self.cleaned_data.get('direccion')
-        if not direccion or direccion.strip() == '':
-            raise forms.ValidationError('La dirección es requerida')
+        # Puede ir vacía
+        if not direccion:
+            return ''
         return direccion.strip()
     
     def clean_telefono(self):
@@ -175,11 +176,11 @@ class ProveedorForm(forms.ModelForm):
 class ClienteForm(forms.ModelForm):
     class Meta:
         model = Cliente
-        fields = ['nombre', 'ruc', 'direccion', 'telefono', 'email', 'activo']
+        # No exponemos 'activo' ni los campos removidos del modelo
+        fields = ['nombre', 'ruc', 'telefono', 'email']
         widgets = {
             'nombre': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Nombre del cliente'}),
             'ruc': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'RUC del cliente'}),
-            'direccion': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Dirección completa'}),
             'telefono': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Número de teléfono'}),
             'email': forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'correo@ejemplo.com'}),
         }
@@ -206,12 +207,6 @@ class ClienteForm(forms.ModelForm):
                 raise forms.ValidationError('Ya existe un cliente con este RUC')
         
         return ruc.strip()
-    
-    def clean_direccion(self):
-        direccion = self.cleaned_data.get('direccion')
-        if not direccion or direccion.strip() == '':
-            raise forms.ValidationError('La dirección es requerida')
-        return direccion.strip()
     
     def clean_telefono(self):
         telefono = self.cleaned_data.get('telefono')
@@ -306,6 +301,9 @@ class PagoForm(forms.ModelForm):
                 })
                 self.fields['monto_total'].help_text = f'Pago parcial permitido. Saldo pendiente: Gs. {self.factura.saldo_pendiente:,}'
                 
+                # Preseleccionar tipo como efectivo para proveedores
+                self.fields['tipo'].initial = 'efectivo'
+                
                 # Ocultar campo de monto del billete para proveedores
                 self.fields['monto_billete'].widget = forms.HiddenInput()
                 self.fields['monto_billete'].required = False
@@ -389,8 +387,9 @@ class PagoMultipleForm(forms.ModelForm):
         self.factura_especifica = kwargs.pop('factura_especifica', None)
         super().__init__(*args, **kwargs)
         
-        # Siempre predeterminar tipo como efectivo
-        self.fields['tipo'].initial = 'efectivo'
+        # Siempre predeterminar tipo como efectivo para pagos a proveedores
+        if not self.instance.pk:  # Solo para formularios nuevos
+            self.fields['tipo'].initial = 'efectivo'
         
         # Si hay una factura específica, configurar para esa factura
         if self.factura_especifica:

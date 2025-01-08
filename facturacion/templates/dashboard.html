@@ -158,6 +158,87 @@
     </div>
   </div>
 </div>
+
+<!-- Productos Más Vendidos y Top Clientes -->
+<div class="row mt-4">
+  <!-- Productos Más Vendidos -->
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title"><i class="bi bi-bar-chart"></i> Productos Más Vendidos</h3>
+        <div class="card-tools">
+          <button type="button" class="btn btn-tool" data-lte-toggle="card-collapse">
+            <i data-lte-icon="expand" class="bi bi-plus-lg"></i>
+            <i data-lte-icon="collapse" class="bi bi-dash-lg"></i>
+          </button>
+        </div>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-striped">
+            <thead>
+              <tr>
+                <th>Producto</th>
+                <th class="text-end">Cantidad Vendida</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for producto in productos_vendidos|slice:":5" %}
+              <tr>
+                <td>{{ producto.producto__nombre }}</td>
+                <td class="text-end">{{ producto.cantidad_vendida }}</td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="2" class="text-center text-muted">No hay datos de ventas disponibles</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Top Clientes -->
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title"><i class="bi bi-people"></i> Top Clientes</h3>
+        <div class="card-tools">
+          <button type="button" class="btn btn-tool" data-lte-toggle="card-collapse">
+            <i data-lte-icon="expand" class="bi bi-plus-lg"></i>
+            <i data-lte-icon="collapse" class="bi bi-dash-lg"></i>
+          </button>
+        </div>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-striped">
+            <thead>
+              <tr>
+                <th>Cliente</th>
+                <th class="text-end">Total Compras</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for cliente in clientes_compras|slice:":5" %}
+              <tr>
+                <td>{{ cliente.cliente__nombre }}</td>
+                <td class="text-end">Gs. {{ cliente.total_compras|floatformat:0|intcomma_dot }}</td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="2" class="text-center text-muted">No hay datos de clientes disponibles</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}

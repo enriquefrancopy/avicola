@@ -1,11 +1,41 @@
 from django.urls import path
 from django.contrib.auth.views import LoginView, LogoutView
-from . import views, views_pagos, views_caja
+from django.contrib.auth import logout, authenticate, login
+from django.shortcuts import redirect, render
+from django.contrib import messages
+from . import views, views_pagos, views_caja, views_reportes, views_permisos
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
+
+def logout_view(request):
+    logout(request)
+    return redirect('login')
+
+def login_view(request):
+    """Vista personalizada de login con combobox de usuarios"""
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        user = authenticate(request, username=username, password=password)
+        
+        if user is not None:
+            login(request, user)
+            # Forzar el guardado de la sesión
+            request.session.save()
+            return redirect('dashboard')
+        else:
+            messages.error(request, 'Usuario o contraseña incorrectos.')
+    
+    # Obtener lista de usuarios activos para el combobox
+    usuarios = User.objects.filter(is_active=True).order_by('first_name', 'last_name', 'username')
+    
+    return render(request, 'login.html', {'usuarios': usuarios})
 
 urlpatterns = [
     # Authentication URLs
-    path('login/', LoginView.as_view(template_name='login.html'), name='login'),
-    path('logout/', LogoutView.as_view(), name='logout'),
+    path('login/', login_view, name='login'),
+    path('logout/', logout_view, name='logout'),
     
     # Dashboard
     path('', views.dashboard, name='dashboard'),
@@ -24,6 +54,13 @@ urlpatterns = [
     path('proveedores/<int:pk>/editar/', views.proveedor_editar, name='proveedor_editar'),
     path('proveedores/<int:pk>/eliminar/', views.proveedor_eliminar, name='proveedor_eliminar'),
     path('proveedores/<int:pk>/reactivar/', views.proveedor_reactivar, name='proveedor_reactivar'),
+    
+    # Clientes
+    path('clientes/', views.clientes_list, name='clientes_list'),
+    path('clientes/agregar/', views.cliente_crear, name='cliente_crear'),
+    path('clientes/<int:pk>/editar/', views.cliente_editar, name='cliente_editar'),
+    path('clientes/<int:pk>/eliminar/', views.cliente_eliminar, name='cliente_eliminar'),
+    path('clientes/<int:pk>/reactivar/', views.cliente_reactivar, name='cliente_reactivar'),
     
     # Facturas
     path('facturas/', views.factura_list, name='factura_list'),
@@ -79,6 +116,7 @@ urlpatterns = [
     path('configuracion/guardar-ajax/', views.configuracion_guardar_ajax, name='configuracion_guardar_ajax'),
     path('configuracion/resetear/', views.configuracion_resetear, name='configuracion_resetear'),
     path('configuracion/temas/', views.configuracion_temas, name='configuracion_temas'),
+    path('configuracion/backup-supabase/', views.backup_supabase_view, name='backup_supabase'),
     
     # Reportes Avanzados
     path('reportes/', views.reportes_dashboard, name='reportes_dashboard'),
@@ -86,6 +124,12 @@ urlpatterns = [
     path('reportes/productos/', views.reporte_productos_analisis, name='reporte_productos_analisis'),
     path('reportes/clientes-proveedores/', views.reporte_clientes_proveedores, name='reporte_clientes_proveedores'),
     path('reportes/pagos-proveedores/', views.reporte_pagos_proveedores, name='reporte_pagos_proveedores'),
+    path('reportes/flujo-caja/', views_reportes.reporte_flujo_caja, name='reporte_flujo_caja'),
+    path('reportes/flujo-caja/exportar/', views_reportes.exportar_flujo_caja_excel, name='exportar_flujo_caja_excel'),
+    path('reportes/rentabilidad-productos/', views_reportes.reporte_rentabilidad_productos, name='reporte_rentabilidad_productos'),
+    path('reportes/tendencias-ventas/', views_reportes.reporte_tendencias_ventas, name='reporte_tendencias_ventas'),
+    path('reportes/analisis-clientes/', views_reportes.reporte_analisis_clientes, name='reporte_analisis_clientes'),
+    path('reportes/eficiencia-operativa/', views_reportes.reporte_eficiencia_operativa, name='reporte_eficiencia_operativa'),
     
     # Módulo de Pagos a Proveedores
     path('pagos-proveedores/', views.pagos_proveedores_dashboard, name='pagos_proveedores_dashboard'),
@@ -106,4 +150,14 @@ urlpatterns = [
     path('gasto/<int:gasto_id>/editar/', views.gasto_editar, name='gasto_editar'),
     path('gasto/<int:gasto_id>/eliminar/', views.gasto_eliminar, name='gasto_eliminar'),
     path('caja/reporte/', views.reporte_caja, name='reporte_caja'),
+    
+    # API para detalles de gasto
+    path('api/gastos/<int:gasto_id>/detalle/', views_caja.gasto_detalle_ajax, name='gasto_detalle_ajax'),
+    
+    # Gestión de Permisos de Usuarios
+    path('permisos/', views_permisos.permisos_usuarios_list, name='permisos_usuarios_list'),
+    path('permisos/<int:user_id>/editar/', views_permisos.permisos_usuario_editar, name='permisos_usuario_editar'),
+    path('permisos/<int:user_id>/reset/', views_permisos.permisos_usuario_reset, name='permisos_usuario_reset'),
+    path('permisos/<int:user_id>/ajax/', views_permisos.permisos_usuario_ajax, name='permisos_usuario_ajax'),
+    path('permisos/crear-por-defecto/', views_permisos.crear_permisos_por_defecto, name='crear_permisos_por_defecto'),
 ]

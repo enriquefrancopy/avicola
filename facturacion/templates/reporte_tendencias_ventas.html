@@ -1,0 +1,354 @@
+{% extends 'base.html' %}
+{% load humanize custom_filters %}
+
+{% block title %}{{ titulo }} - Avícola CVA{% endblock %}
+
+{% block page_title %}{{ titulo }}{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Inicio</a></li>
+<li class="breadcrumb-item"><a href="{% url 'reportes_dashboard' %}">Reportes</a></li>
+<li class="breadcrumb-item active">{{ titulo }}</li>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  <!-- Filtros -->
+  <div class="card shadow mb-4">
+    <div class="card-header bg-primary text-white">
+      <h5 class="mb-0"><i class="bi bi-funnel"></i> Filtros</h5>
+    </div>
+    <div class="card-body">
+      <form method="get" class="row g-3">
+        <div class="col-md-4">
+          <label for="periodo" class="form-label">Período (días)</label>
+          <select class="form-control" id="periodo" name="periodo">
+            <option value="7" {% if periodo == "7" %}selected{% endif %}>Últimos 7 días</option>
+            <option value="15" {% if periodo == "15" %}selected{% endif %}>Últimos 15 días</option>
+            <option value="30" {% if periodo == "30" %}selected{% endif %}>Últimos 30 días</option>
+            <option value="60" {% if periodo == "60" %}selected{% endif %}>Últimos 60 días</option>
+            <option value="90" {% if periodo == "90" %}selected{% endif %}>Últimos 90 días</option>
+          </select>
+        </div>
+        <div class="col-md-4">
+          <label for="tipo_analisis" class="form-label">Tipo de Análisis</label>
+          <select class="form-control" id="tipo_analisis" name="tipo_analisis">
+            <option value="diario" {% if tipo_analisis == "diario" %}selected{% endif %}>Diario</option>
+            <option value="semanal" {% if tipo_analisis == "semanal" %}selected{% endif %}>Semanal</option>
+            <option value="mensual" {% if tipo_analisis == "mensual" %}selected{% endif %}>Mensual</option>
+          </select>
+        </div>
+        <div class="col-md-4 d-flex align-items-end">
+          <button type="submit" class="btn btn-primary me-2">
+            <i class="bi bi-search"></i> Filtrar
+          </button>
+          <a href="{% url 'reporte_tendencias_ventas' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-clockwise"></i> Limpiar
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Resumen -->
+  <div class="row mb-4">
+    <div class="col-md-3">
+      <div class="card bg-primary text-white">
+        <div class="card-body text-center">
+          <h4 class="card-title">Gs. {{ total_periodo|intcomma_dot }}</h4>
+          <p class="card-text">Total Ventas del Período</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card bg-success text-white">
+        <div class="card-body text-center">
+          <h4 class="card-title">Gs. {{ promedio_diario|intcomma_dot }}</h4>
+          <p class="card-text">Promedio Diario</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card bg-info text-white">
+        <div class="card-body text-center">
+          <h4 class="card-title">{{ tendencias|length }}</h4>
+          <p class="card-text">Días Analizados</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card bg-warning text-white">
+        <div class="card-body text-center">
+          <h4 class="card-title">{{ productos_mas_vendidos|length }}</h4>
+          <p class="card-text">Productos Destacados</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Gráfico de Tendencias -->
+  <div class="card shadow mb-4">
+    <div class="card-header bg-primary text-white">
+      <h5 class="mb-0"><i class="bi bi-graph-up"></i> Tendencias de Ventas</h5>
+    </div>
+    <div class="card-body">
+      <canvas id="graficoTendencias" width="400" height="200"></canvas>
+    </div>
+  </div>
+
+  <!-- Días con Más Ventas -->
+  <div class="card shadow mb-4">
+    <div class="card-header bg-success text-white">
+      <h5 class="mb-0"><i class="bi bi-trophy"></i> Días con Más Ventas</h5>
+    </div>
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-striped table-hover">
+          <thead class="table-success">
+            <tr>
+              <th>Fecha</th>
+              <th>Total Ventas</th>
+              <th>Cantidad Facturas</th>
+              <th>Productos Destacados</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for dia in dias_mas_ventas %}
+            <tr>
+              <td><strong>{{ dia.fecha|date:"d/m/Y" }}</strong></td>
+              <td class="text-success">Gs. {{ dia.total_ventas|intcomma_dot }}</td>
+              <td>{{ dia.cantidad_facturas|intcomma_dot }}</td>
+              <td>
+                {% for producto in dia.productos_destacados|slice:":3" %}
+                  <span class="badge bg-light text-dark">{{ producto.detalles__producto__nombre }} ({{ producto.cantidad }})</span>
+                {% endfor %}
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="4" class="text-center text-muted">No hay datos para mostrar</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Días con Menos Ventas -->
+  <div class="card shadow mb-4">
+    <div class="card-header bg-warning text-white">
+      <h5 class="mb-0"><i class="bi bi-exclamation-triangle"></i> Días con Menos Ventas</h5>
+    </div>
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-striped table-hover">
+          <thead class="table-warning">
+            <tr>
+              <th>Fecha</th>
+              <th>Total Ventas</th>
+              <th>Cantidad Facturas</th>
+              <th>Productos Destacados</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for dia in dias_menos_ventas %}
+            <tr>
+              <td><strong>{{ dia.fecha|date:"d/m/Y" }}</strong></td>
+              <td class="text-warning">Gs. {{ dia.total_ventas|intcomma_dot }}</td>
+              <td>{{ dia.cantidad_facturas|intcomma_dot }}</td>
+              <td>
+                                 {% for producto in dia.productos_destacados|slice:":3" %}
+                   <span class="badge bg-light text-dark">{{ producto.detalles__producto__nombre }} ({{ producto.cantidad }})</span>
+                 {% endfor %}
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="4" class="text-center text-muted">No hay datos para mostrar</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Productos Más Vendidos -->
+  <div class="card shadow mb-4">
+    <div class="card-header bg-info text-white">
+      <h5 class="mb-0"><i class="bi bi-star"></i> Productos Más Vendidos del Período</h5>
+    </div>
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-striped table-hover">
+          <thead class="table-info">
+            <tr>
+              <th>Producto</th>
+              <th>Cantidad Total Vendida</th>
+              <th>Total Ventas</th>
+              <th>Promedio por Unidad</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for producto in productos_mas_vendidos %}
+            <tr>
+                             <td><strong>{{ producto.detalles__producto__nombre }}</strong></td>
+              <td>{{ producto.cantidad_total|intcomma_dot }}</td>
+              <td class="text-info">Gs. {{ producto.total_ventas|intcomma_dot }}</td>
+              <td>Gs. {{ producto.total_ventas|div:producto.cantidad_total|floatformat:0|intcomma_dot }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="4" class="text-center text-muted">No hay datos para mostrar</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Detalle Diario -->
+  <div class="card shadow mb-4">
+    <div class="card-header bg-secondary text-white">
+      <h5 class="mb-0"><i class="bi bi-calendar3"></i> Detalle Diario</h5>
+    </div>
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-striped table-hover" id="tablaDetalle">
+          <thead class="table-secondary">
+            <tr>
+              <th>Fecha</th>
+              <th>Total Ventas</th>
+              <th>Cantidad Facturas</th>
+              <th>Productos Destacados</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for dia in tendencias %}
+            <tr>
+              <td><strong>{{ dia.fecha|date:"d/m/Y" }}</strong></td>
+              <td class="{% if dia.total_ventas > promedio_diario %}text-success{% elif dia.total_ventas < promedio_diario %}text-warning{% else %}text-info{% endif %}">
+                Gs. {{ dia.total_ventas|intcomma_dot }}
+              </td>
+              <td>{{ dia.cantidad_facturas|intcomma_dot }}</td>
+              <td>
+                                 {% for producto in dia.productos_destacados|slice:":2" %}
+                   <span class="badge bg-light text-dark">{{ producto.detalles__producto__nombre }} ({{ producto.cantidad }})</span>
+                 {% endfor %}
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="4" class="text-center text-muted">No hay datos para mostrar</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Botones de Acción -->
+  <div class="text-center mb-4">
+    <a href="{% url 'reportes_dashboard' %}" class="btn btn-secondary">
+      <i class="bi bi-arrow-left"></i> Volver a Reportes
+    </a>
+  </div>
+</div>
+
+<style>
+.card {
+  transition: transform 0.2s ease-in-out;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+}
+
+.table th {
+  font-weight: 600;
+}
+
+.badge {
+  font-size: 0.85em;
+  margin-right: 0.25rem;
+}
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Datos para el gráfico
+  const fechas = [{% for dia in tendencias %}'{{ dia.fecha|date:"d/m" }}'{% if not forloop.last %}, {% endif %}{% endfor %}];
+  const ventas = [{% for dia in tendencias %}{{ dia.total_ventas }}{% if not forloop.last %}, {% endif %}{% endfor %}];
+  const facturas = [{% for dia in tendencias %}{{ dia.cantidad_facturas }}{% if not forloop.last %}, {% endif %}{% endfor %}];
+
+  // Crear gráfico
+  const ctx = document.getElementById('graficoTendencias').getContext('2d');
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: fechas,
+      datasets: [{
+        label: 'Ventas (Gs.)',
+        data: ventas,
+        borderColor: 'rgb(75, 192, 192)',
+        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+        tension: 0.1,
+        yAxisID: 'y'
+      }, {
+        label: 'Cantidad Facturas',
+        data: facturas,
+        borderColor: 'rgb(255, 99, 132)',
+        backgroundColor: 'rgba(255, 99, 132, 0.2)',
+        tension: 0.1,
+        yAxisID: 'y1'
+      }]
+    },
+    options: {
+      responsive: true,
+      interaction: {
+        mode: 'index',
+        intersect: false,
+      },
+      scales: {
+        y: {
+          type: 'linear',
+          display: true,
+          position: 'left',
+          title: {
+            display: true,
+            text: 'Ventas (Gs.)'
+          }
+        },
+        y1: {
+          type: 'linear',
+          display: true,
+          position: 'right',
+          title: {
+            display: true,
+            text: 'Cantidad Facturas'
+          },
+          grid: {
+            drawOnChartArea: false,
+          },
+        }
+      }
+    }
+  });
+
+  // Inicializar DataTable si está disponible
+  if (typeof $.fn.DataTable !== 'undefined') {
+    $('#tablaDetalle').DataTable({
+      "language": {
+        "url": "//cdn.datatables.net/plug-ins/1.10.24/i18n/Spanish.json"
+      },
+      "pageLength": 25,
+      "order": [[1, "desc"]] // Ordenar por ventas descendente
+    });
+  }
+});
+</script>
+{% endblock %}

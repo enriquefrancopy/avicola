@@ -44,6 +44,7 @@
                  <option value="normal" {% if request.GET.estado == 'normal' %}selected{% endif %}>Stock Normal</option>
                  <option value="minimo" {% if request.GET.estado == 'minimo' %}selected{% endif %}>Stock Mínimo</option>
                  <option value="critico" {% if request.GET.estado == 'critico' %}selected{% endif %}>Stock Crítico</option>
+                 <option value="agotado" {% if request.GET.estado == 'agotado' %}selected{% endif %}>Agotado</option>
                </select>
              </div>
              
@@ -96,17 +97,21 @@
               <td class="text-center">{{ producto.iva }}%</td>
                              <td class="text-center">
                  {% if producto.activo %}
-                   {% with stock_diff=producto.stock|sub:producto.stock_minimo %}
-                   <span class="badge {% if stock_diff < 0 %}bg-danger{% elif stock_diff == 0 %}bg-danger{% else %}bg-success{% endif %}">
-                     {% if stock_diff < 0 %}
-                       Stock Crítico
-                     {% elif stock_diff == 0 %}
-                       Stock Mínimo
-                     {% else %}
-                       Stock Normal
-                     {% endif %}
-                   </span>
-                   {% endwith %}
+                   {% if producto.stock == 0 %}
+                     <span class="badge bg-danger">Agotado</span>
+                   {% else %}
+                     {% with stock_diff=producto.stock|sub:producto.stock_minimo %}
+                     <span class="badge {% if stock_diff < 0 %}bg-danger{% elif stock_diff == 0 %}bg-danger{% else %}bg-success{% endif %}">
+                       {% if stock_diff < 0 %}
+                         Stock Crítico
+                       {% elif stock_diff == 0 %}
+                         Stock Mínimo
+                       {% else %}
+                         Stock Normal
+                       {% endif %}
+                     </span>
+                     {% endwith %}
+                   {% endif %}
                  {% else %}
                    <span class="badge bg-secondary">Desactivado</span>
                  {% endif %}

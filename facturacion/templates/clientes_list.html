@@ -1,0 +1,283 @@
+{% extends 'base.html' %}
+{% load humanize custom_filters %}
+
+{% block title %}Clientes - Avícola CVA{% endblock %}
+
+{% block page_title %}{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item active">Clientes</li>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+  <div class="card shadow">
+    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+      <h4 class="mb-0"><i class="bi bi-person-lines-fill"></i> Gestión de Clientes</h4>
+      <div class="d-flex ms-auto justify-content-end">
+        <button class="btn btn-outline-light me-2" type="button" data-bs-toggle="collapse" data-bs-target="#filtros-clientes" aria-expanded="false">
+          <i class="bi bi-funnel"></i> Filtros
+        </button>
+        {% if usuario_permisos.clientes.crear %}
+        <button class="btn btn-success" type="button" data-bs-toggle="modal" data-bs-target="#modalAgregarCliente">
+          <i class="bi bi-plus-circle"></i> Nuevo Cliente
+        </button>
+        {% endif %}
+      </div>
+    </div>
+    <div class="card-body">
+      <!-- Filtros -->
+      <div class="collapse mb-3" id="filtros-clientes">
+        <div class="card card-body bg-light border border-primary">
+          <form class="row g-3" method="get">
+            <div class="col-md-4">
+              <input type="text" name="search" class="form-control" placeholder="Buscar cliente..." value="{{ search }}">
+            </div>
+            <div class="col-md-3">
+              <button type="submit" class="btn btn-outline-primary w-100"><i class="bi bi-search"></i> Buscar</button>
+            </div>
+            <div class="col-md-2">
+              <a href="{% url 'clientes_list' %}" class="btn btn-outline-secondary w-100"><i class="bi bi-arrow-clockwise"></i> Limpiar</a>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <div class="table-responsive">
+        <table class="table table-striped table-hover table-bordered">
+          <thead class="table-dark">
+            <tr>
+              <th>Nombre</th>
+              <th>RUC</th>
+              <th>Teléfono</th>
+              <th>Email</th>
+              <th style="width: 120px;" class="text-center">Estado</th>
+              <th style="width: 120px;" class="text-end">Saldo</th>
+              <th style="width: 200px;" class="text-center">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for cliente in clientes %}
+            <tr class="align-middle">
+              <td>
+                <strong>{{ cliente.nombre }}</strong>
+              </td>
+              <td>
+                <span class="badge bg-secondary">{{ cliente.ruc }}</span>
+              </td>
+              <td>
+                {% if cliente.telefono %}
+                  <i class="bi bi-telephone"></i> {{ cliente.telefono }}
+                {% else %}
+                  <span class="text-muted">-</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if cliente.email %}
+                  <i class="bi bi-envelope"></i> {{ cliente.email }}
+                {% else %}
+                  <span class="text-muted">-</span>
+                {% endif %}
+              </td>
+              <td class="text-center">
+                {% if cliente.activo %}
+                  <span class="badge bg-success">Activo</span>
+                {% else %}
+                  <span class="badge bg-danger">Inactivo</span>
+                {% endif %}
+              </td>
+              <td class="text-end">
+                <span class="fw-bold {% if cliente.saldo > 0 %}text-danger{% else %}text-success{% endif %}">
+                  Gs. {{ cliente.saldo|floatformat:0|intcomma_dot }}
+                </span>
+              </td>
+              <td class="text-center">
+                <div class="btn-group" role="group">
+                  {% if usuario_permisos.clientes.editar %}
+                  <button type="button" 
+                          class="btn btn-outline-primary btn-sm" 
+                          data-bs-toggle="modal" 
+                          data-bs-target="#modalEditarCliente{{ cliente.id }}"
+                          title="Editar cliente">
+                    <i class="bi bi-pencil"></i>
+                  </button>
+                  {% endif %}
+                  {% if usuario_permisos.clientes.eliminar %}
+                  <button type="button" 
+                          class="btn btn-outline-danger btn-sm" 
+                          data-bs-toggle="modal" 
+                          data-bs-target="#modalEliminarCliente{{ cliente.id }}"
+                          title="Desactivar cliente">
+                    <i class="bi bi-trash"></i>
+                  </button>
+                  {% endif %}
+                </div>
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="7" class="text-center py-4">
+                <i class="bi bi-inbox text-muted" style="font-size: 2rem;"></i>
+                <p class="text-muted mt-2">No se encontraron clientes.</p>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modales de Edición de Clientes -->
+{% for cliente in clientes %}
+<!-- Modal Editar Cliente -->
+<div class="modal fade" id="modalEditarCliente{{ cliente.id }}" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="post" action="{% url 'cliente_editar' cliente.id %}">
+        {% csrf_token %}
+        <div class="modal-header">
+          <h5 class="modal-title">Editar Cliente</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="nombre{{ cliente.id }}" class="form-label">Nombre</label>
+            <input type="text" class="form-control" id="nombre{{ cliente.id }}" name="nombre" value="{{ cliente.nombre }}" required>
+          </div>
+          <div class="mb-3">
+            <label for="ruc{{ cliente.id }}" class="form-label">RUC</label>
+            <input type="text" class="form-control" id="ruc{{ cliente.id }}" name="ruc" value="{{ cliente.ruc }}" required>
+          </div>
+          <div class="mb-3">
+            <label for="telefono{{ cliente.id }}" class="form-label">Teléfono</label>
+            <input type="text" class="form-control" id="telefono{{ cliente.id }}" name="telefono" value="{{ cliente.telefono }}" required>
+          </div>
+          <div class="mb-3">
+            <label for="email{{ cliente.id }}" class="form-label">Email</label>
+            <input type="email" class="form-control" id="email{{ cliente.id }}" name="email" value="{{ cliente.email }}" required>
+          </div>
+          <div class="mb-3">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="activo{{ cliente.id }}" name="activo" {% if cliente.activo %}checked{% endif %}>
+              <label class="form-check-label" for="activo{{ cliente.id }}">
+                Cliente Activo
+              </label>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-danger" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Desactivar Cliente -->
+<div class="modal fade" id="modalEliminarCliente{{ cliente.id }}" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Confirmar Desactivación</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="alert alert-info">
+          <i class="bi bi-info-circle"></i>
+          <strong>¿Está seguro que desea desactivar el cliente "{{ cliente.nombre }}"?</strong>
+        </div>
+        <p>El cliente será desactivado y no aparecerá en las listas activas, pero permanecerá en la base de datos para mantener el historial.</p>
+        {% if cliente.saldo > 0 %}
+          <div class="alert alert-warning">
+            <i class="bi bi-exclamation-triangle"></i>
+            <strong>Saldo pendiente: Gs. {{ cliente.saldo|floatformat:0|intcomma_dot }}</strong>
+          </div>
+        {% endif %}
+        <p class="text-info"><small>Esta acción es reversible. Puede reactivar el cliente editándolo más tarde.</small></p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-danger" data-bs-dismiss="modal">Cancelar</button>
+        <form method="post" action="{% url 'cliente_eliminar' cliente.id %}" class="d-inline">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-danger">Desactivar</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endfor %}
+
+<!-- Modal Agregar Cliente -->
+<div class="modal fade" id="modalAgregarCliente" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="post" action="{% url 'cliente_crear' %}">
+        {% csrf_token %}
+        <div class="modal-header">
+          <h5 class="modal-title">Agregar Nuevo Cliente</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="nombre" class="form-label">Nombre</label>
+            <input type="text" class="form-control" id="nombre" name="nombre" required>
+          </div>
+          <div class="mb-3">
+            <label for="ruc" class="form-label">RUC</label>
+            <input type="text" class="form-control" id="ruc" name="ruc" required>
+          </div>
+          <div class="mb-3">
+            <label for="telefono" class="form-label">Teléfono</label>
+            <input type="text" class="form-control" id="telefono" name="telefono" required>
+          </div>
+          <div class="mb-3">
+            <label for="email" class="form-label">Email</label>
+            <input type="email" class="form-control" id="email" name="email" required>
+          </div>
+          <div class="mb-3">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="activo" name="activo" checked>
+              <label class="form-check-label" for="activo">
+                Cliente Activo
+              </label>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Guardar Cliente</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<style>
+.table th {
+  border-top: none;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.table td {
+  vertical-align: middle;
+  font-size: 0.9rem;
+}
+
+.badge {
+  font-size: 0.8em;
+}
+
+.btn-group .btn {
+  transition: all 0.2s ease;
+}
+
+.btn-group .btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+</style>
+{% endblock %}

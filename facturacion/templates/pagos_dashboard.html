@@ -11,66 +11,6 @@
 
 {% block content %}
 <div class="container-fluid mt-4">
-  <!-- Estadísticas principales -->
-  <div class="row mb-4">
-    <div class="col-lg-3 col-6">
-      <div class="small-box bg-success">
-        <div class="inner">
-          <h3>{{ total_pagos_clientes }}</h3>
-          <p>Pagos de Clientes</p>
-        </div>
-        <div class="icon">
-          <i class="bi bi-person-check"></i>
-        </div>
-        <a href="{% url 'pagos_clientes_list' %}" class="small-box-footer">
-          Ver todos <i class="bi bi-arrow-circle-right"></i>
-        </a>
-      </div>
-    </div>
-    <div class="col-lg-3 col-6">
-      <div class="small-box bg-warning">
-        <div class="inner">
-          <h3>{{ total_pagos_proveedores }}</h3>
-          <p>Pagos a Proveedores</p>
-        </div>
-        <div class="icon">
-          <i class="bi bi-truck"></i>
-        </div>
-        <a href="{% url 'pagos_proveedores_list' %}" class="small-box-footer">
-          Ver todos <i class="bi bi-arrow-circle-right"></i>
-        </a>
-      </div>
-    </div>
-    <div class="col-lg-3 col-6">
-      <div class="small-box bg-info">
-        <div class="inner">
-          <h3>{{ facturas_pendientes_clientes.count }}</h3>
-          <p>Facturas Clientes Pendientes</p>
-        </div>
-        <div class="icon">
-          <i class="bi bi-clock-history"></i>
-        </div>
-        <a href="{% url 'pagos_clientes_list' %}?estado=pendiente" class="small-box-footer">
-          Ver pendientes <i class="bi bi-arrow-circle-right"></i>
-        </a>
-      </div>
-    </div>
-    <div class="col-lg-3 col-6">
-      <div class="small-box bg-danger">
-        <div class="inner">
-          <h3>{{ facturas_pendientes_proveedores.count }}</h3>
-          <p>Facturas Proveedores Pendientes</p>
-        </div>
-        <div class="icon">
-          <i class="bi bi-exclamation-triangle"></i>
-        </div>
-        <a href="{% url 'pagos_proveedores_list' %}?estado=pendiente" class="small-box-footer">
-          Ver pendientes <i class="bi bi-arrow-circle-right"></i>
-        </a>
-      </div>
-    </div>
-  </div>
-
   <!-- Estado de Caja -->
   <div class="row mb-4">
     <div class="col-12">
@@ -104,47 +44,6 @@
               </a>
             </div>
           {% endif %}
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Acciones rápidas -->
-  <div class="row mb-4">
-    <div class="col-12">
-      <div class="card">
-        <div class="card-header">
-          <h3 class="card-title">
-            <i class="bi bi-lightning"></i> Acciones Rápidas
-          </h3>
-        </div>
-        <div class="card-body">
-          <div class="row">
-            <div class="col-md-3">
-              <a href="{% url 'pagos_clientes_list' %}" class="btn btn-success btn-lg w-100 mb-2">
-                <i class="bi bi-person-check"></i><br>
-                Cobrar Clientes
-              </a>
-            </div>
-            <div class="col-md-3">
-              <a href="{% url 'pagos_proveedores_list' %}" class="btn btn-warning btn-lg w-100 mb-2">
-                <i class="bi bi-truck"></i><br>
-                Pagar Proveedores
-              </a>
-            </div>
-            <div class="col-md-3">
-              <a href="{% url 'pagos_clientes_list' %}?estado=pendiente" class="btn btn-info btn-lg w-100 mb-2">
-                <i class="bi bi-clock-history"></i><br>
-                Pendientes Clientes
-              </a>
-            </div>
-            <div class="col-md-3">
-              <a href="{% url 'pagos_proveedores_list' %}?estado=pendiente" class="btn btn-danger btn-lg w-100 mb-2">
-                <i class="bi bi-exclamation-triangle"></i><br>
-                Pendientes Proveedores
-              </a>
-            </div>
-          </div>
         </div>
       </div>
     </div>
@@ -246,64 +145,6 @@
             <div class="text-center text-muted py-4">
               <i class="bi bi-check-circle" style="font-size: 3rem;"></i>
               <p class="mt-2">No hay facturas de proveedores pendientes</p>
-            </div>
-          {% endif %}
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Pagos recientes -->
-  <div class="row mt-4">
-    <div class="col-12">
-      <div class="card">
-        <div class="card-header">
-          <h3 class="card-title">
-            <i class="bi bi-clock-history"></i> Pagos Recientes
-          </h3>
-        </div>
-        <div class="card-body">
-          {% if pagos_recientes %}
-            <div class="table-responsive">
-              <table class="table table-striped">
-                <thead>
-                  <tr>
-                    <th>Fecha</th>
-                    <th>Tipo</th>
-                    <th>Cliente/Proveedor</th>
-                    <th>Monto</th>
-                    <th>Usuario</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {% for pago in pagos_recientes %}
-                  <tr>
-                    <td>{{ pago.fecha|date:"d/m/Y H:i" }}</td>
-                    <td>
-                      {% if pago.factura.tipo == 'venta' %}
-                        <span class="badge bg-success">Cliente</span>
-                      {% else %}
-                        <span class="badge bg-warning">Proveedor</span>
-                      {% endif %}
-                    </td>
-                    <td>
-                      {% if pago.factura.tipo == 'venta' %}
-                        {{ pago.factura.cliente.nombre }}
-                      {% else %}
-                        {{ pago.factura.proveedor.nombre }}
-                      {% endif %}
-                    </td>
-                    <td class="fw-bold">Gs. {{ pago.monto_total|intcomma_dot }}</td>
-                    <td>{{ pago.usuario.username }}</td>
-                  </tr>
-                  {% endfor %}
-                </tbody>
-              </table>
-            </div>
-          {% else %}
-            <div class="text-center text-muted py-4">
-              <i class="bi bi-inbox" style="font-size: 3rem;"></i>
-              <p class="mt-2">No hay pagos registrados</p>
             </div>
           {% endif %}
         </div>

@@ -61,33 +61,7 @@
     </div>
   </div>
 
-  <!-- Estadísticas -->
-  <div class="row mb-4">
-    <div class="col-md-4">
-      <div class="card bg-primary text-white">
-        <div class="card-body text-center">
-          <h3>{{ total_facturas }}</h3>
-          <p>Total Facturas</p>
-        </div>
-      </div>
-    </div>
-    <div class="col-md-4">
-      <div class="card bg-success text-white">
-        <div class="card-body text-center">
-          <h3>Gs. {{ total_ventas|floatformat:0|intcomma_dot }}</h3>
-          <p>Total Ventas</p>
-        </div>
-      </div>
-    </div>
-    <div class="col-md-4">
-      <div class="card bg-info text-white">
-        <div class="card-body text-center">
-                     <h3>Gs. {% if total_facturas > 0 %}{{ total_ventas|floatformat:0|intcomma_dot }}{% else %}0{% endif %}</h3>
-          <p>Promedio por Factura</p>
-        </div>
-      </div>
-    </div>
-  </div>
+
 
   <!-- Tabla de Facturas -->
   <div class="card shadow">

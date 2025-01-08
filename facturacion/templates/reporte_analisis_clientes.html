@@ -1,0 +1,349 @@
+{% extends 'base.html' %}
+{% load humanize custom_filters %}
+
+{% block title %}{{ titulo }} - Avícola CVA{% endblock %}
+
+{% block page_title %}{{ titulo }}{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Inicio</a></li>
+<li class="breadcrumb-item"><a href="{% url 'reportes_dashboard' %}">Reportes</a></li>
+<li class="breadcrumb-item active">{{ titulo }}</li>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  <!-- Filtros -->
+  <div class="card shadow mb-4">
+    <div class="card-header bg-info text-white">
+      <h5 class="mb-0"><i class="bi bi-funnel"></i> Filtros</h5>
+    </div>
+    <div class="card-body">
+      <form method="get" class="row g-3">
+        <div class="col-md-3">
+          <label for="fecha_inicio" class="form-label">Fecha Inicio</label>
+          <input type="date" class="form-control" id="fecha_inicio" name="fecha_inicio" value="{{ fecha_inicio }}">
+        </div>
+        <div class="col-md-3">
+          <label for="fecha_fin" class="form-label">Fecha Fin</label>
+          <input type="date" class="form-control" id="fecha_fin" name="fecha_fin" value="{{ fecha_fin }}">
+        </div>
+        <div class="col-md-3">
+          <label for="tipo_cliente" class="form-label">Tipo de Cliente</label>
+          <select class="form-control" id="tipo_cliente" name="tipo_cliente">
+            <option value="todos" {% if tipo_cliente == "todos" %}selected{% endif %}>Todos los Clientes</option>
+            <option value="frecuentes" {% if tipo_cliente == "frecuentes" %}selected{% endif %}>Clientes Frecuentes (3+ compras)</option>
+            <option value="nuevos" {% if tipo_cliente == "nuevos" %}selected{% endif %}>Clientes Nuevos (1 compra)</option>
+          </select>
+        </div>
+        <div class="col-md-3 d-flex align-items-end">
+          <button type="submit" class="btn btn-info me-2">
+            <i class="bi bi-search"></i> Filtrar
+          </button>
+          <a href="{% url 'reporte_analisis_clientes' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-clockwise"></i> Limpiar
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Resumen -->
+  <div class="row mb-4">
+    <div class="col-md-3">
+      <div class="card bg-info text-white">
+        <div class="card-body text-center">
+          <h4 class="card-title">
+            {% if clientes_analisis %}
+              Gs. {{ clientes_analisis|sum_list:"total_compras"|intcomma_dot }}
+            {% else %}
+              Gs. 0
+            {% endif %}
+          </h4>
+          <p class="card-text">Clientes Analizados</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card bg-success text-white">
+        <div class="card-body text-center">
+          <h4 class="card-title">{{ top_clientes|length }}</h4>
+          <p class="card-text">Top Clientes</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card bg-warning text-white">
+        <div class="card-body text-center">
+          <h4 class="card-title">{{ clientes_pendientes|length }}</h4>
+          <p class="card-text">Con Saldo Pendiente</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card bg-primary text-white">
+        <div class="card-body text-center">
+          <h4 class="card-title">{{ fecha_inicio|date:"d/m/Y" }} - {{ fecha_fin|date:"d/m/Y" }}</h4>
+          <p class="card-text">Período Analizado</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Top 10 Clientes -->
+  <div class="card shadow mb-4">
+    <div class="card-header bg-success text-white">
+      <h5 class="mb-0"><i class="bi bi-trophy"></i> Top 10 Clientes por Compras</h5>
+    </div>
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-striped table-hover">
+          <thead class="table-success">
+            <tr>
+              <th>Cliente</th>
+              <th>RUC</th>
+              <th>Total Compras</th>
+              <th>Cantidad Facturas</th>
+              <th>Promedio Compra</th>
+              <th>Total Pagado</th>
+              <th>Saldo Pendiente</th>
+              <th>Frecuencia (días)</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for cliente in top_clientes %}
+            <tr>
+              <td><strong>{{ cliente.cliente.nombre }}</strong></td>
+              <td>{{ cliente.cliente.ruc|default:"-" }}</td>
+              <td class="text-success">Gs. {{ cliente.total_compras|intcomma_dot }}</td>
+              <td>{{ cliente.cantidad_facturas|intcomma_dot }}</td>
+              <td>Gs. {{ cliente.promedio_compra|intcomma_dot }}</td>
+              <td class="text-info">Gs. {{ cliente.total_pagado|intcomma_dot }}</td>
+              <td class="{% if cliente.saldo_pendiente > 0 %}text-danger{% else %}text-success{% endif %}">
+                Gs. {{ cliente.saldo_pendiente|intcomma_dot }}
+              </td>
+              <td>{{ cliente.frecuencia_compra|floatformat:1 }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="8" class="text-center text-muted">No hay datos para mostrar</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Clientes con Saldo Pendiente -->
+  <div class="card shadow mb-4">
+    <div class="card-header bg-warning text-white">
+      <h5 class="mb-0"><i class="bi bi-exclamation-triangle"></i> Clientes con Saldo Pendiente</h5>
+    </div>
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-striped table-hover">
+          <thead class="table-warning">
+            <tr>
+              <th>Cliente</th>
+              <th>RUC</th>
+              <th>Total Compras</th>
+              <th>Total Pagado</th>
+              <th>Saldo Pendiente</th>
+              <th>% Pagado</th>
+              <th>Última Compra</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for cliente in clientes_pendientes %}
+            <tr>
+              <td><strong>{{ cliente.cliente.nombre }}</strong></td>
+              <td>{{ cliente.cliente.ruc|default:"-" }}</td>
+              <td>Gs. {{ cliente.total_compras|intcomma_dot }}</td>
+              <td class="text-info">Gs. {{ cliente.total_pagado|intcomma_dot }}</td>
+              <td class="text-danger">Gs. {{ cliente.saldo_pendiente|intcomma_dot }}</td>
+              <td>
+                {% if cliente.total_compras > 0 %}
+                  <span class="badge {% if cliente.total_pagado|div:cliente.total_compras|mul:100 >= 80 %}bg-success{% elif cliente.total_pagado|div:cliente.total_compras|mul:100 >= 50 %}bg-warning{% else %}bg-danger{% endif %}">
+                    {{ cliente.total_pagado|div:cliente.total_compras|mul:100|floatformat:1 }}%
+                  </span>
+                {% else %}
+                  <span class="badge bg-secondary">0%</span>
+                {% endif %}
+              </td>
+              <td>{{ cliente.cliente.factura_set.last.fecha|date:"d/m/Y"|default:"-" }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="7" class="text-center text-muted">No hay clientes con saldo pendiente</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Análisis de Segmentación -->
+  <div class="row mb-4">
+    <!-- Clientes Frecuentes -->
+    <div class="col-md-6">
+      <div class="card shadow h-100">
+        <div class="card-header bg-primary text-white">
+          <h5 class="mb-0"><i class="bi bi-star"></i> Clientes Frecuentes</h5>
+        </div>
+        <div class="card-body">
+          {% with clientes_frecuentes=clientes_analisis|slice:":5" %}
+          {% if clientes_frecuentes %}
+            <div class="list-group list-group-flush">
+              {% for cliente in clientes_frecuentes %}
+              <div class="list-group-item d-flex justify-content-between align-items-center">
+                <div>
+                  <h6 class="mb-1">{{ cliente.cliente.nombre }}</h6>
+                  <small class="text-muted">{{ cliente.cantidad_facturas }} facturas</small>
+                </div>
+                <span class="badge bg-primary rounded-pill">Gs. {{ cliente.total_compras|intcomma_dot }}</span>
+              </div>
+              {% endfor %}
+            </div>
+          {% else %}
+            <p class="text-muted text-center">No hay clientes frecuentes</p>
+          {% endif %}
+          {% endwith %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Clientes Nuevos -->
+    <div class="col-md-6">
+      <div class="card shadow h-100">
+        <div class="card-header bg-success text-white">
+          <h5 class="mb-0"><i class="bi bi-person-plus"></i> Clientes Nuevos</h5>
+        </div>
+        <div class="card-body">
+          {% with clientes_nuevos=clientes_analisis|slice:":5" %}
+          {% if clientes_nuevos %}
+            <div class="list-group list-group-flush">
+              {% for cliente in clientes_nuevos %}
+              {% if cliente.cantidad_facturas == 1 %}
+              <div class="list-group-item d-flex justify-content-between align-items-center">
+                <div>
+                  <h6 class="mb-1">{{ cliente.cliente.nombre }}</h6>
+                  <small class="text-muted">Primera compra</small>
+                </div>
+                <span class="badge bg-success rounded-pill">Gs. {{ cliente.total_compras|intcomma_dot }}</span>
+              </div>
+              {% endif %}
+              {% endfor %}
+            </div>
+          {% else %}
+            <p class="text-muted text-center">No hay clientes nuevos</p>
+          {% endif %}
+          {% endwith %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Lista Completa de Clientes -->
+  <div class="card shadow mb-4">
+    <div class="card-header bg-primary text-white">
+      <h5 class="mb-0"><i class="bi bi-list-ul"></i> Lista Completa de Clientes</h5>
+    </div>
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-striped table-hover" id="tablaClientes">
+          <thead class="table-primary">
+            <tr>
+              <th>Cliente</th>
+              <th>RUC</th>
+              <th>Total Compras</th>
+              <th>Cantidad Facturas</th>
+              <th>Promedio Compra</th>
+              <th>Total Pagado</th>
+              <th>Saldo Pendiente</th>
+              <th>Frecuencia (días)</th>
+              <th>Estado</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for cliente in clientes_analisis %}
+            <tr>
+              <td><strong>{{ cliente.cliente.nombre }}</strong></td>
+              <td>{{ cliente.cliente.ruc|default:"-" }}</td>
+              <td>Gs. {{ cliente.total_compras|intcomma_dot }}</td>
+              <td>{{ cliente.cantidad_facturas|intcomma_dot }}</td>
+              <td>Gs. {{ cliente.promedio_compra|intcomma_dot }}</td>
+              <td class="text-info">Gs. {{ cliente.total_pagado|intcomma_dot }}</td>
+              <td class="{% if cliente.saldo_pendiente > 0 %}text-danger{% else %}text-success{% endif %}">
+                Gs. {{ cliente.saldo_pendiente|intcomma_dot }}
+              </td>
+              <td>{{ cliente.frecuencia_compra|floatformat:1 }}</td>
+              <td>
+                {% if cliente.cantidad_facturas >= 3 %}
+                  <span class="badge bg-primary">Frecuente</span>
+                {% elif cliente.cantidad_facturas == 1 %}
+                  <span class="badge bg-success">Nuevo</span>
+                {% else %}
+                  <span class="badge bg-warning">Regular</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="9" class="text-center text-muted">No hay datos para mostrar</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Botones de Acción -->
+  <div class="text-center mb-4">
+    <a href="{% url 'reportes_dashboard' %}" class="btn btn-secondary">
+      <i class="bi bi-arrow-left"></i> Volver a Reportes
+    </a>
+  </div>
+</div>
+
+<style>
+.card {
+  transition: transform 0.2s ease-in-out;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+}
+
+.table th {
+  font-weight: 600;
+}
+
+.badge {
+  font-size: 0.85em;
+}
+
+.list-group-item {
+  border-left: none;
+  border-right: none;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Inicializar DataTable si está disponible
+  if (typeof $.fn.DataTable !== 'undefined') {
+    $('#tablaClientes').DataTable({
+      "language": {
+        "url": "//cdn.datatables.net/plug-ins/1.10.24/i18n/Spanish.json"
+      },
+      "pageLength": 25,
+      "order": [[2, "desc"]] // Ordenar por total compras descendente
+    });
+  }
+});
+</script>
+{% endblock %}
+
