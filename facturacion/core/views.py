@@ -810,7 +810,7 @@ def factura_ver(request, pk):
 def factura_pagos(request, pk):
     """Ver y gestionar pagos de una factura"""
     factura = get_object_or_404(Factura, pk=pk)
-    pagos = factura.pagos.all()
+    pagos_facturas = factura.pagos_facturas.select_related('pago', 'pago__usuario').all()
     
     # Obtener caja activa del día
     caja_activa = Caja.obtener_caja_activa()
@@ -849,7 +849,7 @@ def factura_pagos(request, pk):
     
     return render(request, 'factura_pagos.html', {
         'factura': factura,
-        'pagos': pagos,
+        'pagos_facturas': pagos_facturas,
         'form': form,
         'caja_activa': caja_activa
     })
