@@ -1,0 +1,350 @@
+{% extends 'base.html' %}
+{% load humanize custom_filters %}
+
+{% block title %}Reporte Avanzado - Pagos a Proveedores{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'reportes_dashboard' %}">Reportes</a></li>
+<li class="breadcrumb-item active">Pagos a Proveedores</li>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+  <!-- Header -->
+  <div class="card shadow mb-4">
+    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+      <h4 class="mb-0"><i class="bi bi-credit-card"></i> Reporte Avanzado - Pagos a Proveedores</h4>
+      <div class="d-flex justify-content-end w-100 ms-3">
+        <a href="{% url 'reportes_dashboard' %}" class="btn btn-outline-light">
+          <i class="bi bi-arrow-left"></i> Volver
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filtros -->
+  <div class="card shadow mb-4">
+    <div class="card-header bg-light">
+      <h5 class="mb-0"><i class="bi bi-funnel"></i> Filtros</h5>
+    </div>
+    <div class="card-body">
+      <form method="get" class="row g-3">
+        <div class="col-md-3">
+          <label for="fecha_inicio" class="form-label">Fecha Inicio</label>
+          <input type="date" class="form-control" id="fecha_inicio" name="fecha_inicio" value="{{ fecha_inicio }}">
+        </div>
+        <div class="col-md-3">
+          <label for="fecha_fin" class="form-label">Fecha Fin</label>
+          <input type="date" class="form-control" id="fecha_fin" name="fecha_fin" value="{{ fecha_fin }}">
+        </div>
+        <div class="col-md-3">
+          <label for="proveedor" class="form-label">Proveedor</label>
+          <select class="form-select" id="proveedor" name="proveedor">
+            <option value="">Todos los proveedores</option>
+            {% for proveedor in proveedores_disponibles %}
+              <option value="{{ proveedor.id }}" {% if proveedor_seleccionado == proveedor.id|stringformat:"s" %}selected{% endif %}>
+                {{ proveedor.nombre }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label for="tipo_pago" class="form-label">Tipo de Pago</label>
+          <select class="form-select" id="tipo_pago" name="tipo_pago">
+            <option value="">Todos los tipos</option>
+            {% for tipo_codigo, tipo_nombre in tipos_pago_disponibles %}
+              <option value="{{ tipo_codigo }}" {% if tipo_pago_seleccionado == tipo_codigo %}selected{% endif %}>
+                {{ tipo_nombre }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-12">
+          <button type="submit" class="btn btn-primary">
+            <i class="bi bi-search"></i> Filtrar
+          </button>
+          <a href="{% url 'reporte_pagos_proveedores' %}" class="btn btn-secondary">
+            <i class="bi bi-arrow-clockwise"></i> Limpiar
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Estadísticas Generales -->
+  <div class="row mb-4">
+    <div class="col-md-3">
+      <div class="card bg-success text-white">
+        <div class="card-body text-center">
+          <h3 class="mb-0">{{ total_pagos }}</h3>
+          <p class="mb-0">Total Pagos</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card bg-primary text-white">
+        <div class="card-body text-center">
+          <h3 class="mb-0">Gs. {{ total_monto_pagado|floatformat:0|intcomma_dot }}</h3>
+          <p class="mb-0">Total Pagado</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card bg-info text-white">
+        <div class="card-body text-center">
+          <h3 class="mb-0">Gs. {{ total_asignado|floatformat:0|intcomma_dot }}</h3>
+          <p class="mb-0">Total Asignado</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+              <div class="card bg-danger text-white">
+        <div class="card-body text-center">
+          <h3 class="mb-0">Gs. {{ total_disponible|floatformat:0|intcomma_dot }}</h3>
+          <p class="mb-0">Total Disponible</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Gráficos y Tablas -->
+  <div class="row">
+    <!-- Estadísticas por Proveedor -->
+    <div class="col-lg-6 mb-4">
+      <div class="card shadow">
+        <div class="card-header bg-info text-white">
+          <h5 class="mb-0"><i class="bi bi-truck"></i> Pagos por Proveedor</h5>
+        </div>
+        <div class="card-body">
+          {% if stats_por_proveedor %}
+            <div class="table-responsive">
+              <table class="table table-sm">
+                <thead>
+                  <tr>
+                    <th>Proveedor</th>
+                    <th class="text-end">Total Pagado</th>
+                    <th class="text-end">Cantidad</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for stat in stats_por_proveedor %}
+                  <tr>
+                    <td>{{ stat.proveedor__nombre }}</td>
+                    <td class="text-end">Gs. {{ stat.total_pagado|floatformat:0|intcomma_dot }}</td>
+                    <td class="text-end">{{ stat.cantidad_pagos }}</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          {% else %}
+            <p class="text-muted text-center">No hay datos disponibles</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Estadísticas por Tipo de Pago -->
+    <div class="col-lg-6 mb-4">
+      <div class="card shadow">
+        <div class="card-header bg-danger text-white">
+          <h5 class="mb-0"><i class="bi bi-credit-card"></i> Pagos por Tipo</h5>
+        </div>
+        <div class="card-body">
+          {% if stats_por_tipo %}
+            <div class="table-responsive">
+              <table class="table table-sm">
+                <thead>
+                  <tr>
+                    <th>Tipo</th>
+                    <th class="text-end">Total</th>
+                    <th class="text-end">Cantidad</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for stat in stats_por_tipo %}
+                  <tr>
+                    <td>{{ stat.get_tipo_display }}</td>
+                    <td class="text-end">Gs. {{ stat.total|floatformat:0|intcomma_dot }}</td>
+                    <td class="text-end">{{ stat.cantidad }}</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          {% else %}
+            <p class="text-muted text-center">No hay datos disponibles</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Top Pagos y Usuarios -->
+  <div class="row">
+    <!-- Top 10 Pagos Más Grandes -->
+    <div class="col-lg-6 mb-4">
+      <div class="card shadow">
+        <div class="card-header bg-success text-white">
+          <h5 class="mb-0"><i class="bi bi-trophy"></i> Top 10 Pagos Más Grandes</h5>
+        </div>
+        <div class="card-body">
+          {% if top_pagos %}
+            <div class="table-responsive">
+              <table class="table table-sm">
+                <thead>
+                  <tr>
+                    <th>Pago #</th>
+                    <th>Proveedor</th>
+                    <th class="text-end">Monto</th>
+                    <th>Fecha</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for pago in top_pagos %}
+                  <tr>
+                    <td>
+                      <a href="{% url 'pago_proveedor_ver' pago.pk %}" class="text-decoration-none">
+                        {{ pago.id }}
+                      </a>
+                    </td>
+                    <td>{{ pago.proveedor.nombre }}</td>
+                    <td class="text-end fw-bold">Gs. {{ pago.monto_total|floatformat:0|intcomma_dot }}</td>
+                    <td>{{ pago.fecha|date:'d/m/Y' }}</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          {% else %}
+            <p class="text-muted text-center">No hay datos disponibles</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Usuarios que Realizaron Pagos -->
+    <div class="col-lg-6 mb-4">
+      <div class="card shadow">
+        <div class="card-header bg-primary text-white">
+          <h5 class="mb-0"><i class="bi bi-person"></i> Usuarios que Realizaron Pagos</h5>
+        </div>
+        <div class="card-body">
+          {% if usuarios_pagos %}
+            <div class="table-responsive">
+              <table class="table table-sm">
+                <thead>
+                  <tr>
+                    <th>Usuario</th>
+                    <th class="text-end">Total Pagado</th>
+                    <th class="text-end">Cantidad</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for usuario in usuarios_pagos %}
+                  <tr>
+                    <td>{{ usuario.usuario__username }}</td>
+                    <td class="text-end">Gs. {{ usuario.total_pagado|floatformat:0|intcomma_dot }}</td>
+                    <td class="text-end">{{ usuario.cantidad }}</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          {% else %}
+            <p class="text-muted text-center">No hay datos disponibles</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Lista Detallada de Pagos -->
+  <div class="card shadow">
+    <div class="card-header bg-dark text-white">
+      <h5 class="mb-0"><i class="bi bi-list-ul"></i> Lista Detallada de Pagos</h5>
+    </div>
+    <div class="card-body">
+      {% if pagos %}
+        <div class="table-responsive">
+          <table class="table table-striped table-hover">
+            <thead class="table-dark">
+              <tr>
+                <th>Pago #</th>
+                <th>Fecha</th>
+                <th>Proveedor</th>
+                <th>Tipo</th>
+                <th class="text-end">Monto Total</th>
+                <th class="text-end">Asignado</th>
+                <th class="text-end">Disponible</th>
+                <th>Usuario</th>
+                <th class="text-center">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for pago in pagos %}
+              <tr>
+                <td>
+                  <a href="{% url 'pago_proveedor_ver' pago.pk %}" class="text-decoration-none fw-bold">
+                    {{ pago.id }}
+                  </a>
+                </td>
+                <td>{{ pago.fecha|date:'d/m/Y H:i' }}</td>
+                <td>{{ pago.proveedor.nombre }}</td>
+                <td>
+                  <span class="badge bg-{% if pago.tipo == 'efectivo' %}success{% elif pago.tipo == 'transferencia' %}primary{% else %}warning{% endif %}">
+                    {{ pago.get_tipo_display }}
+                  </span>
+                </td>
+                <td class="text-end fw-bold">Gs. {{ pago.monto_total|floatformat:0|intcomma_dot }}</td>
+                <td class="text-end text-success">Gs. {{ pago.monto_asignado|floatformat:0|intcomma_dot }}</td>
+                <td class="text-end text-danger">Gs. {{ pago.monto_disponible|floatformat:0|intcomma_dot }}</td>
+                <td>{{ pago.usuario.username }}</td>
+                <td class="text-center">
+                  <div class="btn-group" role="group">
+                    <a href="{% url 'pago_proveedor_ver' pago.pk %}" class="btn btn-outline-primary btn-sm" title="Ver detalles">
+                      <i class="bi bi-eye"></i>
+                    </a>
+                    {% if pago.monto_disponible > 0 %}
+                      <a href="{% url 'pago_proveedor_asignar' pago.pk %}" class="btn btn-outline-success btn-sm" title="Asignar facturas">
+                        <i class="bi bi-link"></i>
+                      </a>
+                    {% endif %}
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="text-center py-4">
+          <i class="bi bi-inbox text-muted" style="font-size: 3rem;"></i>
+          <p class="text-muted mt-2">No se encontraron pagos con los filtros aplicados.</p>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<style>
+.table th {
+  border-top: none;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.table td {
+  vertical-align: middle;
+  font-size: 0.9rem;
+}
+
+.badge {
+  font-size: 0.8em;
+}
+
+.btn-group .btn {
+  padding: 0.25rem 0.5rem;
+}
+</style>
+{% endblock %} 

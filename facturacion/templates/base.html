@@ -1,0 +1,387 @@
+{% load static %}
+<!doctype html>
+<html lang="es">
+  <!--begin::Head-->
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>{% block title %}Avícola CVA{% endblock %}</title>
+    <!--begin::Accessibility Meta Tags-->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#007bff" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#1a1a1a" media="(prefers-color-scheme: dark)" />
+    <!--end::Accessibility Meta Tags-->
+    <!--begin::Primary Meta Tags-->
+    <meta name="title" content="{% block meta_title %}Avícola CVA - Sistema de Gestión{% endblock %}" />
+    <meta name="author" content="Avícola CVA" />
+    <meta name="description" content="{% block meta_description %}Sistema de gestión empresarial para Avícola CVA{% endblock %}" />
+    <!--end::Primary Meta Tags-->
+    <!--begin::Accessibility Features-->
+    <meta name="supported-color-schemes" content="light dark" />
+    <!--end::Accessibility Features-->
+    <!--begin::Fonts-->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@fontsource/source-sans-3@5.0.12/index.css"
+      integrity="sha256-tXJfXfp6Ewt1ilPzLDtQnJV4hclT9XuaZUKyUvmyr+Q="
+      crossorigin="anonymous"
+      media="print"
+      onload="this.media='all'"
+    />
+    <!--end::Fonts-->
+    <!--begin::Third Party Plugin(OverlayScrollbars)-->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/overlayscrollbars@2.11.0/styles/overlayscrollbars.min.css"
+      crossorigin="anonymous"
+    />
+    <!--end::Third Party Plugin(OverlayScrollbars)-->
+    <!--begin::Third Party Plugin(Bootstrap Icons)-->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css"
+      crossorigin="anonymous"
+    />
+    <!--end::Third Party Plugin(Bootstrap Icons)-->
+    <!--begin::Bootstrap CSS-->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN"
+      crossorigin="anonymous"
+    />
+    <!--end::Bootstrap CSS-->
+    <!--begin::Required Plugin(AdminLTE)-->
+    <link rel="stylesheet" href="{% static 'AdminLTE/dist/css/adminlte.css' %}" />
+    <!--end::Required Plugin(AdminLTE)-->
+    <!-- apexcharts -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/apexcharts@3.37.1/dist/apexcharts.css"
+      crossorigin="anonymous"
+    />
+    <!--begin::Custom CSS-->
+    {% load static %}
+    {% load humanize custom_filters %}
+    
+    <!-- Cargar tema dinámicamente -->
+    {% with tema_actual=configuracion_sistema.tema_visual|default:"azul" %}
+        {% if tema_actual == "azul" %}
+            <link rel="stylesheet" href="{% static 'css/temas/tema-azul.css' %}" />
+        {% elif tema_actual == "oscuro" %}
+            <link rel="stylesheet" href="{% static 'css/temas/tema-oscuro.css' %}" />
+        {% elif tema_actual == "minimalista" %}
+            <link rel="stylesheet" href="{% static 'css/temas/tema-minimalista.css' %}" />
+        {% else %}
+            <link rel="stylesheet" href="{% static 'css/temas/tema-azul.css' %}" />
+        {% endif %}
+    {% endwith %}
+    <!--end::Custom CSS-->
+    {% block extra_css %}{% endblock %}
+  </head>
+  <body class="layout-fixed sidebar-expand-lg sidebar-open bg-body-tertiary">
+    <!--begin::App Wrapper-->
+    <div class="app-wrapper">
+      <!--begin::Header-->
+      <nav class="app-header navbar navbar-expand bg-body">
+        <!--begin::Container-->
+        <div class="container-fluid">
+          <!--begin::Start Navbar Links-->
+          <ul class="navbar-nav">
+            <li class="nav-item">
+              <a class="nav-link" data-lte-toggle="sidebar" href="#" role="button">
+                <i class="bi bi-list"></i>
+              </a>
+            </li>
+          </ul>
+          <!--end::Start Navbar Links-->
+          <!--begin::End Navbar Links-->
+          <ul class="navbar-nav ms-auto">
+            <!--begin::Navbar Search-->
+            <li class="nav-item">
+              <a class="nav-link" data-widget="navbar-search" href="#" role="button">
+                <i class="bi bi-search"></i>
+              </a>
+            </li>
+            <!--end::Navbar Search-->
+            <!--begin::Notifications Dropdown Menu-->
+            <li class="nav-item dropdown">
+              <a class="nav-link" data-bs-toggle="dropdown" href="#">
+                <i class="bi bi-bell-fill"></i>
+                <span class="navbar-badge badge text-bg-danger">{{ total_alertas|default:0 }}</span>
+              </a>
+              <div class="dropdown-menu dropdown-menu-lg dropdown-menu-end">
+                <span class="dropdown-item dropdown-header">{{ total_alertas|default:0 }} Alertas</span>
+                <div class="dropdown-divider"></div>
+                {% if total_alertas > 0 %}
+                  {% if alertas.stock_bajo %}
+                    <a href="{% url 'productos_list' %}?estado=critico" class="dropdown-item">
+                      <i class="bi bi-exclamation-triangle text-danger me-2"></i> 
+                      {{ alertas.stock_bajo.count }} productos con stock bajo
+                    </a>
+                  {% endif %}
+                  {% if alertas.agotados %}
+                    <a href="{% url 'productos_list' %}?estado=agotado" class="dropdown-item">
+                      <i class="bi bi-x-circle text-danger me-2"></i> 
+                      {{ alertas.agotados.count }} productos agotados
+                    </a>
+                  {% endif %}
+                  {% if alertas.facturas_vencidas %}
+                    <a href="{% url 'factura_list' %}?estado=pendiente" class="dropdown-item">
+                      <i class="bi bi-calendar-x text-danger me-2"></i> 
+                      {{ alertas.facturas_vencidas.count }} facturas vencidas
+                    </a>
+                  {% endif %}
+                  <div class="dropdown-divider"></div>
+                  <a href="{% url 'notificaciones_list' %}" class="dropdown-item dropdown-footer">
+                    <i class="bi bi-bell me-2"></i> Ver Todas las Alertas
+                  </a>
+                {% else %}
+                  <a href="#" class="dropdown-item">
+                    <i class="bi bi-check-circle text-success me-2"></i> No hay alertas pendientes
+                  </a>
+                {% endif %}
+              </div>
+            </li>
+            <!--end::Notifications Dropdown Menu-->
+            <!--begin::Fullscreen Toggle-->
+            <li class="nav-item">
+              <a class="nav-link" href="#" data-lte-toggle="fullscreen">
+                <i data-lte-icon="maximize" class="bi bi-arrows-fullscreen"></i>
+                <i data-lte-icon="minimize" class="bi bi-fullscreen-exit" style="display: none"></i>
+              </a>
+            </li>
+            <!--end::Fullscreen Toggle-->
+            <!--begin::User Menu Dropdown-->
+            <li class="nav-item dropdown user-menu">
+              <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
+                <img
+                  src="{% static 'img/logo.png' %}"
+                  class="user-image rounded-circle shadow"
+                  alt="User Image"
+                />
+                <span class="d-none d-md-inline">{{ user.username|default:"Usuario" }}</span>
+              </a>
+              <ul class="dropdown-menu dropdown-menu-lg dropdown-menu-end">
+                <!--begin::User Image-->
+                <li class="user-header text-bg-primary">
+                  <img
+                    src="{% static 'img/logo.png' %}"
+                    class="rounded-circle shadow"
+                    alt="User Image"
+                  />
+                  <p>
+                    {{ user.get_full_name|default:user.username|default:"Usuario" }} - Administrador
+                    <small>Miembro desde {{ user.date_joined|date:"M Y"|default:"Nov. 2023" }}</small>
+                  </p>
+                </li>
+                <!--end::User Image-->
+                <!--begin::Menu Body-->
+                <li class="user-body">
+                  <!--begin::Row-->
+                  <div class="row">
+                    <div class="col-3 text-center"><a href="{% url 'dashboard' %}">Inicio</a></div>
+                    <div class="col-3 text-center"><a href="{% url 'productos_list' %}">Productos</a></div>
+                    <div class="col-3 text-center"><a href="{% url 'factura_list' %}">Facturas</a></div>
+                    <div class="col-3 text-center"><a href="{% url 'proveedores_list' %}">Proveedores</a></div>
+                  </div>
+                  <!--end::Row-->
+                </li>
+                <!--end::Menu Body-->
+                <!--begin::Menu Footer-->
+                <li class="user-footer">
+                  <a href="#" class="btn btn-default btn-flat">Perfil</a>
+                  <a href="{% url 'logout' %}" class="btn btn-default btn-flat float-end">Cerrar Sesión</a>
+                </li>
+                <!--end::Menu Footer-->
+              </ul>
+            </li>
+            <!--end::User Menu Dropdown-->
+          </ul>
+          <!--end::End Navbar Links-->
+        </div>
+        <!--end::Container-->
+      </nav>
+      <!--end::Header-->
+      <!--begin::Sidebar-->
+      <aside class="app-sidebar bg-body-secondary shadow" data-bs-theme="dark">
+        <!--begin::Sidebar Brand-->
+        <div class="sidebar-brand">
+          <!--begin::Brand Link-->
+          <a href="{% url 'dashboard' %}" class="brand-link">
+            <!--begin::Brand Image-->
+            <img
+              src="{% static 'img/logo.png' %}"
+              alt="Avícola CVA Logo"
+              class="brand-image opacity-75 shadow"
+            />
+            <!--end::Brand Image-->
+            <!--begin::Brand Text-->
+            <span class="brand-text fw-light">Avícola CVA</span>
+            <!--end::Brand Text-->
+          </a>
+          <!--end::Brand Link-->
+        </div>
+        <!--end::Sidebar Brand-->
+        <!--begin::Sidebar Wrapper-->
+        <div class="sidebar-wrapper">
+          <nav class="mt-2">
+            <!--begin::Sidebar Menu-->
+                         <ul
+               class="nav sidebar-menu flex-column"
+               data-lte-toggle="treeview"
+               role="navigation"
+               aria-label="Main navigation"
+               data-accordion="false"
+               id="navigation"
+             >
+               <li class="nav-item">
+                 <a href="{% url 'dashboard' %}" class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+                   <i class="nav-icon bi bi-speedometer"></i>
+                   <p>Inicio</p>
+                 </a>
+               </li>
+               <li class="nav-item">
+                 <a href="{% url 'productos_list' %}" class="nav-link {% if 'producto' in request.resolver_match.url_name %}active{% endif %}">
+                   <i class="nav-icon bi bi-box-seam"></i>
+                   <p>Productos</p>
+                 </a>
+               </li>
+               <li class="nav-item">
+                 <a href="{% url 'proveedores_list' %}" class="nav-link {% if 'proveedor' in request.resolver_match.url_name %}active{% endif %}">
+                   <i class="nav-icon bi bi-people"></i>
+                   <p>Proveedores</p>
+                 </a>
+               </li>
+              <li class="nav-item">
+                <a href="{% url 'factura_list' %}" class="nav-link {% if 'factura' in request.resolver_match.url_name %}active{% endif %}">
+                  <i class="nav-icon bi bi-receipt"></i>
+                  <p>Facturas</p>
+                </a>
+              </li>
+
+              <li class="nav-item">
+                <a href="{% url 'stock_movimientos' %}" class="nav-link {% if 'stock' in request.resolver_match.url_name %}active{% endif %}">
+                  <i class="nav-icon bi bi-arrow-left-right"></i>
+                  <p>Movimientos de Stock</p>
+                </a>
+              </li>
+              <li class="nav-header">ADMINISTRACIÓN</li>
+              <li class="nav-item">
+                <a href="{% url 'configuracion_panel' %}" class="nav-link {% if 'configuracion' in request.resolver_match.url_name %}active{% endif %}">
+                  <i class="nav-icon bi bi-gear"></i>
+                  <p>Configuración</p>
+                </a>
+              </li>
+
+              <li class="nav-item">
+                <a href="{% url 'reportes_dashboard' %}" class="nav-link {% if 'reporte' in request.resolver_match.url_name %}active{% endif %}">
+                  <i class="nav-icon bi bi-file-earmark-text"></i>
+                  <p>Reportes</p>
+                </a>
+              </li>
+            </ul>
+            <!--end::Sidebar Menu-->
+          </nav>
+        </div>
+        <!--end::Sidebar Wrapper-->
+      </aside>
+      <!--end::Sidebar-->
+      <!--begin::App Content-->
+      <div class="app-content">
+        <!--begin::Content Header-->
+        <div class="content-header">
+          <!--begin::Container-->
+          <div class="container-fluid">
+            <!--begin::Row-->
+            <div class="row mb-2">
+              <!--begin::Col-->
+              <div class="col-sm-6">
+                                 <h1 class="m-0">{% block page_title %}{% endblock %}</h1>
+              </div>
+              <!--end::Col-->
+              <!--begin::Col-->
+              <div class="col-sm-6">
+                <ol class="breadcrumb float-sm-end">
+                  <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Inicio</a></li>
+                  {% block breadcrumb %}{% endblock %}
+                </ol>
+              </div>
+              <!--end::Col-->
+            </div>
+            <!--end::Row-->
+          </div>
+          <!--end::Container-->
+        </div>
+        <!--end::Content Header-->
+        <!--begin::Content-->
+        <div class="content">
+          <!--begin::Container-->
+          <div class="container-fluid">
+            {% if messages %}
+              {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                  {{ message }}
+                  <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+              {% endfor %}
+            {% endif %}
+            
+            {% block content %}{% endblock %}
+          </div>
+          <!--end::Container-->
+        </div>
+        <!--end::Content-->
+      </div>
+      <!--end::App Content-->
+      <!--begin::Footer-->
+      <footer class="app-footer">
+        <!--begin::To the right-->
+        <div class="float-end d-none d-sm-inline">
+          <strong>Copyright &copy; 2025 <a href="#">Avícola CVA</a>.</strong> Todos los derechos reservados.
+        </div>
+        <!--end::To the right-->
+        <!--begin::Default to the left-->
+        <div>
+          <strong>Sistema de Gestión Empresarial</strong> - Desarrollado GrupoCVA
+        </div>
+        <!--end::Default to the left-->
+      </footer>
+      <!--end::Footer-->
+    </div>
+    <!--end::App Wrapper-->
+    <!--begin::Script-->
+    <!--begin::jQuery (Cargar primero)-->
+    <script
+      src="https://code.jquery.com/jquery-3.7.1.min.js"
+      integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
+      crossorigin="anonymous"
+    ></script>
+    <!--end::jQuery-->
+    <!--begin::Third Party Plugin(OverlayScrollbars)-->
+    <script
+      src="https://cdn.jsdelivr.net/npm/overlayscrollbars@2.11.0/browser/overlayscrollbars.browser.es6.min.js"
+      crossorigin="anonymous"
+    ></script>
+    <!--end::Third Party Plugin(OverlayScrollbars)-->
+    <!--begin::Bootstrap JS-->
+    <script
+      src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
+      integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL"
+      crossorigin="anonymous"
+    ></script>
+    <!--end::Bootstrap JS-->
+    <!--begin::Required Plugin(AdminLTE)-->
+    <script src="{% static 'AdminLTE/dist/js/adminlte.js' %}"></script>
+    <!--end::Required Plugin(AdminLTE)-->
+    <!--begin::Third Party Plugin(ApexCharts)-->
+    <script
+      src="https://cdn.jsdelivr.net/npm/apexcharts@3.37.1/dist/apexcharts.min.js"
+      crossorigin="anonymous"
+    ></script>
+    <!--end::Third Party Plugin(ApexCharts)-->
+    {% block extra_js %}{% endblock %}
+    <!--end::Script-->
+  </body>
+  <!--end::Body-->
+</html> 

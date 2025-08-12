@@ -1,0 +1,162 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load humanize custom_filters %}
+
+{% block title %}Abrir Caja - Avícola CVA{% endblock %}
+
+{% block page_title %}Abrir Caja{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Inicio</a></li>
+<li class="breadcrumb-item"><a href="{% url 'caja_list' %}">Control de Caja</a></li>
+<li class="breadcrumb-item active">Abrir Caja</li>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">
+          <i class="bi bi-cash-coin"></i> Abrir Caja del Día
+        </h3>
+      </div>
+      <div class="card-body">
+        <form method="post">
+          {% csrf_token %}
+          
+          <div class="alert alert-info">
+            <i class="bi bi-info-circle"></i>
+            <strong>Información:</strong> Estás abriendo la caja para el día de hoy ({{ fecha_actual|date:"d/m/Y" }}).
+          </div>
+          
+          <div class="alert alert-info">
+            <i class="bi bi-info-circle"></i>
+            <strong>Instrucciones:</strong> Completa las cantidades de cada denominación para calcular automáticamente el saldo inicial.
+          </div>
+          
+          <div class="row">
+            <div class="col-12">
+              <h5 class="mb-3">
+                <i class="bi bi-cash-stack"></i> Denominaciones de Billetes y Monedas
+              </h5>
+            </div>
+          </div>
+          
+          <div class="row">
+            {% for denominacion in denominaciones %}
+            <div class="col-md-3 col-6 mb-3">
+              <div class="form-group">
+                <label for="denominacion_{{ denominacion.valor }}" class="form-label">
+                  <strong>{{ denominacion.label }}</strong>
+                </label>
+                <input type="number" 
+                       class="form-control denominacion-input" 
+                       id="denominacion_{{ denominacion.valor }}" 
+                       name="denominacion_{{ denominacion.valor }}" 
+                       value="0" 
+                       min="0" 
+                       data-valor="{{ denominacion.valor }}"
+                       placeholder="0">
+                <div class="form-text">
+                  Cantidad: <span class="subtotal-denominacion" id="subtotal_{{ denominacion.valor }}">Gs. 0</span>
+                </div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+          
+          <div class="row mt-3">
+            <div class="col-12">
+              <div class="alert alert-success">
+                <h5 class="mb-2">
+                  <i class="bi bi-calculator"></i> Resumen del Saldo Inicial
+                </h5>
+                <div class="row">
+                  <div class="col-md-6">
+                    <strong>Total Calculado:</strong>
+                    <span class="text-success fs-4" id="total-calculado">Gs. 0</span>
+                  </div>
+                  <div class="col-md-6">
+                    <strong>Total en Números:</strong>
+                    <span class="text-primary fs-4" id="total-numeros">0</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="d-flex justify-content-end gap-2">
+            <a href="{% url 'caja_list' %}" class="btn btn-outline-danger">
+              <i class="bi bi-x-circle"></i> Cancelar
+            </a>
+            <button type="submit" class="btn btn-success">
+              <i class="bi bi-check-circle"></i> Abrir Caja
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Función para formatear números con separadores de miles
+  function formatNumber(num) {
+    return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  }
+  
+  // Función para calcular totales
+  function calcularTotales() {
+    let total = 0;
+    const inputs = document.querySelectorAll('.denominacion-input');
+    
+    inputs.forEach(input => {
+      const cantidad = parseInt(input.value) || 0;
+      const valor = parseInt(input.dataset.valor);
+      const subtotal = cantidad * valor;
+      
+      // Actualizar subtotal de cada denominación
+      const subtotalElement = document.getElementById(`subtotal_${valor}`);
+      if (subtotalElement) {
+        subtotalElement.textContent = `Gs. ${formatNumber(subtotal)}`;
+      }
+      
+      total += subtotal;
+    });
+    
+    // Actualizar totales
+    document.getElementById('total-calculado').textContent = `Gs. ${formatNumber(total)}`;
+    document.getElementById('total-numeros').textContent = formatNumber(total);
+  }
+  
+  // Event listeners para inputs de denominaciones
+  const denominacionInputs = document.querySelectorAll('.denominacion-input');
+  denominacionInputs.forEach(input => {
+    input.addEventListener('input', calcularTotales);
+  });
+  
+  // Calcular totales iniciales
+  calcularTotales();
+  
+  // Validar que al menos una denominación tenga cantidad
+  document.querySelector('form').addEventListener('submit', function(e) {
+    let tieneDenominaciones = false;
+    denominacionInputs.forEach(input => {
+      if (parseInt(input.value) > 0) {
+        tieneDenominaciones = true;
+      }
+    });
+    
+    if (!tieneDenominaciones) {
+      e.preventDefault();
+      alert('Debes ingresar al menos una denominación con cantidad mayor a 0.');
+      return false;
+    }
+  });
+});
+</script>
+{% endblock %}

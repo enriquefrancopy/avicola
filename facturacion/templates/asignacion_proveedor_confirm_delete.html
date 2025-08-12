@@ -1,0 +1,269 @@
+{% extends 'base.html' %}
+{% load humanize custom_filters %}
+
+{% block title %}Eliminar Asignación{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'pagos_proveedores_dashboard' %}">Pagos a Proveedores</a></li>
+<li class="breadcrumb-item"><a href="{% url 'pago_proveedor_ver' asignacion.pago.id %}">Pago #{{ asignacion.pago.id }}</a></li>
+<li class="breadcrumb-item active">Eliminar Asignación</li>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+  <div class="row justify-content-center">
+    <div class="col-md-8">
+      <div class="card shadow border-danger">
+        <div class="card-header bg-danger text-white">
+          <h4 class="mb-0">
+            <i class="bi bi-exclamation-triangle"></i> Confirmar Eliminación de Asignación
+          </h4>
+        </div>
+        <div class="card-body">
+          
+          <div class="alert alert-warning">
+            <i class="bi bi-exclamation-triangle"></i>
+            <strong>¡Atención!</strong> Está a punto de eliminar la asignación del pago #{{ asignacion.pago.id }} a la factura #{{ asignacion.factura.numero }}. Esta acción no se puede deshacer.
+          </div>
+          
+          <!-- Información de la asignación -->
+          <div class="row mb-4">
+            <div class="col-md-6">
+              <div class="card bg-light">
+                <div class="card-header bg-info text-white">
+                  <h6 class="mb-0">
+                    <i class="bi bi-info-circle"></i> Información del Pago
+                  </h6>
+                </div>
+                <div class="card-body">
+                  <div class="row">
+                    <div class="col-6">
+                      <small class="text-muted">ID del Pago:</small><br>
+                      <strong>#{{ asignacion.pago.id }}</strong>
+                    </div>
+                    <div class="col-6">
+                      <small class="text-muted">Fecha:</small><br>
+                      <strong>{{ asignacion.pago.fecha|date:'d/m/Y H:i' }}</strong>
+                    </div>
+                  </div>
+                  <div class="row mt-2">
+                    <div class="col-6">
+                      <small class="text-muted">Proveedor:</small><br>
+                      <strong>{{ asignacion.pago.proveedor.nombre }}</strong>
+                    </div>
+                    <div class="col-6">
+                      <small class="text-muted">Tipo:</small><br>
+                      <span class="badge bg-info">{{ asignacion.pago.get_tipo_display }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="col-md-6">
+              <div class="card bg-danger text-white">
+                <div class="card-header">
+                  <h6 class="mb-0">
+                    <i class="bi bi-receipt"></i> Información de la Factura
+                  </h6>
+                </div>
+                <div class="card-body">
+                  <div class="row">
+                    <div class="col-6">
+                      <small class="text-center d-block">Número:</small>
+                      <strong class="text-center d-block">#{{ asignacion.factura.numero }}</strong>
+                    </div>
+                    <div class="col-6">
+                      <small class="text-center d-block">Fecha:</small>
+                      <strong class="text-center d-block">{{ asignacion.factura.fecha|date:'d/m/Y' }}</strong>
+                    </div>
+                  </div>
+                  <div class="row mt-2">
+                    <div class="col-6">
+                      <small class="text-center d-block">Total:</small>
+                      <strong class="text-center d-block">Gs. {{ asignacion.factura.total|floatformat:0|intcomma_dot }}</strong>
+                    </div>
+                    <div class="col-6">
+                      <small class="text-center d-block">Estado:</small>
+                      <span class="badge bg-{% if asignacion.factura.estado == 'pagada' %}success{% elif asignacion.factura.estado == 'anulada' %}danger{% else %}warning{% endif %}">
+                        {{ asignacion.factura.get_estado_display }}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Impacto financiero -->
+          <div class="row mb-4">
+            <div class="col-md-6">
+              <div class="card bg-success text-white">
+                <div class="card-header">
+                  <h6 class="mb-0">
+                    <i class="bi bi-calculator"></i> Estado Actual del Pago
+                  </h6>
+                </div>
+                <div class="card-body">
+                  <div class="row">
+                    <div class="col-6">
+                      <small class="text-center d-block">Monto Total:</small>
+                      <strong class="text-center d-block fs-4">Gs. {{ asignacion.pago.monto_total|floatformat:0|intcomma_dot }}</strong>
+                    </div>
+                    <div class="col-6">
+                      <small class="text-center d-block">Asignado:</small>
+                      <strong class="text-center d-block fs-4">Gs. {{ asignacion.pago.monto_asignado|floatformat:0|intcomma_dot }}</strong>
+                    </div>
+                  </div>
+                  <div class="row mt-3">
+                    <div class="col-12">
+                      <small class="text-center d-block">Disponible:</small>
+                      <strong class="text-center d-block fs-4 text-danger">
+                        Gs. {{ asignacion.pago.monto_disponible|floatformat:0|intcomma_dot }}
+                      </strong>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="col-md-6">
+              <div class="card bg-danger text-white">
+                <div class="card-header">
+                  <h6 class="mb-0">
+                    <i class="bi bi-arrow-up-circle"></i> Después de Eliminar
+                  </h6>
+                </div>
+                <div class="card-body">
+                  <div class="row">
+                    <div class="col-6">
+                      <small class="text-center d-block">Monto Total:</small>
+                      <strong class="text-center d-block fs-4">Gs. {{ asignacion.pago.monto_total|floatformat:0|intcomma_dot }}</strong>
+                    </div>
+                    <div class="col-6">
+                      <small class="text-center d-block">Asignado:</small>
+                      <strong class="text-center d-block fs-4">Gs. {{ asignacion.pago.monto_asignado|sub:asignacion.monto|floatformat:0|intcomma_dot }}</strong>
+                    </div>
+                  </div>
+                  <div class="row mt-3">
+                    <div class="col-12">
+                      <small class="text-center d-block">Disponible:</small>
+                      <strong class="text-center d-block fs-4 text-danger">
+                        Gs. {{ asignacion.pago.monto_disponible|add:asignacion.monto|floatformat:0|intcomma_dot }}
+                      </strong>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Detalles de la asignación -->
+          <div class="card mb-4">
+            <div class="card-header bg-danger text-white">
+              <h6 class="mb-0">
+                <i class="bi bi-link"></i> Detalles de la Asignación
+              </h6>
+            </div>
+            <div class="card-body">
+              <div class="table-responsive">
+                <table class="table table-striped">
+                  <thead class="table-dark">
+                    <tr>
+                      <th>Concepto</th>
+                      <th>Valor Actual</th>
+                      <th>Valor Después</th>
+                      <th>Diferencia</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><strong>Monto Asignado</strong></td>
+                      <td class="text-success">Gs. {{ asignacion.monto|floatformat:0|intcomma_dot }}</td>
+                      <td class="text-danger">Gs. 0</td>
+                      <td class="text-danger">-Gs. {{ asignacion.monto|floatformat:0|intcomma_dot }}</td>
+                    </tr>
+                    <tr>
+                      <td><strong>Saldo de la Factura</strong></td>
+                      <td class="text-danger">Gs. {{ asignacion.factura.saldo_pendiente|floatformat:0|intcomma_dot }}</td>
+                      <td class="text-danger">Gs. {{ asignacion.factura.saldo_pendiente|add:asignacion.monto|floatformat:0|intcomma_dot }}</td>
+                      <td class="text-danger">+Gs. {{ asignacion.monto|floatformat:0|intcomma_dot }}</td>
+                    </tr>
+                    <tr>
+                      <td><strong>Saldo del Proveedor</strong></td>
+                      <td class="text-danger">Gs. {{ asignacion.pago.proveedor.saldo|floatformat:0|intcomma_dot }}</td>
+                      <td class="text-danger">Gs. {{ asignacion.pago.proveedor.saldo|add:asignacion.monto|floatformat:0|intcomma_dot }}</td>
+                      <td class="text-danger">+Gs. {{ asignacion.monto|floatformat:0|intcomma_dot }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- Confirmación -->
+          <div class="alert alert-danger">
+            <h6 class="alert-heading">
+              <i class="bi bi-exclamation-triangle"></i> Consecuencias de esta acción:
+            </h6>
+            <ul class="mb-0">
+              <li>Se eliminará la asignación de Gs. {{ asignacion.monto|floatformat:0|intcomma_dot }} a la factura #{{ asignacion.factura.numero }}</li>
+              <li>El saldo de la factura aumentará en Gs. {{ asignacion.monto|floatformat:0|intcomma_dot }}</li>
+              <li>El saldo del proveedor aumentará en Gs. {{ asignacion.monto|floatformat:0|intcomma_dot }}</li>
+              <li>El monto disponible del pago aumentará en Gs. {{ asignacion.monto|floatformat:0|intcomma_dot }}</li>
+              <li>Esta acción no se puede deshacer</li>
+            </ul>
+          </div>
+
+          <!-- Botones de acción -->
+          <div class="row">
+            <div class="col-12 text-center">
+              <form method="post" class="d-inline">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger btn-lg me-3">
+                  <i class="bi bi-trash"></i> Sí, Eliminar Asignación
+                </button>
+              </form>
+              <a href="{% if request.GET.next %}{{ request.GET.next }}{% else %}{% url 'pago_proveedor_ver' asignacion.pago.id %}{% endif %}" class="btn btn-secondary btn-lg">
+                <i class="bi bi-x-circle"></i> Cancelar
+              </a>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.card {
+  border-radius: 0.5rem;
+  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+.table th {
+  border-top: none;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.table td {
+  vertical-align: middle;
+  font-size: 0.9rem;
+}
+
+.badge {
+  font-size: 0.8em;
+}
+
+.fs-4 {
+  font-size: 1.5rem !important;
+}
+
+.btn-lg {
+  padding: 0.75rem 1.5rem;
+  font-size: 1.1rem;
+}
+</style>
+{% endblock %} 

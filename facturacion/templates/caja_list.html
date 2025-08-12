@@ -1,0 +1,168 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load humanize custom_filters %}
+
+{% block title %}Control de Caja - Avícola CVA{% endblock %}
+
+{% block page_title %}Control de Caja{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Inicio</a></li>
+<li class="breadcrumb-item active">Control de Caja</li>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h3 class="card-title">Gestión de Cajas</h3>
+        <div class="d-flex gap-2">
+          {% if not caja_actual %}
+            <a href="{% url 'caja_abrir' %}" class="btn btn-success">
+              <i class="bi bi-cash-coin"></i> Abrir Caja
+            </a>
+          {% else %}
+            <a href="{% url 'caja_ver' caja_actual.id %}" class="btn btn-primary">
+              <i class="bi bi-eye"></i> Ver Caja Actual
+            </a>
+          {% endif %}
+          <a href="{% url 'reporte_caja' %}" class="btn btn-info">
+            <i class="bi bi-graph-up"></i> Reporte
+          </a>
+        </div>
+      </div>
+      <div class="card-body">
+        <!-- Estadísticas -->
+        <div class="row mb-4">
+          <div class="col-lg-3 col-6">
+            <div class="small-box bg-info">
+              <div class="inner">
+                <h3>{{ total_cajas }}</h3>
+                <p>Total de Cajas</p>
+              </div>
+              <div class="icon">
+                <i class="bi bi-cash-stack"></i>
+              </div>
+            </div>
+          </div>
+          <div class="col-lg-3 col-6">
+            <div class="small-box bg-success">
+              <div class="inner">
+                <h3>{{ cajas_cerradas }}</h3>
+                <p>Cajas Cerradas</p>
+              </div>
+              <div class="icon">
+                <i class="bi bi-check-circle"></i>
+              </div>
+            </div>
+          </div>
+          <div class="col-lg-3 col-6">
+            <div class="small-box bg-warning">
+              <div class="inner">
+                <h3>{{ cajas_abiertas }}</h3>
+                <p>Cajas Abiertas</p>
+              </div>
+              <div class="icon">
+                <i class="bi bi-exclamation-triangle"></i>
+              </div>
+            </div>
+          </div>
+          <div class="col-lg-3 col-6">
+            <div class="small-box bg-primary">
+              <div class="inner">
+                <h3>{% if caja_actual %}Sí{% else %}No{% endif %}</h3>
+                <p>Caja de Hoy</p>
+              </div>
+              <div class="icon">
+                <i class="bi bi-calendar-check"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tabla de cajas -->
+        <div class="table-responsive">
+          <table class="table table-striped">
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Saldo Inicial</th>
+                <th>Saldo Final</th>
+                <th>Saldo Real</th>
+                <th>Diferencia</th>
+                <th>Estado</th>
+                <th>Usuario Apertura</th>
+                <th>Usuario Cierre</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for caja in cajas %}
+              <tr>
+                <td>{{ caja.fecha|date:"d/m/Y" }}</td>
+                <td>Gs. {{ caja.saldo_inicial|intcomma_dot }}</td>
+                <td>Gs. {{ caja.saldo_final|intcomma_dot }}</td>
+                <td>
+                  {% if caja.cerrada %}
+                    Gs. {{ caja.saldo_real|intcomma_dot }}
+                  {% else %}
+                    <span class="text-muted">-</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if caja.cerrada %}
+                    {% if caja.diferencia == 0 %}
+                      <span class="badge bg-success">Sin diferencia</span>
+                    {% elif caja.diferencia > 0 %}
+                      <span class="badge bg-warning">+Gs. {{ caja.diferencia|intcomma_dot }}</span>
+                    {% else %}
+                      <span class="badge bg-danger">Gs. {{ caja.diferencia|intcomma_dot }}</span>
+                    {% endif %}
+                  {% else %}
+                    <span class="text-muted">-</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if caja.cerrada %}
+                    <span class="badge bg-success">Cerrada</span>
+                  {% else %}
+                    <span class="badge bg-warning">Abierta</span>
+                  {% endif %}
+                </td>
+                <td>{{ caja.usuario_apertura.username }}</td>
+                <td>
+                  {% if caja.usuario_cierre %}
+                    {{ caja.usuario_cierre.username }}
+                  {% else %}
+                    <span class="text-muted">-</span>
+                  {% endif %}
+                </td>
+                <td>
+                  <div class="btn-group" role="group">
+                    <a href="{% url 'caja_ver' caja.id %}" class="btn btn-sm btn-primary">
+                      <i class="bi bi-eye"></i>
+                    </a>
+                    {% if not caja.cerrada %}
+                      <a href="{% url 'caja_cerrar' caja.id %}" class="btn btn-sm btn-danger">
+                        <i class="bi bi-lock"></i>
+                      </a>
+                    {% endif %}
+                  </div>
+                </td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="9" class="text-center text-muted">
+                  No hay cajas registradas
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

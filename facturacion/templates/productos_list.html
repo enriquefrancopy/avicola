@@ -1,0 +1,463 @@
+{% extends "base.html" %}
+{% load static %}
+{% load humanize custom_filters %}
+
+{% block title %}Productos - Avícola CVA{% endblock %}
+
+{% block page_title %}{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item active">Productos</li>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+  <div class="card shadow">
+         <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+               <h4 class="mb-0">
+          <i class="bi bi-box-seam"></i> 
+          Gestión de Productos
+        </h4>
+      <div class="d-flex ms-auto justify-content-end">
+        <button class="btn btn-outline-light me-2" type="button" data-bs-toggle="collapse" data-bs-target="#filtros-productos" aria-expanded="false">
+          <i class="bi bi-funnel"></i> Filtros
+        </button>
+        <a href="{% url 'exportar_productos_excel' %}?{{ request.GET.urlencode }}" class="btn btn-outline-light me-2" title="Exportar a Excel">
+          <i class="bi bi-file-earmark-excel"></i> Exportar
+        </a>
+        <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalAgregarProducto">
+          <i class="bi bi-plus-circle"></i> Nuevo Producto
+        </button>
+      </div>
+    </div>
+    <div class="card-body">
+      <!-- Filtros -->
+      <div class="collapse mb-3" id="filtros-productos">
+        <div class="card card-body bg-light border border-primary">
+          <form class="row g-3" method="get">
+            <div class="col-md-4">
+              <input type="text" name="q" class="form-control" placeholder="Buscar producto..." value="{{ request.GET.q }}">
+            </div>
+                         <div class="col-md-3">
+               <select name="estado" class="form-select">
+                 <option value="">Todos los estados</option>
+                 <option value="normal" {% if request.GET.estado == 'normal' %}selected{% endif %}>Stock Normal</option>
+                 <option value="minimo" {% if request.GET.estado == 'minimo' %}selected{% endif %}>Stock Mínimo</option>
+                 <option value="critico" {% if request.GET.estado == 'critico' %}selected{% endif %}>Stock Crítico</option>
+               </select>
+             </div>
+             
+            <div class="col-md-3">
+              <button type="submit" class="btn btn-outline-primary w-100"><i class="bi bi-search"></i> Buscar</button>
+            </div>
+            <div class="col-md-2">
+              <a href="{% url 'productos_list' %}" class="btn btn-outline-secondary w-100"><i class="bi bi-arrow-clockwise"></i> Limpiar</a>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <div class="table-responsive">
+        <table class="table table-striped table-hover table-bordered">
+          <thead class="table-dark">
+            <tr>
+              <th>Código</th>
+              <th>Nombre</th>
+              <th style="width: 100px;" class="text-center">Stock</th>
+              <th style="width: 120px;" class="text-center">Stock Mínimo</th>
+              <th style="width: 120px;" class="text-end">Costo</th>
+              <th style="width: 120px;" class="text-end">Precio</th>
+              <th style="width: 80px;" class="text-center">IVA</th>
+              <th style="width: 120px;" class="text-center">Estado</th>
+              <th style="width: 200px;" class="text-center">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for producto in productos %}
+            <tr class="align-middle">
+              <td>
+                <span class="badge bg-secondary">{{ producto.codigo }}</span>
+              </td>
+              <td>
+                <strong>{{ producto.nombre }}</strong>
+              </td>
+              <td class="text-center">
+                <span class="fw-bold {% if producto.stock <= producto.stock_minimo %}text-danger{% else %}text-success{% endif %}">
+                  {{ producto.stock }}
+                </span>
+              </td>
+              <td class="text-center">{{ producto.stock_minimo }}</td>
+              <td class="text-end">
+                <span class="text-muted">Gs. {{ producto.costo|intcomma_dot }}</span>
+              </td>
+              <td class="text-end">
+                <span class="fw-bold">Gs. {{ producto.precio|intcomma_dot }}</span>
+              </td>
+              <td class="text-center">{{ producto.iva }}%</td>
+                             <td class="text-center">
+                 {% if producto.activo %}
+                   {% with stock_diff=producto.stock|sub:producto.stock_minimo %}
+                   <span class="badge {% if stock_diff < 0 %}bg-danger{% elif stock_diff == 0 %}bg-danger{% else %}bg-success{% endif %}">
+                     {% if stock_diff < 0 %}
+                       Stock Crítico
+                     {% elif stock_diff == 0 %}
+                       Stock Mínimo
+                     {% else %}
+                       Stock Normal
+                     {% endif %}
+                   </span>
+                   {% endwith %}
+                 {% else %}
+                   <span class="badge bg-secondary">Desactivado</span>
+                 {% endif %}
+               </td>
+                                                           <td class="text-center">
+                  <div class="btn-group" role="group">
+                    <button type="button" 
+                            class="btn btn-outline-primary btn-sm" 
+                            data-bs-toggle="modal" 
+                            data-bs-target="#modalEditarProducto{{ producto.id }}"
+                            title="Editar producto">
+                      <i class="bi bi-pencil"></i>
+                    </button>
+                    {% if producto.activo %}
+                      <button type="button" 
+                              class="btn btn-outline-success btn-sm" 
+                              data-bs-toggle="modal" 
+                              data-bs-target="#modalAjustarStock{{ producto.id }}"
+                              title="Ajustar stock">
+                        <i class="bi bi-arrow-left-right"></i>
+                      </button>
+                      <button type="button" 
+                              class="btn btn-outline-danger btn-sm" 
+                              data-bs-toggle="modal" 
+                              data-bs-target="#modalEliminarProducto{{ producto.id }}"
+                              title="Desactivar producto">
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    {% else %}
+                      <button type="button" 
+                              class="btn btn-outline-success btn-sm" 
+                              data-bs-toggle="modal" 
+                              data-bs-target="#modalReactivarProducto{{ producto.id }}"
+                              title="Reactivar producto">
+                        <i class="bi bi-arrow-clockwise"></i>
+                      </button>
+                    {% endif %}
+                  </div>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="9" class="text-center py-4">
+                <div class="text-muted">
+                  <i class="bi bi-box-seam fs-1"></i>
+                  <p class="mt-2">No hay productos registrados</p>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modales para cada producto -->
+{% for producto in productos %}
+<!-- Modal Editar Producto -->
+<div class="modal fade" id="modalEditarProducto{{ producto.id }}" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="post" action="{% url 'producto_editar' producto.id %}">
+        {% csrf_token %}
+        <div class="modal-header">
+          <h5 class="modal-title">Editar Producto</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="codigo{{ producto.id }}" class="form-label">Código</label>
+            <input type="text" class="form-control" id="codigo{{ producto.id }}" name="codigo" value="{{ producto.codigo }}" required>
+          </div>
+          <div class="mb-3">
+            <label for="nombre{{ producto.id }}" class="form-label">Nombre</label>
+            <input type="text" class="form-control" id="nombre{{ producto.id }}" name="nombre" value="{{ producto.nombre }}" required>
+          </div>
+          <div class="mb-3">
+            <label for="costo{{ producto.id }}" class="form-label">Costo</label>
+            <input type="number" class="form-control" id="costo{{ producto.id }}" name="costo" value="{{ producto.costo }}" required>
+          </div>
+          <div class="mb-3">
+            <label for="precio{{ producto.id }}" class="form-label">Precio</label>
+            <input type="number" class="form-control" id="precio{{ producto.id }}" name="precio" value="{{ producto.precio }}" required>
+          </div>
+          <div class="mb-3">
+            <label for="stock_minimo{{ producto.id }}" class="form-label">Stock Mínimo</label>
+            <input type="number" class="form-control" id="stock_minimo{{ producto.id }}" name="stock_minimo" value="{{ producto.stock_minimo }}" required>
+          </div>
+          <div class="mb-3">
+            <div class="alert alert-info">
+              <i class="bi bi-info-circle"></i>
+              <strong>Stock actual: {{ producto.stock }} unidades</strong><br>
+              <small>Para modificar el stock, use el botón "Ajustar Stock" que registra los movimientos en el historial.</small>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label for="iva{{ producto.id }}" class="form-label">IVA (%)</label>
+            <select class="form-select" id="iva{{ producto.id }}" name="iva" required>
+              <option value="5" {% if producto.iva == 5 %}selected{% endif %}>5%</option>
+              <option value="10" {% if producto.iva == 10 %}selected{% endif %}>10%</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="activo{{ producto.id }}" name="activo" {% if producto.activo %}checked{% endif %}>
+              <label class="form-check-label" for="activo{{ producto.id }}">
+                Producto Activo
+              </label>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Ajustar Stock -->
+<div class="modal fade" id="modalAjustarStock{{ producto.id }}" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="post" action="{% url 'producto_ajustar_stock' producto.id %}">
+        {% csrf_token %}
+        <div class="modal-header">
+          <h5 class="modal-title">Ajustar Stock - {{ producto.nombre }}</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="tipo_movimiento{{ producto.id }}" class="form-label">Tipo de Movimiento</label>
+            <select class="form-select" id="tipo_movimiento{{ producto.id }}" name="tipo_movimiento">
+              <option value="entrada">Entrada</option>
+              <option value="salida">Salida</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label for="cantidad{{ producto.id }}" class="form-label">Cantidad</label>
+            <input type="number" class="form-control" id="cantidad{{ producto.id }}" name="cantidad" min="1">
+          </div>
+          <div class="mb-3">
+            <label for="observacion{{ producto.id }}" class="form-label">Observación</label>
+            <textarea class="form-control" id="observacion{{ producto.id }}" name="observacion" rows="3"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-success">Registrar Movimiento</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+ <!-- Modal Desactivar Producto -->
+ <div class="modal fade" id="modalEliminarProducto{{ producto.id }}" tabindex="-1">
+   <div class="modal-dialog">
+     <div class="modal-content">
+       <div class="modal-header">
+         <h5 class="modal-title">Confirmar Desactivación</h5>
+         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+       </div>
+       <div class="modal-body">
+         <div class="alert alert-info">
+           <i class="bi bi-info-circle"></i>
+           <strong>¿Está seguro que desea desactivar el producto "{{ producto.nombre }}"?</strong>
+         </div>
+         <p>El producto será desactivado y no aparecerá en las listas activas, pero permanecerá en la base de datos para mantener el historial.</p>
+         {% if producto.stock > 0 %}
+           <div class="alert alert-warning">
+             <i class="bi bi-exclamation-triangle"></i>
+             <strong>Stock disponible: {{ producto.stock }} unidades</strong>
+           </div>
+         {% endif %}
+         <p class="text-info"><small>Esta acción es reversible. Puede reactivar el producto editándolo más tarde.</small></p>
+       </div>
+       <div class="modal-footer">
+         <button type="button" class="btn btn-outline-danger" data-bs-dismiss="modal">Cancelar</button>
+         <form method="post" action="{% url 'producto_eliminar' producto.id %}" class="d-inline">
+           {% csrf_token %}
+           <button type="submit" class="btn btn-danger">Desactivar</button>
+         </form>
+       </div>
+     </div>
+   </div>
+ </div>
+
+ <!-- Modal Reactivar Producto -->
+ <div class="modal fade" id="modalReactivarProducto{{ producto.id }}" tabindex="-1">
+   <div class="modal-dialog">
+     <div class="modal-content">
+       <div class="modal-header">
+         <h5 class="modal-title">Confirmar Reactivación</h5>
+         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+       </div>
+       <div class="modal-body">
+         <div class="alert alert-success">
+           <i class="bi bi-check-circle"></i>
+           <strong>¿Está seguro que desea reactivar el producto "{{ producto.nombre }}"?</strong>
+         </div>
+         <p>El producto será reactivado y volverá a aparecer en las listas activas.</p>
+         <p class="text-success"><small>Esta acción hará que el producto esté disponible nuevamente en el sistema.</small></p>
+       </div>
+       <div class="modal-footer">
+         <button type="button" class="btn btn-outline-danger" data-bs-dismiss="modal">Cancelar</button>
+         <form method="post" action="{% url 'producto_reactivar' producto.id %}" class="d-inline">
+           {% csrf_token %}
+           <button type="submit" class="btn btn-success">Reactivar</button>
+         </form>
+       </div>
+     </div>
+   </div>
+ </div>
+{% endfor %}
+
+<!-- Modal Agregar Producto -->
+<div class="modal fade" id="modalAgregarProducto" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="post" action="{% url 'producto_crear' %}">
+        {% csrf_token %}
+        <div class="modal-header">
+          <h5 class="modal-title">Agregar Nuevo Producto</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="codigo" class="form-label">Código</label>
+            <input type="text" class="form-control" id="codigo" name="codigo" required>
+          </div>
+          <div class="mb-3">
+            <label for="nombre" class="form-label">Nombre</label>
+            <input type="text" class="form-control" id="nombre" name="nombre" required>
+          </div>
+          <div class="mb-3">
+            <label for="costo" class="form-label">Costo</label>
+            <input type="number" class="form-control" id="costo" name="costo" value="0" required>
+          </div>
+          <div class="mb-3">
+            <label for="stock" class="form-label">Stock Inicial</label>
+            <input type="number" class="form-control" id="stock" name="stock" value="0" required>
+          </div>
+          <div class="mb-3">
+            <label for="stock_minimo" class="form-label">Stock Mínimo</label>
+            <input type="number" class="form-control" id="stock_minimo" name="stock_minimo" required>
+          </div>
+          <div class="mb-3">
+            <label for="precio" class="form-label">Precio</label>
+            <input type="number" class="form-control" id="precio" name="precio" required>
+          </div>
+          <div class="mb-3">
+            <label for="iva" class="form-label">IVA (%)</label>
+            <select class="form-select" id="iva" name="iva" required>
+              <option value="5">5%</option>
+              <option value="10" selected>10%</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="activo" name="activo" checked>
+              <label class="form-check-label" for="activo">
+                Producto Activo
+              </label>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Guardar Producto</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Convertir código de producto a mayúsculas automáticamente
+  function convertirAMayusculas(input) {
+    if (!input) return;
+    
+    input.addEventListener('input', function() {
+      this.value = this.value.toUpperCase();
+    });
+    
+    input.addEventListener('blur', function() {
+      this.value = this.value.toUpperCase();
+    });
+  }
+  
+  // Aplicar a todos los campos de código existentes
+  const codigoInputs = document.querySelectorAll('input[id^="codigo"]');
+  codigoInputs.forEach(function(input) {
+    convertirAMayusculas(input);
+  });
+  
+  // Observar cambios en el DOM para detectar modales que se abren
+  const observer = new MutationObserver(function(mutations) {
+    mutations.forEach(function(mutation) {
+      mutation.addedNodes.forEach(function(node) {
+        if (node.nodeType === 1) {
+          const nuevosCodigoInputs = node.querySelectorAll ? node.querySelectorAll('input[id^="codigo"]') : [];
+          nuevosCodigoInputs.forEach(function(input) {
+            convertirAMayusculas(input);
+          });
+        }
+      });
+    });
+  });
+  
+  observer.observe(document.body, {
+    childList: true,
+    subtree: true
+  });
+  
+  // Manejar errores de formulario en modales
+  function manejarErroresFormulario() {
+    const modales = document.querySelectorAll('.modal');
+    modales.forEach(function(modal) {
+      const form = modal.querySelector('form');
+      if (form) {
+        form.addEventListener('submit', function(e) {
+          const requiredFields = form.querySelectorAll('[required]');
+          let hasErrors = false;
+          
+          requiredFields.forEach(function(field) {
+            if (!field.value.trim()) {
+              field.classList.add('is-invalid');
+              hasErrors = true;
+            } else {
+              field.classList.remove('is-invalid');
+            }
+          });
+          
+          if (hasErrors) {
+            e.preventDefault();
+            alert('Por favor complete todos los campos requeridos.');
+          }
+        });
+      }
+    });
+  }
+  
+  // Aplicar manejo de errores
+  manejarErroresFormulario();
+});
+</script>
+{% endblock %}

@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load humanize custom_filters %}
+
+{% block title %}Eliminar Gasto - Avícola CVA{% endblock %}
+
+{% block page_title %}Eliminar Gasto{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Inicio</a></li>
+<li class="breadcrumb-item"><a href="{% url 'caja_list' %}">Control de Caja</a></li>
+<li class="breadcrumb-item"><a href="{% url 'caja_ver' gasto.caja.id %}">Caja {{ gasto.caja.fecha|date:"d/m/Y" }}</a></li>
+<li class="breadcrumb-item active">Eliminar Gasto</li>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">
+          <i class="bi bi-exclamation-triangle text-danger"></i> Confirmar Eliminación
+        </h3>
+      </div>
+      <div class="card-body">
+        <div class="alert alert-danger">
+          <h5 class="mb-2">
+            <i class="bi bi-exclamation-triangle"></i> ¿Estás seguro de que quieres eliminar este gasto?
+          </h5>
+          <p class="mb-0">
+            Esta acción no se puede deshacer y también eliminará el movimiento correspondiente en la caja.
+          </p>
+        </div>
+        
+        <div class="card mb-3">
+          <div class="card-header">
+            <h6 class="mb-0">Detalles del Gasto</h6>
+          </div>
+          <div class="card-body">
+            <div class="row">
+              <div class="col-md-6">
+                <strong>Categoría:</strong><br>
+                {{ gasto.get_categoria_display }}
+              </div>
+              <div class="col-md-6">
+                <strong>Monto:</strong><br>
+                <span class="text-danger">Gs. {{ gasto.monto|intcomma_dot }}</span>
+              </div>
+            </div>
+            <hr>
+            <div class="row">
+              <div class="col-12">
+                <strong>Descripción:</strong><br>
+                {{ gasto.descripcion }}
+              </div>
+            </div>
+            {% if gasto.comprobante %}
+            <hr>
+            <div class="row">
+              <div class="col-12">
+                <strong>Comprobante:</strong><br>
+                {{ gasto.comprobante }}
+              </div>
+            </div>
+            {% endif %}
+            {% if gasto.observacion %}
+            <hr>
+            <div class="row">
+              <div class="col-12">
+                <strong>Observación:</strong><br>
+                {{ gasto.observacion }}
+              </div>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+        
+        <form method="post">
+          {% csrf_token %}
+          <div class="d-flex justify-content-end gap-2">
+            <a href="{% url 'caja_ver' gasto.caja.id %}" class="btn btn-outline-secondary">
+              <i class="bi bi-arrow-left"></i> Cancelar
+            </a>
+            <button type="submit" class="btn btn-danger">
+              <i class="bi bi-trash"></i> Eliminar Gasto
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

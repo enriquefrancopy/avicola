@@ -1,0 +1,287 @@
+{% extends 'base.html' %}
+{% load humanize custom_filters %}
+
+{% block title %}Asignar Facturas al Pago{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'factura_list' %}">Facturas</a></li>
+<li class="breadcrumb-item"><a href="{% url 'pago_ver' pago.pk %}">Pago #{{ pago.id }}</a></li>
+<li class="breadcrumb-item active">Asignar Facturas</li>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+  <div class="card shadow">
+    <div class="card-header bg-primary text-white">
+      <div class="d-flex justify-content-between align-items-center">
+        <h4 class="mb-0">
+          <i class="bi bi-link"></i> Asignar Facturas al Pago #{{ pago.id }}
+        </h4>
+        <div class="d-flex justify-content-end w-100 ms-3">
+          <a href="{% url 'pago_ver' pago.pk %}" class="btn btn-outline-light">
+            <i class="bi bi-arrow-left"></i> Volver al Pago
+          </a>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      
+      <!-- Información del pago -->
+      <div class="row mb-4">
+        <div class="col-md-6">
+          <div class="card bg-light">
+            <div class="card-body">
+              <h6 class="card-title"><i class="bi bi-credit-card"></i> Información del Pago</h6>
+              <div class="row">
+                <div class="col-6">
+                  <small class="text-muted">Monto Total:</small><br>
+                  <strong class="text-success">Gs. {{ pago.monto_total|floatformat:0|intcomma_dot }}</strong>
+                </div>
+                <div class="col-6">
+                  <small class="text-muted">Tipo:</small><br>
+                  <strong>{{ pago.get_tipo_display }}</strong>
+                </div>
+              </div>
+              <div class="row mt-2">
+                <div class="col-6">
+                  <small class="text-muted">Asignado:</small><br>
+                  <strong class="text-info">Gs. {{ pago.monto_asignado|floatformat:0|intcomma_dot }}</strong>
+                </div>
+                <div class="col-6">
+                  <small class="text-muted">Disponible:</small><br>
+                  <strong class="{% if pago.monto_disponible > 0 %}text-danger{% else %}text-success{% endif %}">
+                    Gs. {{ pago.monto_disponible|floatformat:0|intcomma_dot }}
+                  </strong>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="card bg-info text-white">
+            <div class="card-body">
+              <h6 class="card-title">
+                <i class="bi bi-person"></i> 
+                {% if proveedor %}
+                  Proveedor: {{ proveedor.nombre }}
+                {% else %}
+                  Cliente: {{ cliente.nombre }}
+                {% endif %}
+              </h6>
+              <div class="row">
+                <div class="col-6">
+                  <small class="text-center d-block">Facturas Pendientes:</small>
+                  <strong class="text-center d-block">{{ facturas_pendientes.count }}</strong>
+                </div>
+                <div class="col-6">
+                  <small class="text-center d-block">Total Pendiente:</small>
+                  <strong class="text-center d-block">
+                    Gs. {{ total_pendiente|floatformat:0|intcomma_dot }}
+                  </strong>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Formulario de asignación -->
+      {% if facturas_pendientes and pago.monto_disponible > 0 %}
+      <div class="card mb-4">
+        <div class="card-header bg-success text-white">
+          <h6 class="mb-0">
+            <i class="bi bi-plus-circle"></i> Asignar Montos a Facturas
+          </h6>
+        </div>
+        <div class="card-body">
+          <form method="post" id="asignacionForm">
+            {% csrf_token %}
+            
+            <div class="alert alert-info">
+              <i class="bi bi-info-circle"></i> 
+              <strong>Instrucciones:</strong> Asigne montos a las facturas que desea pagar. 
+              El total asignado no puede exceder el monto disponible del pago (Gs. {{ pago.monto_disponible|floatformat:0|intcomma_dot }}).
+            </div>
+            
+            <div class="table-responsive">
+              <table class="table table-striped table-hover">
+                <thead class="table-dark">
+                  <tr>
+                    <th>Seleccionar</th>
+                    <th>Número</th>
+                    <th>Fecha</th>
+                    <th>Total</th>
+                    <th>Pagado</th>
+                    <th>Saldo Pendiente</th>
+                    <th>Monto a Asignar</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for factura in facturas_pendientes %}
+                  <tr>
+                    <td>
+                      <input type="checkbox" name="seleccionar_{{ factura.id }}" 
+                             class="form-check-input factura-checkbox" 
+                             data-factura-id="{{ factura.id }}"
+                             data-saldo="{{ factura.saldo_pendiente }}">
+                    </td>
+                    <td>
+                      <a href="{% url 'factura_ver' factura.pk %}" class="text-decoration-none">
+                        {{ factura.numero }}
+                      </a>
+                    </td>
+                    <td>{{ factura.fecha|date:'d/m/Y' }}</td>
+                    <td class="fw-bold">Gs. {{ factura.total|floatformat:0|intcomma_dot }}</td>
+                    <td class="text-success">Gs. {{ factura.total_pagado|floatformat:0|intcomma_dot }}</td>
+                    <td class="text-danger fw-bold">Gs. {{ factura.saldo_pendiente|floatformat:0|intcomma_dot }}</td>
+                    <td>
+                      <input type="hidden" name="factura_id" value="{{ factura.id }}">
+                      <input type="number" name="monto" 
+                             class="form-control monto-input" 
+                             min="1" 
+                             max="{{ factura.saldo_pendiente }}"
+                             placeholder="0"
+                             disabled>
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+            
+            <div class="row mt-3">
+              <div class="col-md-6">
+                <div class="alert alert-warning">
+                  <strong>Total Asignado:</strong> 
+                  <span id="totalAsignado">Gs. 0</span> / 
+                  <span>Gs. {{ pago.monto_disponible|floatformat:0|intcomma_dot }}</span>
+                </div>
+              </div>
+              <div class="col-md-6 d-flex justify-content-end">
+                <button type="submit" class="btn btn-success" id="btnAsignar" disabled>
+                  <i class="bi bi-check-circle"></i> Asignar Pagos
+                </button>
+                <a href="{% url 'pago_ver' pago.pk %}" class="btn btn-secondary">
+                  <i class="bi bi-x-circle"></i> Cancelar
+                </a>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+      {% elif pago.monto_disponible <= 0 %}
+      <div class="alert alert-success">
+        <i class="bi bi-check-circle"></i> 
+        <strong>¡Pago completamente asignado!</strong> No hay monto disponible para asignar a más facturas.
+      </div>
+      {% else %}
+      <div class="alert alert-info">
+        <i class="bi bi-info-circle"></i> 
+        <strong>No hay facturas pendientes</strong> para asignar a este pago.
+      </div>
+      {% endif %}
+
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const checkboxes = document.querySelectorAll('.factura-checkbox');
+    const montoInputs = document.querySelectorAll('.monto-input');
+    const totalAsignadoSpan = document.getElementById('totalAsignado');
+    const btnAsignar = document.getElementById('btnAsignar');
+    const montoDisponible = {{ pago.monto_disponible }};
+    
+    let totalAsignado = 0;
+    
+    function actualizarTotal() {
+        totalAsignado = 0;
+        montoInputs.forEach(input => {
+            if (input.value && !input.disabled) {
+                totalAsignado += parseInt(input.value) || 0;
+            }
+        });
+        
+        totalAsignadoSpan.textContent = `Gs. ${totalAsignado.toLocaleString()}`;
+        
+        // Habilitar/deshabilitar botón
+        btnAsignar.disabled = totalAsignado === 0 || totalAsignado > montoDisponible;
+        
+        // Cambiar color del total
+        if (totalAsignado > montoDisponible) {
+            totalAsignadoSpan.className = 'text-danger fw-bold';
+        } else if (totalAsignado > 0) {
+            totalAsignadoSpan.className = 'text-success fw-bold';
+        } else {
+            totalAsignadoSpan.className = '';
+        }
+    }
+    
+    checkboxes.forEach((checkbox, index) => {
+        checkbox.addEventListener('change', function() {
+            const montoInput = montoInputs[index];
+            const saldo = parseInt(this.dataset.saldo);
+            
+            if (this.checked) {
+                montoInput.disabled = false;
+                montoInput.value = saldo; // Asignar el saldo completo por defecto
+                montoInput.focus();
+            } else {
+                montoInput.disabled = true;
+                montoInput.value = '';
+            }
+            
+            actualizarTotal();
+        });
+    });
+    
+    montoInputs.forEach(input => {
+        input.addEventListener('input', actualizarTotal);
+    });
+    
+    // Validación del formulario
+    document.getElementById('asignacionForm').addEventListener('submit', function(e) {
+        if (totalAsignado > montoDisponible) {
+            e.preventDefault();
+            alert('El total asignado excede el monto disponible del pago.');
+            return false;
+        }
+        
+        if (totalAsignado === 0) {
+            e.preventDefault();
+            alert('Debe asignar al menos un monto a una factura.');
+            return false;
+        }
+    });
+});
+</script>
+
+<style>
+.form-control:focus {
+  border-color: #80bdff;
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.table th {
+  border-top: none;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.table td {
+  vertical-align: middle;
+  font-size: 0.9rem;
+}
+
+.monto-input:disabled {
+  background-color: #e9ecef;
+  opacity: 0.6;
+}
+
+.form-check-input:checked {
+  background-color: #198754;
+  border-color: #198754;
+}
+</style>
+{% endblock %} 

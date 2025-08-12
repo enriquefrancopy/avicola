@@ -1,0 +1,389 @@
+{% extends 'base.html' %}
+{% load humanize custom_filters %}
+
+{% block title %}Movimientos de Stock - Avícola CVA{% endblock %}
+
+{% block page_title %}{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item active">Movimientos de Stock</li>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="card shadow">
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+            <h4 class="mb-0"><i class="bi bi-arrow-left-right"></i> Movimientos de Stock</h4>
+            <div class="d-flex ms-auto justify-content-end">
+                <button class="btn btn-outline-light me-2" type="button" data-bs-toggle="collapse" data-bs-target="#filtros-stock" aria-expanded="false">
+                  <i class="bi bi-funnel"></i> Filtros
+                </button>
+            </div>
+        </div>
+        <div class="card-body">
+
+      <!-- Filtros -->
+      <div class="collapse mb-3" id="filtros-stock">
+        <div class="card card-body bg-light border border-primary">
+          <form class="row g-3" method="get">
+            <div class="col-md-3">
+              <input type="text" name="q" class="form-control" placeholder="Buscar producto..." value="{{ request.GET.q }}">
+            </div>
+            <div class="col-md-2">
+              <select name="tipo" class="form-select">
+                <option value="">Todos los tipos</option>
+                {% for tipo_valor, tipo_nombre in tipos_movimiento %}
+                  <option value="{{ tipo_valor }}" {% if request.GET.tipo == tipo_valor %}selected{% endif %}>{{ tipo_nombre }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-2">
+              <select name="origen" class="form-select">
+                <option value="">Todos los orígenes</option>
+                {% for origen_valor, origen_nombre in origenes_movimiento %}
+                  <option value="{{ origen_valor }}" {% if request.GET.origen == origen_valor %}selected{% endif %}>{{ origen_nombre }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-2">
+              <div class="input-group">
+                <input type="text" name="desde" class="form-control" id="fecha-desde-stock" placeholder="Desde" value="{{ request.GET.desde }}" readonly>
+                <button class="btn btn-outline-secondary" type="button" onclick="abrirCalendario('fecha-desde-stock')">
+                  <i class="bi bi-calendar3"></i>
+                </button>
+              </div>
+            </div>
+            <div class="col-md-2">
+              <div class="input-group">
+                <input type="text" name="hasta" class="form-control" id="fecha-hasta-stock" placeholder="Hasta" value="{{ request.GET.hasta }}" readonly>
+                <button class="btn btn-outline-secondary" type="button" onclick="abrirCalendario('fecha-hasta-stock')">
+                  <i class="bi bi-calendar3"></i>
+                </button>
+              </div>
+            </div>
+            <div class="col-md-2">
+              <button type="submit" class="btn btn-outline-primary w-100"><i class="bi bi-search"></i> Buscar</button>
+            </div>
+            <div class="col-md-1">
+              <a href="{% url 'stock_movimientos' %}" class="btn btn-outline-secondary w-100"><i class="bi bi-x-circle"></i> Limpiar</a>
+            </div>
+          </form>
+        </div>
+      </div>
+
+    <!-- Tabla de movimientos -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">
+                <i class="bi bi-list-ul"></i> 
+                Movimientos de Stock 
+                <span class="badge bg-primary">{{ movimientos.count }}</span>
+            </h5>
+        </div>
+        <div class="card-body">
+            {% if movimientos %}
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Producto</th>
+                            <th>Tipo</th>
+                            <th>Origen</th>
+                            <th>Cantidad</th>
+                            <th>Stock Anterior</th>
+                            <th>Stock Nuevo</th>
+                            <th>Usuario</th>
+                            <th>Referencia</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for movimiento in movimientos %}
+                        <tr>
+                            <td>
+                                <small class="text-muted">{{ movimiento.fecha|date:"d/m/Y" }}</small><br>
+                                <small class="text-muted">{{ movimiento.fecha|date:"H:i" }}</small>
+                            </td>
+                            <td>
+                                <strong>{{ movimiento.producto.nombre }}</strong><br>
+                                <small class="text-muted">{{ movimiento.producto.codigo }}</small>
+                            </td>
+                            <td>
+                                {% if movimiento.tipo == 'entrada' %}
+                                    <span class="badge bg-success">Entrada</span>
+                                {% elif movimiento.tipo == 'salida' %}
+                                    <span class="badge bg-danger">Salida</span>
+                                {% elif movimiento.tipo == 'ajuste' %}
+                                    <span class="badge bg-danger">Ajuste</span>
+                                {% elif movimiento.tipo == 'inicial' %}
+                                    <span class="badge bg-info">Inicial</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <small class="text-muted">{{ movimiento.get_origen_display }}</small>
+                            </td>
+                            <td>
+                                {% if movimiento.tipo == 'entrada' %}
+                                    <span class="text-success">+{{ movimiento.cantidad }}</span>
+                                {% elif movimiento.tipo == 'salida' %}
+                                    <span class="text-danger">-{{ movimiento.cantidad }}</span>
+                                {% else %}
+                                    <span class="text-danger">{{ movimiento.cantidad }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge bg-secondary">{{ movimiento.stock_anterior }}</span>
+                            </td>
+                            <td>
+                                <span class="badge bg-primary">{{ movimiento.stock_nuevo }}</span>
+                            </td>
+                            <td>
+                                <small class="text-muted">{{ movimiento.usuario.username }}</small>
+                            </td>
+                            <td>
+                                {% if movimiento.referencia %}
+                                    <small class="text-muted">{{ movimiento.referencia }}</small>
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Paginación -->
+            {% if page_obj.has_other_pages %}
+            <nav aria-label="Paginación de movimientos">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page=1{% if q %}&q={{ q }}{% endif %}{% if tipo %}&tipo={{ tipo }}{% endif %}{% if desde %}&desde={{ desde }}{% endif %}{% if hasta %}&hasta={{ hasta }}{% endif %}">
+                                <i class="bi bi-chevron-double-left"></i>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if q %}&q={{ q }}{% endif %}{% if tipo %}&tipo={{ tipo }}{% endif %}{% if desde %}&desde={{ desde }}{% endif %}{% if hasta %}&hasta={{ hasta }}{% endif %}">
+                                <i class="bi bi-chevron-left"></i>
+                            </a>
+                        </li>
+                    {% endif %}
+
+                    {% for num in page_obj.paginator.page_range %}
+                        {% if page_obj.number == num %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ num }}</span>
+                            </li>
+                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ num }}{% if q %}&q={{ q }}{% endif %}{% if tipo %}&tipo={{ tipo }}{% endif %}{% if desde %}&desde={{ desde }}{% endif %}{% if hasta %}&hasta={{ hasta }}{% endif %}">{{ num }}</a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if q %}&q={{ q }}{% endif %}{% if tipo %}&tipo={{ tipo }}{% endif %}{% if desde %}&desde={{ desde }}{% endif %}{% if hasta %}&hasta={{ hasta }}{% endif %}">
+                                <i class="bi bi-chevron-right"></i>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if q %}&q={{ q }}{% endif %}{% if tipo %}&tipo={{ tipo }}{% endif %}{% if desde %}&desde={{ desde }}{% endif %}{% if hasta %}&hasta={{ hasta }}{% endif %}">
+                                <i class="bi bi-chevron-double-right"></i>
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+
+            {% else %}
+            <div class="text-center py-5">
+                <i class="bi bi-inbox display-1 text-muted"></i>
+                <h4 class="text-muted mt-3">No se encontraron movimientos</h4>
+                <p class="text-muted">No hay movimientos de stock que coincidan con los filtros aplicados.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+</div>
+
+<!-- Modal Calendario -->
+<div class="modal fade" id="modalCalendario" tabindex="-1">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Seleccionar Fecha</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body text-center">
+        <div class="row mb-3">
+          <div class="col-6">
+            <label for="anio" class="form-label">Año</label>
+            <select class="form-select" id="anio">
+              <option value="2020">2020</option>
+              <option value="2021">2021</option>
+              <option value="2022">2022</option>
+              <option value="2023">2023</option>
+              <option value="2024" selected>2024</option>
+              <option value="2025">2025</option>
+            </select>
+          </div>
+          <div class="col-6">
+            <label for="mes" class="form-label">Mes</label>
+            <select class="form-select" id="mes">
+              <option value="1">Enero</option>
+              <option value="2">Febrero</option>
+              <option value="3">Marzo</option>
+              <option value="4">Abril</option>
+              <option value="5">Mayo</option>
+              <option value="6">Junio</option>
+              <option value="7">Julio</option>
+              <option value="8">Agosto</option>
+              <option value="9">Septiembre</option>
+              <option value="10">Octubre</option>
+              <option value="11">Noviembre</option>
+              <option value="12">Diciembre</option>
+            </select>
+          </div>
+        </div>
+        <div id="calendario-dias" class="mb-3">
+          <!-- Los días se generarán con JavaScript -->
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-primary" onclick="seleccionarFecha()">Seleccionar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.table th {
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+.table td {
+    font-size: 0.9rem;
+    vertical-align: middle;
+}
+.badge {
+    font-size: 0.75rem;
+}
+</style>
+
+<script>
+// Variables globales para el calendario
+let campoFechaActual = '';
+let diaSeleccionado = 1;
+
+// Función para abrir el calendario
+function abrirCalendario(campoId) {
+  campoFechaActual = campoId;
+  
+  // Obtener fecha actual o fecha del campo
+  const campo = document.getElementById(campoId);
+  let fecha = new Date();
+  
+  if (campo.value) {
+    const partes = campo.value.split('-');
+    if (partes.length === 3) {
+      fecha = new Date(partes[0], partes[1] - 1, partes[2]);
+    }
+  }
+  
+  // Establecer año y mes en los selects
+  document.getElementById('anio').value = fecha.getFullYear();
+  document.getElementById('mes').value = fecha.getMonth() + 1;
+  diaSeleccionado = fecha.getDate();
+  
+  // Generar calendario
+  generarCalendario();
+  
+  // Mostrar modal
+  const modal = new bootstrap.Modal(document.getElementById('modalCalendario'));
+  modal.show();
+}
+
+// Función para generar el calendario
+function generarCalendario() {
+  const anio = parseInt(document.getElementById('anio').value);
+  const mes = parseInt(document.getElementById('mes').value);
+  
+  const primerDia = new Date(anio, mes - 1, 1);
+  const ultimoDia = new Date(anio, mes, 0);
+  const diasEnMes = ultimoDia.getDate();
+  const diaSemanaInicio = primerDia.getDay();
+  
+  let html = '<div class="row">';
+  
+  // Días de la semana
+  const diasSemana = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+  diasSemana.forEach(dia => {
+    html += `<div class="col text-center"><small class="text-muted">${dia}</small></div>`;
+  });
+  html += '</div>';
+  
+  // Días del mes
+  html += '<div class="row">';
+  
+  // Espacios vacíos al inicio
+  for (let i = 0; i < diaSemanaInicio; i++) {
+    html += '<div class="col text-center p-1"></div>';
+  }
+  
+  // Días del mes
+  for (let dia = 1; dia <= diasEnMes; dia++) {
+    const esSeleccionado = dia === diaSeleccionado;
+    const esHoy = new Date().toDateString() === new Date(anio, mes - 1, dia).toDateString();
+    
+    let clases = 'col text-center p-1';
+    if (esSeleccionado) {
+      clases += ' bg-primary text-white rounded';
+    } else if (esHoy) {
+      clases += ' bg-light border';
+    }
+    
+    html += `<div class="${clases}" onclick="seleccionarDia(${dia})" style="cursor: pointer;">${dia}</div>`;
+    
+    // Nueva fila cada 7 días
+    if ((diaSemanaInicio + dia) % 7 === 0) {
+      html += '</div><div class="row">';
+    }
+  }
+  
+  html += '</div>';
+  
+  document.getElementById('calendario-dias').innerHTML = html;
+}
+
+// Función para seleccionar un día
+function seleccionarDia(dia) {
+  diaSeleccionado = dia;
+  generarCalendario();
+}
+
+// Función para seleccionar la fecha
+function seleccionarFecha() {
+  const anio = document.getElementById('anio').value;
+  const mes = document.getElementById('mes').value.padStart(2, '0');
+  const dia = diaSeleccionado.toString().padStart(2, '0');
+  
+  const fecha = `${anio}-${mes}-${dia}`;
+  document.getElementById(campoFechaActual).value = fecha;
+  
+  // Cerrar modal
+  const modal = bootstrap.Modal.getInstance(document.getElementById('modalCalendario'));
+  modal.hide();
+}
+
+// Eventos para cambiar año y mes
+document.addEventListener('DOMContentLoaded', function() {
+  document.getElementById('anio').addEventListener('change', generarCalendario);
+  document.getElementById('mes').addEventListener('change', generarCalendario);
+});
+</script>
+{% endblock %} 

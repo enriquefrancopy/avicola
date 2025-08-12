@@ -1,0 +1,305 @@
+{% extends 'base.html' %}
+{% load humanize custom_filters %}
+
+{% block title %}Dashboard - Pagos a Proveedores{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+<li class="breadcrumb-item active">Pagos a Proveedores</li>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+  <!-- Header -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card bg-primary text-white">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <h3 class="mb-0">
+                <i class="bi bi-credit-card-2-front"></i> Pagos a Proveedores
+              </h3>
+              <p class="mb-0 mt-2">Gestión integral de pagos a proveedores</p>
+            </div>
+            <div>
+              <a href="{% url 'pago_proveedor_crear' %}" class="btn btn-success btn-lg">
+                <i class="bi bi-plus-circle"></i> Nuevo Pago
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Resumen de Pagos -->
+  <div class="row mb-4">
+    <div class="col-md-3">
+      <div class="card bg-success text-white">
+        <div class="card-body text-center">
+          <i class="bi bi-check-circle" style="font-size: 2.5rem;"></i>
+          <h4 class="mt-2 mb-1">{{ total_pagado|floatformat:0|intcomma_dot }}</h4>
+          <p class="mb-0">Total Pagado (Este Mes)</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+              <div class="card bg-danger text-white">
+        <div class="card-body text-center">
+          <i class="bi bi-clock" style="font-size: 2.5rem;"></i>
+          <h4 class="mt-2 mb-1">{{ total_pendiente|floatformat:0|intcomma_dot }}</h4>
+          <p class="mb-0">Total Pendiente</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card bg-info text-white">
+        <div class="card-body text-center">
+          <i class="bi bi-people" style="font-size: 2.5rem;"></i>
+          <h4 class="mt-2 mb-1">{{ proveedores_pendientes }}</h4>
+          <p class="mb-0">Proveedores con Saldo</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card bg-danger text-white">
+        <div class="card-body text-center">
+          <i class="bi bi-exclamation-triangle" style="font-size: 2.5rem;"></i>
+          <h4 class="mt-2 mb-1">{{ facturas_vencidas }}</h4>
+          <p class="mb-0">Facturas Vencidas</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Acciones Rápidas -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header bg-light">
+          <h5 class="mb-0">
+            <i class="bi bi-lightning"></i> Acciones Rápidas
+          </h5>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-3 mb-3">
+              <a href="{% url 'pago_proveedor_crear' %}" class="btn btn-outline-primary w-100 h-100 d-flex flex-column align-items-center justify-content-center">
+                <i class="bi bi-plus-circle" style="font-size: 2rem;"></i>
+                <span class="mt-2">Crear Pago</span>
+              </a>
+            </div>
+            <div class="col-md-3 mb-3">
+              <a href="{% url 'reporte_pagos_proveedores' %}" class="btn btn-outline-success w-100 h-100 d-flex flex-column align-items-center justify-content-center">
+                <i class="bi bi-graph-up" style="font-size: 2rem;"></i>
+                <span class="mt-2">Reporte Avanzado</span>
+              </a>
+            </div>
+            <div class="col-md-3 mb-3">
+              <a href="{% url 'pagos_proveedores_vencidas' %}" class="btn btn-outline-danger w-100 h-100 d-flex flex-column align-items-center justify-content-center">
+                <i class="bi bi-graph-up" style="font-size: 2rem;"></i>
+                <span class="mt-2">Reportes</span>
+              </a>
+            </div>
+            <div class="col-md-3 mb-3">
+              <a href="{% url 'pagos_proveedores_vencidas' %}" class="btn btn-outline-danger w-100 h-100 d-flex flex-column align-items-center justify-content-center">
+                <i class="bi bi-exclamation-triangle" style="font-size: 2rem;"></i>
+                <span class="mt-2">Facturas Vencidas</span>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Proveedores con Saldo Pendiente -->
+  <div class="row mb-4">
+    <div class="col-md-8">
+      <div class="card">
+        <div class="card-header bg-danger text-white">
+          <h5 class="mb-0">
+            <i class="bi bi-people"></i> Proveedores con Saldo Pendiente
+          </h5>
+        </div>
+        <div class="card-body">
+          {% if proveedores_con_saldo %}
+          <div class="table-responsive">
+            <table class="table table-striped table-hover">
+              <thead class="table-dark">
+                <tr>
+                  <th>Proveedor</th>
+                  <th>RIF</th>
+                  <th>Saldo Pendiente</th>
+                  <th>Facturas Pendientes</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for proveedor in proveedores_con_saldo %}
+                <tr>
+                  <td>
+                    <strong>{{ proveedor.nombre }}</strong>
+                  </td>
+                  <td>{{ proveedor.rif }}</td>
+                  <td class="text-danger fw-bold">Gs. {{ proveedor.saldo|floatformat:0|intcomma_dot }}</td>
+                  <td>
+                    <span class="badge bg-danger">{{ proveedor.facturas_pendientes_count }}</span>
+                  </td>
+                  <td>
+                    <a href="{% url 'pago_proveedor_crear' %}?proveedor={{ proveedor.id }}" class="btn btn-sm btn-success">
+                      <i class="bi bi-credit-card"></i> Pagar
+                    </a>
+                    <a href="{% url 'proveedor_ver' proveedor.id %}" class="btn btn-sm btn-outline-info">
+                      <i class="bi bi-eye"></i> Ver
+                    </a>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          {% else %}
+          <div class="alert alert-success">
+            <i class="bi bi-check-circle"></i> 
+            <strong>¡Excelente!</strong> No hay proveedores con saldo pendiente.
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Facturas Recientes -->
+    <div class="col-md-4">
+      <div class="card">
+        <div class="card-header bg-info text-white">
+          <h5 class="mb-0">
+            <i class="bi bi-receipt"></i> Facturas Recientes
+          </h5>
+        </div>
+        <div class="card-body">
+          {% if facturas_recientes %}
+          <div class="list-group list-group-flush">
+            {% for factura in facturas_recientes %}
+            <div class="list-group-item d-flex justify-content-between align-items-center">
+              <div>
+                <strong>#{{ factura.numero }}</strong><br>
+                <small class="text-muted">{{ factura.proveedor.nombre }}</small>
+              </div>
+              <div class="text-end">
+                <span class="badge bg-{% if factura.estado == 'pagada' %}success{% elif factura.estado == 'anulada' %}danger{% else %}warning{% endif %}">
+                  {{ factura.get_estado_display }}
+                </span><br>
+                <small class="text-muted">Gs. {{ factura.total|floatformat:0|intcomma_dot }}</small>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+          {% else %}
+          <div class="alert alert-info">
+            <i class="bi bi-info-circle"></i> No hay facturas recientes.
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pagos Recientes -->
+  <div class="row">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header bg-success text-white">
+          <h5 class="mb-0">
+            <i class="bi bi-credit-card"></i> Pagos Recientes
+          </h5>
+        </div>
+        <div class="card-body">
+          {% if pagos_recientes %}
+          <div class="table-responsive">
+            <table class="table table-striped table-hover">
+              <thead class="table-dark">
+                <tr>
+                  <th>ID</th>
+                  <th>Fecha</th>
+                  <th>Proveedor</th>
+                  <th>Monto</th>
+                  <th>Tipo</th>
+                  <th>Estado</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for pago in pagos_recientes %}
+                <tr>
+                  <td><strong>#{{ pago.id }}</strong></td>
+                  <td>{{ pago.fecha|date:'d/m/Y H:i' }}</td>
+                  <td>{{ pago.proveedor.nombre }}</td>
+                  <td class="fw-bold">Gs. {{ pago.monto_total|floatformat:0|intcomma_dot }}</td>
+                  <td>
+                    <span class="badge bg-info">{{ pago.get_tipo_display }}</span>
+                  </td>
+                  <td>
+                    <span class="badge bg-{% if pago.completamente_asignado %}success{% else %}warning{% endif %}">
+                      {% if pago.completamente_asignado %}Completo{% else %}Parcial{% endif %}
+                    </span>
+                  </td>
+                  <td>
+                    <a href="{% url 'pago_proveedor_ver' pago.id %}" class="btn btn-sm btn-outline-primary">
+                      <i class="bi bi-eye"></i> Ver
+                    </a>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          {% else %}
+          <div class="alert alert-info">
+            <i class="bi bi-info-circle"></i> No hay pagos recientes.
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.card {
+  border-radius: 0.5rem;
+  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+.card-header {
+  border-radius: 0.5rem 0.5rem 0 0 !important;
+}
+
+.btn {
+  border-radius: 0.375rem;
+}
+
+.table th {
+  border-top: none;
+  font-weight: 600;
+}
+
+.badge {
+  font-size: 0.8em;
+}
+
+.list-group-item {
+  border-left: none;
+  border-right: none;
+}
+
+.list-group-item:first-child {
+  border-top: none;
+}
+
+.list-group-item:last-child {
+  border-bottom: none;
+}
+</style>
+{% endblock %} 

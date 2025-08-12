@@ -1,0 +1,206 @@
+{% extends 'base.html' %}
+{% load humanize custom_filters %}
+{% block content %}
+<div class="container-fluid mt-4">
+  <div class="card shadow">
+    <div class="card-header bg-danger text-white">
+      <div class="d-flex justify-content-between align-items-center">
+        <h4 class="mb-0">
+          <i class="bi bi-credit-card"></i> Gestión de Pagos - Factura #{{ factura.id }}
+        </h4>
+        <div class="d-flex justify-content-end w-100 ms-3">
+          <a href="{% url 'factura_ver' factura.pk %}" class="btn btn-outline-dark">
+            <i class="bi bi-arrow-left"></i> Volver a Factura
+          </a>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <!-- Información de la factura -->
+      <div class="row mb-4">
+        <div class="col-md-6">
+          <div class="card bg-light">
+            <div class="card-body">
+              <h6 class="card-title"><i class="bi bi-info-circle"></i> Información de la Factura</h6>
+              <div class="row">
+                <div class="col-6">
+                  <small class="text-muted">
+                    {% if factura.tipo == 'compra' %}Proveedor:{% else %}Cliente:{% endif %}
+                  </small><br>
+                  <strong>
+                    {% if factura.tipo == 'compra' %}
+                      {{ factura.proveedor }}
+                    {% else %}
+                      {{ factura.cliente }}
+                    {% endif %}
+                  </strong>
+                </div>
+                <div class="col-6">
+                  <small class="text-muted">Fecha:</small><br>
+                  <strong>{{ factura.fecha|date:'d/m/Y H:i' }}</strong>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="card bg-success text-white">
+            <div class="card-body">
+              <h6 class="card-title"><i class="bi bi-calculator"></i> Resumen de Pagos</h6>
+              <div class="row">
+                <div class="col-4">
+                  <small class="text-center d-block">Total:</small>
+                  <strong class="text-center d-block">Gs. {{ factura.total|floatformat:0|intcomma_dot }}</strong>
+                </div>
+                <div class="col-4">
+                  <small class="text-center d-block">Pagado:</small>
+                  <strong class="text-center d-block">Gs. {{ factura.total_pagado|floatformat:0|intcomma_dot }}</strong>
+                </div>
+                <div class="col-4">
+                  <small class="text-center d-block">Saldo:</small>
+                  <strong class="text-center d-block">Gs. {{ factura.saldo_pendiente|floatformat:0|intcomma_dot }}</strong>
+                </div>
+              </div>
+              <div class="progress mt-2" style="height: 10px;">
+                <div class="progress-bar bg-light" role="progressbar" style="width: {{ factura.porcentaje_pagado }}%"></div>
+              </div>
+              <small>{{ factura.porcentaje_pagado|floatformat:1 }}% pagado</small>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Formulario de nuevo pago -->
+      {% if factura.saldo_pendiente > 0 %}
+      <div class="card mb-4">
+        <div class="card-header {% if factura.tipo == 'compra' %}bg-danger text-white{% else %}bg-success text-white{% endif %}">
+          <h6 class="mb-0">
+            <i class="bi bi-plus-circle"></i> 
+            {% if factura.tipo == 'compra' %}
+              Registrar Pago Parcial (Proveedor)
+            {% else %}
+              Registrar Pago Completo (Cliente)
+            {% endif %}
+          </h6>
+        </div>
+        <div class="card-body">
+          <!-- Información específica del tipo de factura -->
+          {% if factura.tipo == 'compra' %}
+            <div class="alert alert-info">
+              <i class="bi bi-info-circle"></i> 
+              <strong>Pago Parcial Permitido:</strong> Puede pagar cualquier monto hasta el saldo pendiente de Gs. {{ factura.saldo_pendiente|floatformat:0|intcomma_dot }}
+            </div>
+          {% else %}
+            <div class="alert alert-warning">
+              <i class="bi bi-exclamation-triangle"></i> 
+              <strong>Pago Completo Requerido:</strong> Para clientes solo se permiten pagos por el monto total pendiente de Gs. {{ factura.saldo_pendiente|floatformat:0|intcomma_dot }}
+            </div>
+          {% endif %}
+          
+          <form method="post">
+            {% csrf_token %}
+            <div class="row">
+              <div class="col-md-3">
+                <label for="{{ form.monto_total.id_for_label }}" class="form-label">Monto</label>
+                <div class="input-group">
+                  <span class="input-group-text">Gs.</span>
+                  {{ form.monto_total }}
+                </div>
+                {% if form.monto_total.errors %}
+                  <div class="text-danger small">{{ form.monto_total.errors.0 }}</div>
+                {% endif %}
+                {% if form.monto_total.help_text %}
+                  <small class="text-muted">{{ form.monto_total.help_text }}</small>
+                {% endif %}
+              </div>
+              <div class="col-md-3">
+                <label for="{{ form.tipo.id_for_label }}" class="form-label">Tipo de Pago</label>
+                {{ form.tipo }}
+              </div>
+              <div class="col-md-3">
+                <label for="{{ form.referencia.id_for_label }}" class="form-label">Referencia</label>
+                {{ form.referencia }}
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">&nbsp;</label>
+                <button type="submit" class="btn btn-success w-100">
+                  <i class="bi bi-check-circle"></i> Registrar Pago
+                </button>
+              </div>
+            </div>
+
+          </form>
+        </div>
+      </div>
+      {% else %}
+      <div class="alert alert-success">
+        <i class="bi bi-check-circle"></i> <strong>¡Factura completamente pagada!</strong> No hay saldo pendiente.
+      </div>
+      {% endif %}
+
+      <!-- Historial de pagos -->
+      <div class="card">
+        <div class="card-header bg-info text-white">
+          <h6 class="mb-0"><i class="bi bi-clock-history"></i> Historial de Pagos</h6>
+        </div>
+        <div class="card-body">
+          {% if pagos %}
+          <div class="table-responsive">
+            <table class="table table-striped table-hover">
+              <thead class="table-dark">
+                <tr>
+                  <th>Fecha</th>
+                  <th>Monto</th>
+                  <th>Tipo</th>
+                  <th>Referencia</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for pago in pagos %}
+                <tr>
+                  <td>{{ pago.fecha|date:'d/m/Y H:i' }}</td>
+                  <td class="fw-bold text-success">Gs. {{ pago.monto|floatformat:0|intcomma_dot }}</td>
+                  <td>
+                    <span class="badge bg-primary">{{ pago.get_tipo_display }}</span>
+                  </td>
+                  <td>{{ pago.referencia|default:"—" }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          {% else %}
+          <p class="text-muted text-center">No hay pagos registrados para esta factura.</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.form-control:focus {
+  border-color: #80bdff;
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.progress {
+  background-color: rgba(255,255,255,0.3);
+}
+
+.table th {
+  border-top: none;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.table td {
+  vertical-align: middle;
+  font-size: 0.9rem;
+}
+
+.badge {
+  font-size: 0.8em;
+}
+</style>
+{% endblock %} 

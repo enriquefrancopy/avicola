@@ -1,0 +1,632 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load humanize custom_filters %}
+
+{% block title %}Inicio - Avícola CVA{% endblock %}
+
+{% block page_title %}{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item active">Inicio</li>
+{% endblock %}
+
+{% block content %}
+
+
+<!--begin::Row-->
+<div class="row">
+  <!-- Start col -->
+  <div class="col-12 connectedSortable">
+    <div class="row">
+      <div class="col-12">
+        <div class="card mb-4">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <h3 class="card-title">Facturación Mensual</h3>
+            <div class="d-flex gap-2">
+              <select id="mes-selector" class="form-select form-select-sm" style="width: auto;">
+                <option value="">Seleccionar mes...</option>
+              </select>
+                             <button id="btn-ventas-diarias" class="btn btn-sm btn-primary" style="display: none;">
+                 <i class="bi bi-calendar-day"></i> Ver Ventas Diarias
+               </button>
+                             <button id="btn-facturacion-mensual" class="btn btn-sm btn-success" style="display: none;">
+                 <i class="bi bi-bar-chart"></i> Ver Facturación Mensual
+               </button>
+            </div>
+          </div>
+          <div class="card-body">
+            <div id="revenue-chart"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- /.Start col -->
+</div>
+<!-- /.row (main row) -->
+
+<!-- Gráficos adicionales -->
+<div class="row mt-4">
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">Estado de Facturas</h3>
+      </div>
+      <div class="card-body">
+        <div id="facturas-chart"></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">Distribución de Stock</h3>
+      </div>
+      <div class="card-body">
+        <div id="stock-chart"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Productos con stock bajo y agotados -->
+<div class="row mt-4">
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">Productos con Stock Bajo</h3>
+        <div class="card-tools">
+          <button type="button" class="btn btn-tool" data-lte-toggle="card-collapse">
+            <i data-lte-icon="expand" class="bi bi-plus-lg"></i>
+            <i data-lte-icon="collapse" class="bi bi-dash-lg"></i>
+          </button>
+        </div>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-striped">
+            <thead>
+              <tr>
+                <th>Producto</th>
+                <th>Stock</th>
+                <th>Estado</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for producto in productos_stock_bajo|slice:":5" %}
+              <tr>
+                <td>{{ producto.nombre }}</td>
+                <td>{{ producto.stock }}</td>
+                <td>
+                  {% if producto.stock == 0 %}
+                    <span class="badge bg-danger">Agotado</span>
+                  {% else %}
+                    <span class="badge bg-danger">Bajo</span>
+                  {% endif %}
+                </td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="3" class="text-center text-muted">No hay productos con stock bajo</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">Productos Agotados</h3>
+        <div class="card-tools">
+          <button type="button" class="btn btn-tool" data-lte-toggle="card-collapse">
+            <i data-lte-icon="expand" class="bi bi-plus-lg"></i>
+            <i data-lte-icon="collapse" class="bi bi-dash-lg"></i>
+          </button>
+        </div>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-striped">
+            <thead>
+              <tr>
+                <th>Producto</th>
+                <th>Stock</th>
+                <th>Estado</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for producto in productos_agotados|slice:":5" %}
+              <tr>
+                <td>{{ producto.nombre }}</td>
+                <td>{{ producto.stock }}</td>
+                <td>
+                  <span class="badge bg-danger">Agotado</span>
+                </td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="3" class="text-center text-muted">No hay productos agotados</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- ApexCharts -->
+<script src="https://cdn.jsdelivr.net/npm/apexcharts@3.37.1/dist/apexcharts.min.js"></script>
+
+<script>
+// Datos para JavaScript - Valores por defecto para evitar errores
+const totalProductos = {{ total_productos|default:0 }};
+const facturasMes = {{ facturas_mes|default:0 }};
+const totalFacturasMes = {{ total_facturas_mes|default:0 }};
+const facturasPendientes = {{ facturas_pendientes|default:0 }};
+const facturasPagadas = {{ facturas_pagadas|default:0 }};
+const productosStockAlto = {{ productos_stock_alto_count|default:0 }};
+const productosStockMedio = {{ productos_stock_medio_count|default:0 }};
+const productosStockBajo = {{ productos_stock_bajo_count|default:0 }};
+const productosAgotados = {{ productos_agotados_count|default:0 }};
+
+// Datos de facturación mensual desde el servidor
+const montosPorMes = {{ montos_por_mes|safe }};
+const mesesGrafico = {{ meses_grafico|safe }};
+
+// Sparkline charts
+
+const option_sparkline1 = {
+  series: [
+    {
+      data: [totalProductos, totalProductos, totalProductos, totalProductos, totalProductos, totalProductos, totalProductos],
+    },
+  ],
+  chart: {
+    type: 'area',
+    height: 50,
+    sparkline: {
+      enabled: true,
+    },
+  },
+  stroke: {
+    curve: 'straight',
+  },
+  fill: {
+    opacity: 0.3,
+  },
+  yaxis: {
+    min: 0,
+  },
+  colors: ['#DCE6EC'],
+};
+
+const sparkline1 = new ApexCharts(document.querySelector('#sparkline-1'), option_sparkline1);
+sparkline1.render();
+
+const option_sparkline2 = {
+  series: [
+    {
+      data: [facturasMes, facturasMes, facturasMes, facturasMes, facturasMes, facturasMes, facturasMes],
+    },
+  ],
+  chart: {
+    type: 'area',
+    height: 50,
+    sparkline: {
+      enabled: true,
+    },
+  },
+  stroke: {
+    curve: 'straight',
+  },
+  fill: {
+    opacity: 0.3,
+  },
+  yaxis: {
+    min: 0,
+  },
+  colors: ['#DCE6EC'],
+};
+
+const sparkline2 = new ApexCharts(document.querySelector('#sparkline-2'), option_sparkline2);
+sparkline2.render();
+
+const option_sparkline3 = {
+  series: [
+    {
+      data: [totalFacturasMes/1000000, totalFacturasMes/1000000, totalFacturasMes/1000000, totalFacturasMes/1000000, totalFacturasMes/1000000, totalFacturasMes/1000000, totalFacturasMes/1000000],
+    },
+  ],
+  chart: {
+    type: 'area',
+    height: 50,
+    sparkline: {
+      enabled: true,
+    },
+  },
+  stroke: {
+    curve: 'straight',
+  },
+  fill: {
+    opacity: 0.3,
+  },
+  yaxis: {
+    min: 0,
+  },
+  colors: ['#DCE6EC'],
+};
+
+const sparkline3 = new ApexCharts(document.querySelector('#sparkline-3'), option_sparkline3);
+sparkline3.render();
+
+// Variables globales para el gráfico
+let salesChart = null;
+let currentView = 'monthly'; // 'monthly' o 'daily'
+
+// Función para formatear números con puntos
+function formatNumber(num) {
+  return new Intl.NumberFormat('es-PY').format(num);
+}
+
+// Función para cargar datos de facturación mensual
+function loadMonthlyData() {
+  fetch('{% url "dashboard_data" %}')
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        updateMonthlyChart(data.facturacion_mensual);
+        populateMonthSelector(data.facturacion_mensual);
+      }
+    })
+    .catch(error => console.error('Error:', error));
+}
+
+// Función para actualizar el gráfico de facturación mensual
+function updateMonthlyChart(data) {
+  const categories = data.map(item => item.mes);
+  const series = data.map(item => item.total);
+  
+  const options = {
+    series: [{
+      name: 'Facturación (Gs.)',
+      data: series
+    }],
+    chart: {
+      height: 350,
+      type: 'bar',
+      toolbar: {
+        show: true,
+        tools: {
+          download: true,
+          selection: false,
+          zoom: false,
+          zoomin: false,
+          zoomout: false,
+          pan: false,
+          reset: false
+        }
+      }
+    },
+    plotOptions: {
+      bar: {
+        horizontal: false,
+        columnWidth: '55%',
+        endingShape: 'rounded',
+        borderRadius: 4
+      },
+    },
+    dataLabels: {
+      enabled: true,
+      formatter: function (val) {
+        return formatNumber(val);
+      },
+      style: {
+        fontSize: '12px',
+        colors: ['#fff'],
+        fontWeight: 'bold'
+      },
+      rotate: 0,
+      offsetY: 0,
+      position: 'top'
+    },
+    stroke: {
+      show: true,
+      width: 2,
+      colors: ['transparent']
+    },
+    xaxis: {
+      categories: categories,
+      labels: {
+        style: {
+          fontSize: '12px'
+        }
+      }
+    },
+    yaxis: {
+      title: {
+        text: 'Facturación (Gs.)'
+      },
+      labels: {
+        formatter: function (val) {
+          return formatNumber(val);
+        }
+      }
+    },
+    fill: {
+      opacity: 1,
+      colors: ['#0d6efd']
+    },
+    tooltip: {
+      y: {
+        formatter: function (val) {
+          return "Gs. " + formatNumber(val);
+        }
+      }
+    },
+    colors: ['#0d6efd']
+  };
+
+  if (salesChart) {
+    salesChart.destroy();
+  }
+  
+  salesChart = new ApexCharts(document.querySelector('#revenue-chart'), options);
+  salesChart.render();
+}
+
+// Función para cargar ventas diarias de un mes específico
+function loadDailyData(mes, anio) {
+  fetch(`{% url "dashboard_data" %}?mes=${mes}&anio=${anio}`)
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        updateDailyChart(data.ventas_diarias, data.mes_nombre);
+      }
+    })
+    .catch(error => console.error('Error:', error));
+}
+
+// Función para actualizar el gráfico de ventas diarias
+function updateDailyChart(data, mesNombre) {
+  const categories = data.map(item => item.dia);
+  const series = data.map(item => item.total);
+  
+  const options = {
+    series: [{
+      name: 'Ventas Diarias (Gs.)',
+      data: series
+    }],
+    chart: {
+      height: 350,
+      type: 'bar',
+      toolbar: {
+        show: true,
+        tools: {
+          download: true,
+          selection: false,
+          zoom: false,
+          zoomin: false,
+          zoomout: false,
+          pan: false,
+          reset: false
+        }
+      }
+    },
+    plotOptions: {
+      bar: {
+        horizontal: false,
+        columnWidth: '70%',
+        endingShape: 'rounded',
+        borderRadius: 4
+      },
+    },
+    dataLabels: {
+      enabled: true,
+      formatter: function (val) {
+        return formatNumber(val);
+      },
+      style: {
+        fontSize: '11px',
+        colors: ['#fff'],
+        fontWeight: 'bold'
+      },
+      rotate: 0,
+      offsetY: 0,
+      position: 'top'
+    },
+    stroke: {
+      show: true,
+      width: 2,
+      colors: ['transparent']
+    },
+    xaxis: {
+      categories: categories,
+      title: {
+        text: 'Día del mes'
+      },
+      labels: {
+        style: {
+          fontSize: '12px'
+        }
+      }
+    },
+    yaxis: {
+      title: {
+        text: 'Ventas (Gs.)'
+      },
+      labels: {
+        formatter: function (val) {
+          return formatNumber(val);
+        }
+      }
+    },
+    fill: {
+      opacity: 1,
+      colors: ['#28a745']
+    },
+    tooltip: {
+      y: {
+        formatter: function (val) {
+          return "Gs. " + formatNumber(val);
+        }
+      }
+    },
+    colors: ['#28a745'],
+    title: {
+      text: `Ventas Diarias - ${mesNombre}`,
+      align: 'center',
+      style: {
+        fontSize: '16px'
+      }
+    }
+  };
+
+  if (salesChart) {
+    salesChart.destroy();
+  }
+  
+  salesChart = new ApexCharts(document.querySelector('#revenue-chart'), options);
+  salesChart.render();
+}
+
+// Función para poblar el selector de meses
+function populateMonthSelector(data) {
+  const selector = document.getElementById('mes-selector');
+  selector.innerHTML = '<option value="">Seleccionar mes...</option>';
+  
+  data.forEach(item => {
+    const option = document.createElement('option');
+    option.value = `${item.mes_num},${item.anio}`;
+    option.textContent = item.mes;
+    selector.appendChild(option);
+  });
+}
+
+// Inicializar gráfico de facturación mensual
+loadMonthlyData();
+
+// Event listeners
+document.addEventListener('DOMContentLoaded', function() {
+  // Selector de mes
+  const mesSelector = document.getElementById('mes-selector');
+  const btnVentasDiarias = document.getElementById('btn-ventas-diarias');
+  const btnFacturacionMensual = document.getElementById('btn-facturacion-mensual');
+  
+  mesSelector.addEventListener('change', function() {
+    const value = this.value;
+    if (value) {
+      const [mes, anio] = value.split(',');
+      loadDailyData(mes, anio);
+      currentView = 'daily';
+      btnVentasDiarias.style.display = 'none';
+      btnFacturacionMensual.style.display = 'inline-block';
+    } else {
+      loadMonthlyData();
+      currentView = 'monthly';
+      btnVentasDiarias.style.display = 'none';
+      btnFacturacionMensual.style.display = 'inline-block';
+    }
+  });
+  
+  // Botón para ver ventas diarias
+  btnVentasDiarias.addEventListener('click', function() {
+    const value = mesSelector.value;
+    if (value) {
+      const [mes, anio] = value.split(',');
+      loadDailyData(mes, anio);
+      currentView = 'daily';
+      this.style.display = 'none';
+      btnFacturacionMensual.style.display = 'inline-block';
+    }
+  });
+  
+  // Botón para volver a facturación mensual
+  btnFacturacionMensual.addEventListener('click', function() {
+    loadMonthlyData();
+    currentView = 'monthly';
+    mesSelector.value = '';
+    this.style.display = 'none';
+    btnVentasDiarias.style.display = 'none';
+  });
+});
+
+// Gráfico de estado de facturas
+const facturasChartOptions = {
+  series: [facturasPendientes, facturasPagadas],
+  chart: {
+    type: 'donut',
+    height: 250,
+  },
+  labels: ['Pendientes', 'Pagadas'],
+  colors: ['#ffc107', '#28a745'],
+  legend: {
+    position: 'bottom',
+  },
+  responsive: [{
+    breakpoint: 480,
+    options: {
+      chart: {
+        width: 200
+      },
+      legend: {
+        position: 'bottom'
+      }
+    }
+  }]
+};
+
+const facturasChart = new ApexCharts(document.querySelector('#facturas-chart'), facturasChartOptions);
+facturasChart.render();
+
+// Gráfico de distribución de stock
+const stockChartOptions = {
+  series: [productosStockAlto, productosStockMedio, productosStockBajo, productosAgotados],
+  chart: {
+    type: 'donut',
+    height: 250,
+  },
+  labels: ['Stock Alto', 'Stock Medio', 'Stock Bajo', 'Agotados'],
+  colors: ['#28a745', '#17a2b8', '#ffc107', '#dc3545'],
+  legend: {
+    position: 'bottom',
+  },
+  responsive: [{
+    breakpoint: 480,
+    options: {
+      chart: {
+        width: 200
+      },
+      legend: {
+        position: 'bottom'
+      }
+    }
+  }]
+};
+
+const stockChart = new ApexCharts(document.querySelector('#stock-chart'), stockChartOptions);
+stockChart.render();
+
+// Sortable functionality
+document.addEventListener('DOMContentLoaded', function() {
+  const connectedSortable = document.querySelector('.connectedSortable');
+  if (connectedSortable && typeof Sortable !== 'undefined') {
+    new Sortable(connectedSortable, {
+      group: 'shared',
+      handle: '.card-header',
+    });
+
+    const cardHeaders = document.querySelectorAll('.connectedSortable .card-header');
+    cardHeaders.forEach((cardHeader) => {
+      cardHeader.style.cursor = 'move';
+    });
+  }
+});
+</script>
+{% endblock %}

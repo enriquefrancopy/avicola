@@ -1,0 +1,609 @@
+/* ========================================
+   TEMA OSCURO MODERNO
+   ======================================== */
+
+:root {
+  /* Colores principales del sistema */
+  --primary-color: #6366F1;        /* Índigo moderno */
+  --primary-dark: #4338CA;         /* Índigo oscuro */
+  --primary-light: #818CF8;        /* Índigo claro */
+  --secondary-color: #F59E0B;      /* Ámbar vibrante */
+  --secondary-dark: #D97706;       /* Ámbar oscuro */
+  --accent-color: #EC4899;         /* Rosa acento */
+  
+  /* Colores de estado */
+  --success-color: #10B981;        /* Verde esmeralda */
+  --warning-color: #FFC107;        /* Amarillo advertencia */
+  --danger-color: #EF4444;         /* Rojo moderno */
+  --info-color: #3B82F6;           /* Azul moderno */
+  
+  /* Colores neutros - Tema oscuro */
+  --white: #FFFFFF;
+  --light-gray: #1F2937;           /* Gris oscuro */
+  --gray: #6B7280;                 /* Gris medio */
+  --dark-gray: #D1D5DB;            /* Gris claro */
+  --black: #111827;                /* Negro suave */
+  
+  /* Colores de fondo */
+  --bg-primary: #111827;           /* Fondo principal */
+  --bg-secondary: #1F2937;         /* Fondo secundario */
+  --bg-tertiary: #374151;          /* Fondo terciario */
+  --bg-card: #1F2937;              /* Fondo de tarjetas */
+  
+  /* Gradientes */
+  --primary-gradient: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+  --secondary-gradient: linear-gradient(135deg, var(--secondary-color) 0%, var(--secondary-dark) 100%);
+  --accent-gradient: linear-gradient(135deg, var(--accent-color) 0%, #BE185D 100%);
+}
+
+/* ========================================
+   ESTILOS GLOBALES
+   ======================================== */
+
+body {
+  font-family: 'Source Sans 3', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: var(--dark-gray);
+  background-color: var(--bg-primary);
+  transition: all 0.3s ease;
+}
+
+/* ========================================
+   HEADER Y NAVEGACIÓN
+   ======================================== */
+
+.app-header {
+  background: var(--bg-secondary) !important;
+  border-bottom: 1px solid var(--bg-tertiary);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.app-header .navbar-nav .nav-link {
+  color: var(--dark-gray) !important;
+}
+
+.app-header .navbar-nav .nav-link:hover {
+  background-color: var(--bg-tertiary);
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+/* Logo en header */
+.navbar-brand img {
+  height: 40px;
+  width: auto;
+  filter: brightness(1.1);
+}
+
+/* ========================================
+   SIDEBAR
+   ======================================== */
+
+.app-sidebar {
+  background: var(--bg-secondary) !important;
+  border-right: 1px solid var(--bg-tertiary);
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.2);
+}
+
+.sidebar-menu .nav-item .nav-link.active {
+  background-color: var(--primary-color) !important;
+  color: var(--white) !important;
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.4);
+  border-radius: 8px;
+  margin: 4px 8px;
+}
+
+.sidebar-menu .nav-item .nav-link:hover {
+  background-color: var(--bg-tertiary) !important;
+  color: var(--dark-gray) !important;
+  transform: translateX(4px);
+  border-radius: 8px;
+  margin: 4px 8px;
+  transition: all 0.3s ease;
+}
+
+.sidebar-menu .nav-link {
+  color: var(--gray) !important;
+  border-radius: 8px;
+  margin: 4px 8px;
+  transition: all 0.3s ease;
+  padding: 0.75rem 1rem;
+}
+
+.sidebar-menu .nav-link:hover {
+  background-color: var(--bg-tertiary) !important;
+  color: var(--dark-gray) !important;
+  transform: translateX(4px);
+}
+
+.sidebar-menu .nav-header {
+  color: var(--primary-color) !important;
+  font-weight: 600;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 1rem 0 0.5rem 0;
+  padding: 0 1rem;
+}
+
+.sidebar-brand {
+  background: var(--bg-tertiary) !important;
+  padding: 1rem;
+  border-bottom: 1px solid var(--bg-tertiary);
+}
+
+.brand-link {
+  color: var(--dark-gray) !important;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.brand-text {
+  color: var(--dark-gray) !important;
+  font-weight: 600;
+  font-size: 1.25rem;
+}
+
+.brand-image {
+  height: 40px;
+  width: auto;
+  filter: brightness(1.1);
+}
+  margin: 4px 8px;
+  transition: all 0.3s ease;
+}
+
+.nav-sidebar .nav-link:hover {
+  background-color: var(--bg-tertiary) !important;
+  color: var(--primary-color) !important;
+  transform: translateX(4px);
+}
+
+/* ========================================
+   BOTONES
+   ======================================== */
+
+.btn-primary {
+  background-color: var(--primary-color) !important;
+  border-color: var(--primary-color) !important;
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+  transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+  background-color: var(--primary-dark) !important;
+  border-color: var(--primary-dark) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+}
+
+.btn-secondary {
+  background-color: var(--secondary-color) !important;
+  border-color: var(--secondary-color) !important;
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+}
+
+.btn-secondary:hover {
+  background-color: var(--secondary-dark) !important;
+  border-color: var(--secondary-dark) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
+}
+
+.btn-success {
+  background-color: var(--success-color) !important;
+  border-color: var(--success-color) !important;
+}
+
+.btn-warning {
+  background-color: var(--warning-color) !important;
+  border-color: var(--warning-color) !important;
+}
+
+.btn-danger {
+  background-color: var(--danger-color) !important;
+  border-color: var(--danger-color) !important;
+}
+
+.btn-info {
+  background-color: var(--info-color) !important;
+  border-color: var(--info-color) !important;
+}
+
+/* ========================================
+   TARJETAS Y PANELES
+   ======================================== */
+
+.card {
+  background-color: var(--bg-card);
+  border: 1px solid var(--bg-tertiary);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  border-radius: 12px;
+  transition: all 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  border-color: var(--primary-color);
+}
+
+.card-header {
+  background: var(--bg-tertiary);
+  color: var(--dark-gray);
+  border-bottom: 1px solid var(--bg-tertiary);
+  border-radius: 12px 12px 0 0 !important;
+  padding: 1.25rem;
+}
+
+.card-primary {
+  border-top: 4px solid var(--primary-color) !important;
+}
+
+.card-success {
+  border-top: 4px solid var(--success-color) !important;
+}
+
+.card-warning {
+  border-top: 4px solid var(--warning-color) !important;
+}
+
+.card-danger {
+  border-top: 4px solid var(--danger-color) !important;
+}
+
+.card-info {
+  border-top: 4px solid var(--info-color) !important;
+}
+
+/* ========================================
+   TABLAS
+   ======================================== */
+
+.table {
+  background-color: var(--bg-card);
+  color: var(--dark-gray);
+}
+
+.table thead th {
+  background-color: var(--bg-tertiary);
+  color: var(--dark-gray);
+  border-color: var(--bg-tertiary);
+  font-weight: 600;
+  padding: 1rem;
+}
+
+.table-striped tbody tr:nth-of-type(odd) {
+  background-color: rgba(99, 102, 241, 0.05);
+}
+
+.table tbody tr:hover {
+  background-color: rgba(99, 102, 241, 0.1) !important;
+  transition: background-color 0.3s ease;
+}
+
+.table td, .table th {
+  border-color: var(--bg-tertiary);
+}
+
+/* ======================================== 
+   ALERTAS Y NOTIFICACIONES
+   ======================================== */
+
+.alert-success {
+  background-color: rgba(16, 185, 129, 0.1);
+  border-color: var(--success-color);
+  color: var(--success-color);
+  border-radius: 8px;
+}
+
+.alert-warning {
+  background-color: rgba(245, 158, 11, 0.1);
+  border-color: var(--warning-color);
+  color: var(--warning-color);
+  border-radius: 8px;
+}
+
+.alert-danger {
+  background-color: rgba(239, 68, 68, 0.1);
+  border-color: var(--danger-color);
+  color: var(--danger-color);
+  border-radius: 8px;
+}
+
+.alert-info {
+  background-color: rgba(59, 130, 246, 0.1);
+  border-color: var(--info-color);
+  color: var(--info-color);
+  border-radius: 8px;
+}
+
+/* ========================================
+   BADGES
+   ======================================== */
+
+.badge.bg-primary {
+  background-color: var(--primary-color) !important;
+}
+
+.badge.bg-success {
+  background-color: var(--success-color) !important;
+}
+
+.badge.bg-warning {
+  background-color: var(--warning-color) !important;
+}
+
+.badge.bg-danger {
+  background-color: var(--danger-color) !important;
+}
+
+.badge.bg-info {
+  background-color: var(--info-color) !important;
+}
+
+/* ========================================
+   FORMULARIOS
+   ======================================== */
+
+.form-control, .form-select {
+  background-color: var(--bg-tertiary);
+  border: 2px solid var(--bg-tertiary);
+  color: var(--dark-gray);
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.form-control:focus, .form-select:focus {
+  background-color: var(--bg-tertiary);
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 0.2rem rgba(99, 102, 241, 0.25);
+  color: var(--dark-gray);
+}
+
+.form-control:hover, .form-select:hover {
+  border-color: var(--primary-light);
+}
+
+.form-control::placeholder {
+  color: var(--gray);
+}
+
+/* ========================================
+   PAGINACIÓN
+   ======================================== */
+
+.page-link {
+  background-color: var(--bg-tertiary);
+  border-color: var(--bg-tertiary);
+  color: var(--dark-gray);
+  border-radius: 6px;
+  margin: 0 2px;
+  transition: all 0.3s ease;
+}
+
+.page-item.active .page-link {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+}
+
+.page-link:hover {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+  color: var(--white);
+}
+
+/* ========================================
+   PROGRESS BARS
+   ======================================== */
+
+.progress {
+  background-color: var(--bg-tertiary);
+  border-radius: 8px;
+}
+
+.progress-bar {
+  background-color: var(--primary-color);
+  border-radius: 8px;
+}
+
+.progress-bar.bg-success {
+  background-color: var(--success-color) !important;
+}
+
+.progress-bar.bg-warning {
+  background-color: var(--warning-color) !important;
+}
+
+.progress-bar.bg-danger {
+  background-color: var(--danger-color) !important;
+}
+
+.progress-bar.bg-info {
+  background-color: var(--info-color) !important;
+}
+
+/* ========================================
+   DROPDOWNS
+   ======================================== */
+
+.dropdown-menu {
+  background-color: var(--bg-card);
+  border: 1px solid var(--bg-tertiary);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+.dropdown-item {
+  color: var(--dark-gray);
+}
+
+.dropdown-item:hover {
+  background-color: var(--bg-tertiary);
+  color: var(--primary-color);
+}
+
+.dropdown-item.active {
+  background-color: var(--primary-color);
+  color: var(--white);
+}
+
+/* ========================================
+   MODALES
+   ======================================== */
+
+.modal-content {
+  background-color: var(--bg-card);
+  border: 1px solid var(--bg-tertiary);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.modal-header {
+  background: var(--bg-tertiary);
+  color: var(--dark-gray);
+  border-bottom: 1px solid var(--bg-tertiary);
+  border-radius: 12px 12px 0 0;
+}
+
+.modal-header .btn-close {
+  filter: invert(1);
+}
+
+.modal-footer {
+  background-color: var(--bg-tertiary);
+  border-top: 1px solid var(--bg-tertiary);
+  border-radius: 0 0 12px 12px;
+}
+
+/* ========================================
+   RESPONSIVE
+   ======================================== */
+
+@media (max-width: 768px) {
+  .navbar-brand img {
+    height: 30px;
+  }
+  
+  .card-header {
+    padding: 1rem;
+  }
+  
+  .card {
+    border-radius: 8px;
+  }
+}
+
+/* ========================================
+   UTILIDADES
+   ======================================== */
+
+.text-primary {
+  color: var(--primary-color) !important;
+}
+
+.text-success {
+  color: var(--success-color) !important;
+}
+
+.text-warning {
+  color: var(--warning-color) !important;
+}
+
+.text-danger {
+  color: var(--danger-color) !important;
+}
+
+.text-info {
+  color: var(--info-color) !important;
+}
+
+.bg-primary {
+  background-color: var(--primary-color) !important;
+}
+
+.bg-success {
+  background-color: var(--success-color) !important;
+}
+
+.bg-warning {
+  background-color: var(--warning-color) !important;
+}
+
+.bg-danger {
+  background-color: var(--danger-color) !important;
+}
+
+.bg-info {
+  background-color: var(--info-color) !important;
+}
+
+/* ========================================
+   ELEMENTOS ESPECÍFICOS DEL TEMA OSCURO
+   ======================================== */
+
+/* Scrollbar personalizada */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--bg-tertiary);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary-color);
+}
+
+/* Input groups */
+.input-group-text {
+  background-color: var(--bg-tertiary);
+  border-color: var(--bg-tertiary);
+  color: var(--gray);
+}
+
+/* List groups */
+.list-group-item {
+  background-color: var(--bg-card);
+  border-color: var(--bg-tertiary);
+  color: var(--dark-gray);
+}
+
+.list-group-item:hover {
+  background-color: var(--bg-tertiary);
+}
+
+/* Nav tabs */
+.nav-tabs .nav-link {
+  background-color: var(--bg-tertiary);
+  border-color: var(--bg-tertiary);
+  color: var(--gray);
+}
+
+.nav-tabs .nav-link.active {
+  background-color: var(--bg-card);
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+/* Breadcrumb */
+.breadcrumb {
+  background-color: var(--bg-tertiary);
+}
+
+.breadcrumb-item + .breadcrumb-item::before {
+  color: var(--gray);
+}
+
+/* Code blocks */
+code, pre {
+  background-color: var(--bg-tertiary);
+  color: var(--dark-gray);
+  border: 1px solid var(--bg-tertiary);
+} 

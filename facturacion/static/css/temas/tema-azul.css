@@ -1,0 +1,481 @@
+/* ========================================
+   TEMA AZUL CORPORATIVO
+   ======================================== */
+
+:root {
+  /* Colores principales del sistema */
+  --primary-color: #1976D2;        /* Azul corporativo principal */
+  --primary-dark: #0D47A1;         /* Azul oscuro */
+  --primary-light: #42A5F5;        /* Azul claro */
+  --secondary-color: #FF6B35;      /* Naranja vibrante */
+  --secondary-dark: #E64A19;       /* Naranja oscuro */
+  --accent-color: #7B1FA2;         /* Púrpura acento */
+  
+  /* Colores de estado */
+  --success-color: #388E3C;        /* Verde éxito */
+  --warning-color: #FFC107;        /* Amarillo advertencia */
+  --danger-color: #D32F2F;         /* Rojo error */
+  --info-color: #0288D1;           /* Azul información */
+  
+  /* Colores neutros */
+  --white: #FFFFFF;
+  --light-gray: #F8F9FA;
+  --gray: #9E9E9E;
+  --dark-gray: #424242;
+  --black: #212121;
+  
+  /* Gradientes */
+  --primary-gradient: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+  --secondary-gradient: linear-gradient(135deg, var(--secondary-color) 0%, var(--secondary-dark) 100%);
+  --accent-gradient: linear-gradient(135deg, var(--accent-color) 0%, #4A148C 100%);
+}
+
+/* ========================================
+   ESTILOS GLOBALES
+   ======================================== */
+
+body {
+  font-family: 'Source Sans 3', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: var(--dark-gray);
+  background-color: var(--light-gray);
+}
+
+/* ========================================
+   HEADER Y NAVEGACIÓN
+   ======================================== */
+
+.app-header {
+  background: var(--primary-gradient) !important;
+  box-shadow: 0 4px 12px rgba(25, 118, 210, 0.15);
+}
+
+.app-header .navbar-nav .nav-link {
+  color: var(--white) !important;
+}
+
+.app-header .navbar-nav .nav-link:hover {
+  background-color: rgba(255,255,255,0.15);
+  border-radius: 6px;
+  transition: all 0.3s ease;
+}
+
+/* Logo en header */
+.navbar-brand img {
+  height: 40px;
+  width: auto;
+}
+
+/* ========================================
+   SIDEBAR
+   ======================================== */
+
+.app-sidebar {
+  background: var(--white) !important;
+  border-right: 1px solid #E3F2FD;
+  box-shadow: 2px 0 8px rgba(0,0,0,0.05);
+}
+
+.sidebar-menu .nav-item .nav-link.active {
+  background-color: var(--primary-color) !important;
+  color: var(--white) !important;
+  box-shadow: 0 2px 8px rgba(25, 118, 210, 0.3);
+  border-radius: 8px;
+  margin: 4px 8px;
+}
+
+.sidebar-menu .nav-item .nav-link:hover {
+  background-color: #E3F2FD !important;
+  color: var(--primary-color) !important;
+  transform: translateX(4px);
+  border-radius: 8px;
+  margin: 4px 8px;
+  transition: all 0.3s ease;
+}
+
+.sidebar-menu .nav-link {
+  color: var(--dark-gray) !important;
+  border-radius: 8px;
+  margin: 4px 8px;
+  transition: all 0.3s ease;
+  padding: 0.75rem 1rem;
+}
+
+.sidebar-menu .nav-link:hover {
+  background-color: #E3F2FD !important;
+  color: var(--primary-color) !important;
+  transform: translateX(4px);
+}
+
+.sidebar-menu .nav-header {
+  color: var(--primary-color) !important;
+  font-weight: 600;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 1rem 0 0.5rem 0;
+  padding: 0 1rem;
+}
+
+.sidebar-brand {
+  background: var(--primary-gradient) !important;
+  padding: 1rem;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.brand-link {
+  color: var(--white) !important;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.brand-text {
+  color: var(--white) !important;
+  font-weight: 600;
+  font-size: 1.25rem;
+}
+
+.brand-image {
+  height: 40px;
+  width: auto;
+  filter: brightness(1.1);
+}
+
+/* ========================================
+   BOTONES
+   ======================================== */
+
+.btn-primary {
+  background-color: var(--primary-color) !important;
+  border-color: var(--primary-color) !important;
+  box-shadow: 0 2px 8px rgba(25, 118, 210, 0.3);
+  transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+  background-color: var(--primary-dark) !important;
+  border-color: var(--primary-dark) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(25, 118, 210, 0.4);
+}
+
+.btn-secondary {
+  background-color: var(--secondary-color) !important;
+  border-color: var(--secondary-color) !important;
+  box-shadow: 0 2px 8px rgba(255, 107, 53, 0.3);
+}
+
+.btn-secondary:hover {
+  background-color: var(--secondary-dark) !important;
+  border-color: var(--secondary-dark) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(255, 107, 53, 0.4);
+}
+
+.btn-success {
+  background-color: var(--success-color) !important;
+  border-color: var(--success-color) !important;
+}
+
+.btn-warning {
+  background-color: var(--warning-color) !important;
+  border-color: var(--warning-color) !important;
+}
+
+.btn-danger {
+  background-color: var(--danger-color) !important;
+  border-color: var(--danger-color) !important;
+}
+
+.btn-info {
+  background-color: var(--info-color) !important;
+  border-color: var(--info-color) !important;
+}
+
+/* ========================================
+   TARJETAS Y PANELES
+   ======================================== */
+
+.card {
+  border: none;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+  border-radius: 12px;
+  transition: all 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+}
+
+.card-header {
+  background: var(--primary-gradient);
+  color: var(--white);
+  border-bottom: none;
+  border-radius: 12px 12px 0 0 !important;
+  padding: 1.25rem;
+}
+
+.card-primary {
+  border-top: 4px solid var(--primary-color) !important;
+}
+
+.card-success {
+  border-top: 4px solid var(--success-color) !important;
+}
+
+.card-warning {
+  border-top: 4px solid var(--warning-color) !important;
+}
+
+.card-danger {
+  border-top: 4px solid var(--danger-color) !important;
+}
+
+.card-info {
+  border-top: 4px solid var(--info-color) !important;
+}
+
+/* ========================================
+   TABLAS
+   ======================================== */
+
+.table thead th {
+  background-color: var(--primary-color);
+  color: var(--white);
+  border-color: var(--primary-dark);
+  font-weight: 600;
+  padding: 1rem;
+}
+
+.table-striped tbody tr:nth-of-type(odd) {
+  background-color: rgba(25, 118, 210, 0.03);
+}
+
+.table tbody tr:hover {
+  background-color: rgba(25, 118, 210, 0.08) !important;
+  transition: background-color 0.3s ease;
+}
+
+/* ======================================== 
+   ALERTAS Y NOTIFICACIONES
+   ======================================== */
+
+.alert-success {
+  background-color: rgba(56, 142, 60, 0.1);
+  border-color: var(--success-color);
+  color: var(--success-color);
+  border-radius: 8px;
+}
+
+.alert-warning {
+  background-color: rgba(245, 124, 0, 0.1);
+  border-color: var(--warning-color);
+  color: var(--warning-color);
+  border-radius: 8px;
+}
+
+.alert-danger {
+  background-color: rgba(211, 47, 47, 0.1);
+  border-color: var(--danger-color);
+  color: var(--danger-color);
+  border-radius: 8px;
+}
+
+.alert-info {
+  background-color: rgba(2, 136, 209, 0.1);
+  border-color: var(--info-color);
+  color: var(--info-color);
+  border-radius: 8px;
+}
+
+/* ========================================
+   BADGES
+   ======================================== */
+
+.badge.bg-primary {
+  background-color: var(--primary-color) !important;
+}
+
+.badge.bg-success {
+  background-color: var(--success-color) !important;
+}
+
+.badge.bg-warning {
+  background-color: var(--warning-color) !important;
+}
+
+.badge.bg-danger {
+  background-color: var(--danger-color) !important;
+}
+
+.badge.bg-info {
+  background-color: var(--info-color) !important;
+}
+
+/* ========================================
+   FORMULARIOS
+   ======================================== */
+
+.form-control:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 0.2rem rgba(25, 118, 210, 0.25);
+}
+
+.form-select:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 0.2rem rgba(25, 118, 210, 0.25);
+}
+
+.form-control, .form-select {
+  border-radius: 8px;
+  border: 2px solid #E3F2FD;
+  transition: all 0.3s ease;
+}
+
+.form-control:hover, .form-select:hover {
+  border-color: var(--primary-light);
+}
+
+/* ========================================
+   PAGINACIÓN
+   ======================================== */
+
+.page-link {
+  color: var(--primary-color);
+  border-radius: 6px;
+  margin: 0 2px;
+  transition: all 0.3s ease;
+}
+
+.page-item.active .page-link {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+  box-shadow: 0 2px 8px rgba(25, 118, 210, 0.3);
+}
+
+.page-link:hover {
+  color: var(--primary-dark);
+  background-color: #E3F2FD;
+  border-color: var(--primary-light);
+}
+
+/* ========================================
+   PROGRESS BARS
+   ======================================== */
+
+.progress-bar {
+  background-color: var(--primary-color);
+  border-radius: 8px;
+}
+
+.progress-bar.bg-success {
+  background-color: var(--success-color) !important;
+}
+
+.progress-bar.bg-warning {
+  background-color: var(--warning-color) !important;
+}
+
+.progress-bar.bg-danger {
+  background-color: var(--danger-color) !important;
+}
+
+.progress-bar.bg-info {
+  background-color: var(--info-color) !important;
+}
+
+/* ========================================
+   DROPDOWNS
+   ======================================== */
+
+.dropdown-item:hover {
+  background-color: #E3F2FD;
+  color: var(--primary-color);
+}
+
+.dropdown-item.active {
+  background-color: var(--primary-color);
+}
+
+/* ========================================
+   MODALES
+   ======================================== */
+
+.modal-header {
+  background: var(--primary-gradient);
+  color: var(--white);
+  border-radius: 12px 12px 0 0;
+}
+
+.modal-header .btn-close {
+  filter: invert(1);
+}
+
+.modal-content {
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+}
+
+/* ========================================
+   RESPONSIVE
+   ======================================== */
+
+@media (max-width: 768px) {
+  .navbar-brand img {
+    height: 30px;
+  }
+  
+  .card-header {
+    padding: 1rem;
+  }
+  
+  .card {
+    border-radius: 8px;
+  }
+}
+
+/* ========================================
+   UTILIDADES
+   ======================================== */
+
+.text-primary {
+  color: var(--primary-color) !important;
+}
+
+.text-success {
+  color: var(--success-color) !important;
+}
+
+.text-warning {
+  color: var(--warning-color) !important;
+}
+
+.text-danger {
+  color: var(--danger-color) !important;
+}
+
+.text-info {
+  color: var(--info-color) !important;
+}
+
+.bg-primary {
+  background-color: var(--primary-color) !important;
+}
+
+.bg-success {
+  background-color: var(--success-color) !important;
+}
+
+.bg-warning {
+  background-color: var(--warning-color) !important;
+}
+
+.bg-danger {
+  background-color: var(--danger-color) !important;
+}
+
+.bg-info {
+  background-color: var(--info-color) !important;
+} 

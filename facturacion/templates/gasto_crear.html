@@ -1,0 +1,148 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load humanize custom_filters %}
+
+{% block title %}Registrar Gasto - Avícola CVA{% endblock %}
+
+{% block page_title %}Registrar Gasto{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Inicio</a></li>
+<li class="breadcrumb-item"><a href="{% url 'caja_list' %}">Control de Caja</a></li>
+<li class="breadcrumb-item"><a href="{% url 'caja_ver' caja.id %}">Caja {{ caja.fecha|date:"d/m/Y" }}</a></li>
+<li class="breadcrumb-item active">Registrar Gasto</li>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-8">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">
+          <i class="bi bi-receipt"></i> Registrar Gasto - Caja {{ caja.fecha|date:"d/m/Y" }}
+        </h3>
+      </div>
+      <div class="card-body">
+        <form method="post">
+          {% csrf_token %}
+          
+          <div class="row">
+            <div class="col-md-6">
+              <div class="form-group mb-3">
+                <label for="categoria" class="form-label">
+                  <strong>Categoría *</strong>
+                </label>
+                <select class="form-select" id="categoria" name="categoria" required>
+                  <option value="">Seleccionar categoría...</option>
+                  <option value="alimentacion">Alimentación</option>
+                  <option value="transporte">Transporte</option>
+                  <option value="servicios">Servicios</option>
+                  <option value="mantenimiento">Mantenimiento</option>
+                  <option value="insumos">Insumos</option>
+                  <option value="otros">Otros</option>
+                </select>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-group mb-3">
+                <label for="monto" class="form-label">
+                  <strong>Monto (Gs.) *</strong>
+                </label>
+                <input type="number" 
+                       class="form-control" 
+                       id="monto" 
+                       name="monto" 
+                       step="100" 
+                       required>
+                <div class="form-text">
+                  Ingresa el monto del gasto
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="form-group mb-3">
+            <label for="descripcion" class="form-label">
+              <strong>Descripción *</strong>
+            </label>
+            <textarea class="form-control" 
+                      id="descripcion" 
+                      name="descripcion" 
+                      rows="3" 
+                      placeholder="Describe el gasto realizado..."
+                      required></textarea>
+          </div>
+          
+          <div class="row">
+            <div class="col-md-6">
+              <div class="form-group mb-3">
+                <label for="comprobante" class="form-label">
+                  <strong>Comprobante (Opcional)</strong>
+                </label>
+                <input type="text" 
+                       class="form-control" 
+                       id="comprobante" 
+                       name="comprobante" 
+                       placeholder="Número de factura, ticket, etc.">
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-group mb-3">
+                <label for="observacion" class="form-label">
+                  <strong>Observación (Opcional)</strong>
+                </label>
+                <textarea class="form-control" 
+                          id="observacion" 
+                          name="observacion" 
+                          rows="2" 
+                          placeholder="Observaciones adicionales..."></textarea>
+              </div>
+            </div>
+          </div>
+          
+          <div class="d-flex justify-content-end gap-2">
+            <a href="{% url 'caja_ver' caja.id %}" class="btn btn-outline-secondary">
+              <i class="bi bi-arrow-left"></i> Volver
+            </a>
+            <button type="submit" class="btn btn-success">
+              <i class="bi bi-check-circle"></i> Registrar Gasto
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Función para formatear números con separadores de miles
+  function formatNumber(num) {
+    return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  }
+  
+  // Formatear el input de monto
+  const montoInput = document.getElementById('monto');
+  montoInput.addEventListener('input', function() {
+    const value = this.value;
+    if (value) {
+      const numericValue = value.replace(/\D/g, '');
+      this.value = numericValue;
+    }
+  });
+  
+  // Validar que el monto sea un número válido
+  document.querySelector('form').addEventListener('submit', function(e) {
+    const monto = parseFloat(montoInput.value);
+    if (isNaN(monto) || monto <= 0) {
+      e.preventDefault();
+      alert('El monto debe ser un número válido mayor a 0.');
+      montoInput.focus();
+      return false;
+    }
+  });
+});
+</script>
+{% endblock %}

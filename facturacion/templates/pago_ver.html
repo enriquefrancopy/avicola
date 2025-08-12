@@ -1,0 +1,227 @@
+{% extends 'base.html' %}
+{% load humanize custom_filters %}
+
+{% block title %}Detalles del Pago #{{ pago.id }}{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'factura_list' %}">Facturas</a></li>
+<li class="breadcrumb-item active">Pago #{{ pago.id }}</li>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+  <div class="card shadow">
+    <div class="card-header bg-primary text-white">
+      <div class="d-flex justify-content-between align-items-center">
+        <h4 class="mb-0">
+          <i class="bi bi-credit-card"></i> Detalles del Pago #{{ pago.id }}
+        </h4>
+        <div>
+          {% if pago.monto_disponible > 0 %}
+          <a href="{% url 'pago_asignar_facturas' pago.pk %}" class="btn btn-success me-2">
+            <i class="bi bi-plus-circle"></i> Asignar Más Facturas
+          </a>
+          {% endif %}
+          <div class="d-flex justify-content-end w-100 ms-3">
+            <a href="{% url 'factura_list' %}" class="btn btn-outline-light">
+              <i class="bi bi-arrow-left"></i> Volver
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      
+      <!-- Información del pago -->
+      <div class="row mb-4">
+        <div class="col-md-6">
+          <div class="card bg-light">
+            <div class="card-body">
+              <h6 class="card-title"><i class="bi bi-info-circle"></i> Información del Pago</h6>
+              <div class="row">
+                <div class="col-6">
+                  <small class="text-muted">Fecha:</small><br>
+                  <strong>{{ pago.fecha|date:'d/m/Y H:i' }}</strong>
+                </div>
+                <div class="col-6">
+                  <small class="text-muted">Tipo:</small><br>
+                  <strong>{{ pago.get_tipo_display }}</strong>
+                </div>
+              </div>
+              <div class="row mt-2">
+                <div class="col-6">
+                  <small class="text-muted">Referencia:</small><br>
+                  <strong>{{ pago.referencia|default:"—" }}</strong>
+                </div>
+                <div class="col-6">
+                  <small class="text-muted">Usuario:</small><br>
+                  <strong>{{ pago.usuario.username }}</strong>
+                </div>
+              </div>
+              {% if pago.observacion %}
+              <div class="row mt-2">
+                <div class="col-12">
+                  <small class="text-muted">Observaciones:</small><br>
+                  <strong>{{ pago.observacion }}</strong>
+                </div>
+              </div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="card bg-success text-white">
+            <div class="card-body">
+              <h6 class="card-title"><i class="bi bi-calculator"></i> Resumen Financiero</h6>
+              <div class="row">
+                <div class="col-4">
+                  <small class="text-center d-block">Total:</small>
+                  <strong class="text-center d-block">Gs. {{ pago.monto_total|floatformat:0|intcomma_dot }}</strong>
+                </div>
+                <div class="col-4">
+                  <small class="text-center d-block">Asignado:</small>
+                  <strong class="text-center d-block">Gs. {{ pago.monto_asignado|floatformat:0|intcomma_dot }}</strong>
+                </div>
+                <div class="col-4">
+                  <small class="text-center d-block">Disponible:</small>
+                  <strong class="text-center d-block {% if pago.monto_disponible > 0 %}text-danger{% endif %}">
+                    Gs. {{ pago.monto_disponible|floatformat:0|intcomma_dot }}
+                  </strong>
+                </div>
+              </div>
+              <div class="progress mt-2" style="height: 10px;">
+                <div class="progress-bar bg-light" role="progressbar" 
+                     style="width: {{ porcentaje_asignado }}%"></div>
+              </div>
+              <small>{{ porcentaje_asignado|floatformat:1 }}% asignado</small>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Asignaciones a facturas -->
+      {% if asignaciones %}
+      <div class="card mb-4">
+        <div class="card-header bg-info text-white">
+          <h6 class="mb-0">
+            <i class="bi bi-link"></i> Facturas Asignadas ({{ asignaciones|length }})
+          </h6>
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table table-striped table-hover">
+              <thead class="table-dark">
+                <tr>
+                  <th>Número</th>
+                  <th>Tipo</th>
+                  <th>Fecha</th>
+                  <th>Total Factura</th>
+                  <th>Pagado Anterior</th>
+                  <th>Monto Asignado</th>
+                  <th>Saldo Restante</th>
+                  <th>Estado</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for asignacion in asignaciones %}
+                <tr>
+                  <td>
+                    <a href="{% url 'factura_ver' asignacion.pago_factura.factura.pk %}" class="text-decoration-none">
+                      {{ asignacion.pago_factura.factura.numero }}
+                    </a>
+                  </td>
+                  <td>
+                    <span class="badge {% if asignacion.pago_factura.factura.tipo == 'compra' %}bg-danger{% else %}bg-success{% endif %}">
+                      {{ asignacion.pago_factura.factura.get_tipo_display }}
+                    </span>
+                  </td>
+                  <td>{{ asignacion.pago_factura.factura.fecha|date:'d/m/Y' }}</td>
+                  <td class="fw-bold">Gs. {{ asignacion.pago_factura.factura.total|floatformat:0|intcomma_dot }}</td>
+                  <td class="text-success">Gs. {{ asignacion.pagado_anterior|floatformat:0|intcomma_dot }}</td>
+                  <td class="text-primary fw-bold">Gs. {{ asignacion.pago_factura.monto|floatformat:0|intcomma_dot }}</td>
+                  <td class="{% if asignacion.pago_factura.factura.saldo_pendiente > 0 %}text-danger{% else %}text-success{% endif %} fw-bold">
+                    Gs. {{ asignacion.pago_factura.factura.saldo_pendiente|floatformat:0|intcomma_dot }}
+                  </td>
+                  <td>
+                    <span class="badge bg-{% if asignacion.pago_factura.factura.estado == 'pagada' %}success{% elif asignacion.pago_factura.factura.estado == 'anulada' %}danger{% else %}warning{% endif %}">
+                      {{ asignacion.pago_factura.factura.get_estado_display }}
+                    </span>
+                  </td>
+                  <td>
+                    <a href="{% url 'asignacion_eliminar' asignacion.pago_factura.pk %}" 
+                       class="btn btn-sm btn-outline-danger"
+                       onclick="return confirm('¿Está seguro de eliminar esta asignación?')">
+                      <i class="bi bi-trash"></i>
+                    </a>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      {% else %}
+      <div class="alert alert-warning">
+        <i class="bi bi-exclamation-triangle"></i> 
+        <strong>No hay facturas asignadas</strong> a este pago. 
+        <a href="{% url 'pago_asignar_facturas' pago.pk %}" class="alert-link">Asignar facturas ahora</a>
+      </div>
+      {% endif %}
+
+      <!-- Acciones -->
+      <div class="card">
+        <div class="card-header bg-danger text-white">
+          <h6 class="mb-0">
+            <i class="bi bi-gear"></i> Acciones
+          </h6>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-6">
+              <a href="{% url 'pago_eliminar' pago.pk %}" 
+                 class="btn btn-danger"
+                 onclick="return confirm('¿Está seguro de eliminar este pago? Esta acción restaurará todos los saldos de las facturas.')">
+                <i class="bi bi-trash"></i> Eliminar Pago
+              </a>
+            </div>
+            <div class="col-md-6 d-flex justify-content-end">
+              <a href="{% url 'factura_list' %}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Volver a Facturas
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<style>
+.form-control:focus {
+  border-color: #80bdff;
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.table th {
+  border-top: none;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.table td {
+  vertical-align: middle;
+  font-size: 0.9rem;
+}
+
+.badge {
+  font-size: 0.8em;
+}
+
+.progress {
+  background-color: rgba(255,255,255,0.3);
+}
+</style>
+{% endblock %} 

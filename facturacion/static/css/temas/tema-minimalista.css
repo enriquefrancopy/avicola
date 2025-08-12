@@ -1,0 +1,624 @@
+/* ========================================
+   TEMA MINIMALISTA
+   ======================================== */
+
+:root {
+  /* Colores principales del sistema */
+  --primary-color: #6B7280;        /* Gris elegante */
+  --primary-dark: #4B5563;         /* Gris oscuro */
+  --primary-light: #9CA3AF;        /* Gris claro */
+  --secondary-color: #F3F4F6;      /* Gris muy claro */
+  --secondary-dark: #E5E7EB;       /* Gris claro */
+  --accent-color: #8B5CF6;         /* Violeta suave */
+  
+  /* Colores de estado */
+  --success-color: #10B981;        /* Verde suave */
+  --warning-color: #FFC107;        /* Amarillo advertencia */
+  --danger-color: #EF4444;         /* Rojo */
+  --info-color: #3B82F6;           /* Azul */
+  
+  /* Colores neutros */
+  --white: #FFFFFF;
+  --light-gray: #F9FAFB;
+  --gray: #9CA3AF;
+  --dark-gray: #374151;
+  --black: #111827;
+  
+  /* Gradientes */
+  --primary-gradient: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+  --secondary-gradient: linear-gradient(135deg, var(--secondary-color) 0%, var(--secondary-dark) 100%);
+  --accent-gradient: linear-gradient(135deg, var(--accent-color) 0%, #7C3AED 100%);
+}
+
+/* ========================================
+   ESTILOS GLOBALES
+   ======================================== */
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: var(--dark-gray);
+  background-color: var(--light-gray);
+  line-height: 1.6;
+}
+
+/* ========================================
+   HEADER Y NAVEGACIÓN
+   ======================================== */
+
+.app-header {
+  background: var(--white) !important;
+  border-bottom: 1px solid var(--secondary-dark);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.app-header .navbar-nav .nav-link {
+  color: var(--dark-gray) !important;
+  font-weight: 500;
+}
+
+.app-header .navbar-nav .nav-link:hover {
+  background-color: var(--secondary-color);
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+/* Logo en header */
+.navbar-brand img {
+  height: 40px;
+  width: auto;
+}
+
+/* ========================================
+   SIDEBAR
+   ======================================== */
+
+.app-sidebar {
+  background: var(--white) !important;
+  border-right: 1px solid var(--secondary-dark);
+  box-shadow: 1px 0 3px rgba(0, 0, 0, 0.05);
+}
+
+.sidebar-menu .nav-item .nav-link.active {
+  background-color: var(--primary-color) !important;
+  color: var(--white) !important;
+  box-shadow: none;
+  border-radius: 6px;
+  margin: 2px 8px;
+}
+
+.sidebar-menu .nav-item .nav-link:hover {
+  background-color: var(--secondary-color) !important;
+  color: var(--dark-gray) !important;
+  transform: translateX(2px);
+  border-radius: 6px;
+  margin: 2px 8px;
+  transition: all 0.2s ease;
+}
+
+.sidebar-menu .nav-link {
+  color: var(--dark-gray) !important;
+  border-radius: 6px;
+  margin: 2px 8px;
+  transition: all 0.2s ease;
+  font-weight: 500;
+  padding: 0.75rem 1rem;
+}
+
+.sidebar-menu .nav-link:hover {
+  background-color: var(--secondary-color) !important;
+  color: var(--dark-gray) !important;
+  transform: translateX(2px);
+}
+
+.sidebar-menu .nav-header {
+  color: var(--primary-color) !important;
+  font-weight: 600;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 1rem 0 0.5rem 0;
+  padding: 0 1rem;
+}
+
+.sidebar-brand {
+  background: var(--white) !important;
+  padding: 1rem;
+  border-bottom: 1px solid var(--secondary-dark);
+}
+
+.brand-link {
+  color: var(--dark-gray) !important;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.brand-text {
+  color: var(--dark-gray) !important;
+  font-weight: 600;
+  font-size: 1.25rem;
+}
+
+.brand-image {
+  height: 40px;
+  width: auto;
+}
+  background-color: var(--secondary-color) !important;
+  color: var(--primary-color) !important;
+}
+
+/* ========================================
+   BOTONES
+   ======================================== */
+
+.btn {
+  border-radius: 6px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+}
+
+.btn-primary {
+  background-color: var(--primary-color) !important;
+  border-color: var(--primary-color) !important;
+}
+
+.btn-primary:hover {
+  background-color: var(--primary-dark) !important;
+  border-color: var(--primary-dark) !important;
+  transform: translateY(-1px);
+}
+
+.btn-secondary {
+  background-color: var(--secondary-color) !important;
+  border-color: var(--secondary-dark) !important;
+  color: var(--dark-gray) !important;
+}
+
+.btn-secondary:hover {
+  background-color: var(--secondary-dark) !important;
+  border-color: var(--gray) !important;
+  color: var(--dark-gray) !important;
+}
+
+.btn-success {
+  background-color: var(--success-color) !important;
+  border-color: var(--success-color) !important;
+}
+
+.btn-warning {
+  background-color: var(--warning-color) !important;
+  border-color: var(--warning-color) !important;
+}
+
+.btn-danger {
+  background-color: var(--danger-color) !important;
+  border-color: var(--danger-color) !important;
+}
+
+.btn-info {
+  background-color: var(--info-color) !important;
+  border-color: var(--info-color) !important;
+}
+
+/* ========================================
+   TARJETAS Y PANELES
+   ======================================== */
+
+.card {
+  background-color: var(--white);
+  border: 1px solid var(--secondary-dark);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.card:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.card-header {
+  background: var(--white);
+  color: var(--dark-gray);
+  border-bottom: 1px solid var(--secondary-dark);
+  border-radius: 8px 8px 0 0 !important;
+  padding: 1rem 1.25rem;
+  font-weight: 600;
+}
+
+.card-primary {
+  border-top: 2px solid var(--primary-color) !important;
+}
+
+.card-success {
+  border-top: 2px solid var(--success-color) !important;
+}
+
+.card-warning {
+  border-top: 2px solid var(--warning-color) !important;
+}
+
+.card-danger {
+  border-top: 2px solid var(--danger-color) !important;
+}
+
+.card-info {
+  border-top: 2px solid var(--info-color) !important;
+}
+
+/* ========================================
+   TABLAS
+   ======================================== */
+
+.table {
+  background-color: var(--white);
+}
+
+.table thead th {
+  background-color: var(--secondary-color);
+  color: var(--dark-gray);
+  border-color: var(--secondary-dark);
+  font-weight: 600;
+  padding: 0.75rem;
+  border-bottom: 2px solid var(--secondary-dark);
+}
+
+.table-striped tbody tr:nth-of-type(odd) {
+  background-color: var(--light-gray);
+}
+
+.table tbody tr:hover {
+  background-color: var(--secondary-color) !important;
+  transition: background-color 0.2s ease;
+}
+
+.table td, .table th {
+  border-color: var(--secondary-dark);
+  padding: 0.75rem;
+}
+
+/* ======================================== 
+   ALERTAS Y NOTIFICACIONES
+   ======================================== */
+
+.alert {
+  border-radius: 6px;
+  border: 1px solid;
+  padding: 0.75rem 1rem;
+}
+
+.alert-success {
+  background-color: rgba(16, 185, 129, 0.05);
+  border-color: rgba(16, 185, 129, 0.2);
+  color: var(--success-color);
+}
+
+.alert-warning {
+  background-color: rgba(245, 158, 11, 0.05);
+  border-color: rgba(245, 158, 11, 0.2);
+  color: var(--warning-color);
+}
+
+.alert-danger {
+  background-color: rgba(239, 68, 68, 0.05);
+  border-color: rgba(239, 68, 68, 0.2);
+  color: var(--danger-color);
+}
+
+.alert-info {
+  background-color: rgba(59, 130, 246, 0.05);
+  border-color: rgba(59, 130, 246, 0.2);
+  color: var(--info-color);
+}
+
+/* ========================================
+   BADGES
+   ======================================== */
+
+.badge {
+  border-radius: 4px;
+  font-weight: 500;
+  padding: 0.25rem 0.5rem;
+}
+
+.badge.bg-primary {
+  background-color: var(--primary-color) !important;
+}
+
+.badge.bg-success {
+  background-color: var(--success-color) !important;
+}
+
+.badge.bg-warning {
+  background-color: var(--warning-color) !important;
+}
+
+.badge.bg-danger {
+  background-color: var(--danger-color) !important;
+}
+
+.badge.bg-info {
+  background-color: var(--info-color) !important;
+}
+
+/* ========================================
+   FORMULARIOS
+   ======================================== */
+
+.form-control, .form-select {
+  border: 1px solid var(--secondary-dark);
+  border-radius: 6px;
+  padding: 0.5rem 0.75rem;
+  transition: all 0.2s ease;
+  background-color: var(--white);
+}
+
+.form-control:focus, .form-select:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(107, 114, 128, 0.1);
+  outline: none;
+}
+
+.form-control:hover, .form-select:hover {
+  border-color: var(--primary-light);
+}
+
+.form-label {
+  font-weight: 500;
+  color: var(--dark-gray);
+  margin-bottom: 0.5rem;
+}
+
+/* ========================================
+   PAGINACIÓN
+   ======================================== */
+
+.page-link {
+  color: var(--primary-color);
+  border: 1px solid var(--secondary-dark);
+  border-radius: 4px;
+  margin: 0 1px;
+  transition: all 0.2s ease;
+}
+
+.page-item.active .page-link {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+}
+
+.page-link:hover {
+  color: var(--primary-dark);
+  background-color: var(--secondary-color);
+  border-color: var(--primary-light);
+}
+
+/* ========================================
+   PROGRESS BARS
+   ======================================== */
+
+.progress {
+  background-color: var(--secondary-color);
+  border-radius: 6px;
+  height: 8px;
+}
+
+.progress-bar {
+  background-color: var(--primary-color);
+  border-radius: 6px;
+}
+
+.progress-bar.bg-success {
+  background-color: var(--success-color) !important;
+}
+
+.progress-bar.bg-warning {
+  background-color: var(--warning-color) !important;
+}
+
+.progress-bar.bg-danger {
+  background-color: var(--danger-color) !important;
+}
+
+.progress-bar.bg-info {
+  background-color: var(--info-color) !important;
+}
+
+/* ========================================
+   DROPDOWNS
+   ======================================== */
+
+.dropdown-menu {
+  background-color: var(--white);
+  border: 1px solid var(--secondary-dark);
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.dropdown-item {
+  color: var(--dark-gray);
+  padding: 0.5rem 1rem;
+  transition: all 0.2s ease;
+}
+
+.dropdown-item:hover {
+  background-color: var(--secondary-color);
+  color: var(--primary-color);
+}
+
+.dropdown-item.active {
+  background-color: var(--primary-color);
+  color: var(--white);
+}
+
+/* ========================================
+   MODALES
+   ======================================== */
+
+.modal-content {
+  background-color: var(--white);
+  border: 1px solid var(--secondary-dark);
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+.modal-header {
+  background: var(--white);
+  color: var(--dark-gray);
+  border-bottom: 1px solid var(--secondary-dark);
+  border-radius: 8px 8px 0 0;
+  padding: 1rem 1.5rem;
+}
+
+.modal-header .btn-close {
+  filter: none;
+}
+
+.modal-footer {
+  background-color: var(--light-gray);
+  border-top: 1px solid var(--secondary-dark);
+  border-radius: 0 0 8px 8px;
+  padding: 1rem 1.5rem;
+}
+
+/* ========================================
+   RESPONSIVE
+   ======================================== */
+
+@media (max-width: 768px) {
+  .navbar-brand img {
+    height: 30px;
+  }
+  
+  .card-header {
+    padding: 0.75rem 1rem;
+  }
+  
+  .card {
+    border-radius: 6px;
+  }
+}
+
+/* ========================================
+   UTILIDADES
+   ======================================== */
+
+.text-primary {
+  color: var(--primary-color) !important;
+}
+
+.text-success {
+  color: var(--success-color) !important;
+}
+
+.text-warning {
+  color: var(--warning-color) !important;
+}
+
+.text-danger {
+  color: var(--danger-color) !important;
+}
+
+.text-info {
+  color: var(--info-color) !important;
+}
+
+.bg-primary {
+  background-color: var(--primary-color) !important;
+}
+
+.bg-success {
+  background-color: var(--success-color) !important;
+}
+
+.bg-warning {
+  background-color: var(--warning-color) !important;
+}
+
+.bg-danger {
+  background-color: var(--danger-color) !important;
+}
+
+.bg-info {
+  background-color: var(--info-color) !important;
+}
+
+/* ========================================
+   ELEMENTOS ESPECÍFICOS DEL TEMA MINIMALISTA
+   ======================================== */
+
+/* Input groups */
+.input-group-text {
+  background-color: var(--secondary-color);
+  border-color: var(--secondary-dark);
+  color: var(--gray);
+  border-radius: 6px;
+}
+
+/* List groups */
+.list-group-item {
+  background-color: var(--white);
+  border-color: var(--secondary-dark);
+  color: var(--dark-gray);
+  padding: 0.75rem 1rem;
+}
+
+.list-group-item:hover {
+  background-color: var(--secondary-color);
+}
+
+/* Nav tabs */
+.nav-tabs .nav-link {
+  background-color: var(--white);
+  border-color: var(--secondary-dark);
+  color: var(--gray);
+  border-radius: 6px 6px 0 0;
+  margin-right: 2px;
+}
+
+.nav-tabs .nav-link.active {
+  background-color: var(--white);
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+  border-bottom-color: var(--white);
+}
+
+/* Breadcrumb */
+.breadcrumb {
+  background-color: var(--white);
+  border: 1px solid var(--secondary-dark);
+  border-radius: 6px;
+  padding: 0.5rem 1rem;
+}
+
+.breadcrumb-item + .breadcrumb-item::before {
+  color: var(--gray);
+}
+
+/* Code blocks */
+code, pre {
+  background-color: var(--secondary-color);
+  color: var(--dark-gray);
+  border: 1px solid var(--secondary-dark);
+  border-radius: 4px;
+  padding: 0.25rem 0.5rem;
+}
+
+/* Separadores */
+hr {
+  border-color: var(--secondary-dark);
+  margin: 1.5rem 0;
+}
+
+/* Sombras sutiles */
+.shadow-sm {
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+}
+
+.shadow {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+}
+
+.shadow-lg {
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1) !important;
+} 

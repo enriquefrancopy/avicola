@@ -1,0 +1,363 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load humanize custom_filters %}
+
+{% block title %}Reporte de Caja - Avícola CVA{% endblock %}
+
+{% block page_title %}Reporte de Caja{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Inicio</a></li>
+<li class="breadcrumb-item"><a href="{% url 'caja_list' %}">Control de Caja</a></li>
+<li class="breadcrumb-item active">Reporte de Caja</li>
+{% endblock %}
+
+{% block content %}
+<!-- Filtros -->
+<div class="row mb-4">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">
+          <i class="bi bi-funnel"></i> Filtros del Reporte
+        </h3>
+      </div>
+      <div class="card-body">
+        <form method="get" class="row">
+          <div class="col-md-4">
+            <div class="form-group">
+              <label for="fecha_inicio" class="form-label">Fecha de Inicio</label>
+              <input type="date" 
+                     class="form-control" 
+                     id="fecha_inicio" 
+                     name="fecha_inicio" 
+                     value="{{ fecha_inicio|date:'Y-m-d' }}">
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="form-group">
+              <label for="fecha_fin" class="form-label">Fecha de Fin</label>
+              <input type="date" 
+                     class="form-control" 
+                     id="fecha_fin" 
+                     name="fecha_fin" 
+                     value="{{ fecha_fin|date:'Y-m-d' }}">
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="form-group">
+              <label class="form-label">&nbsp;</label>
+              <div class="d-grid">
+                <button type="submit" class="btn btn-primary">
+                  <i class="bi bi-search"></i> Generar Reporte
+                </button>
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Estadísticas Generales -->
+<div class="row mb-4">
+  <div class="col-lg-3 col-6">
+    <div class="small-box bg-info">
+      <div class="inner">
+        <h3>{{ total_cajas }}</h3>
+        <p>Total de Cajas</p>
+      </div>
+      <div class="icon">
+        <i class="bi bi-cash-stack"></i>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-3 col-6">
+    <div class="small-box bg-success">
+      <div class="inner">
+        <h3>{{ cajas_cerradas }}</h3>
+        <p>Cajas Cerradas</p>
+      </div>
+      <div class="icon">
+        <i class="bi bi-check-circle"></i>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-3 col-6">
+    <div class="small-box bg-warning">
+      <div class="inner">
+        <h3>{{ cajas_abiertas }}</h3>
+        <p>Cajas Abiertas</p>
+      </div>
+      <div class="icon">
+        <i class="bi bi-exclamation-triangle"></i>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-3 col-6">
+    <div class="small-box bg-danger">
+      <div class="inner">
+        <h3>{{ total_diferencias }}</h3>
+        <p>Total Diferencias</p>
+      </div>
+      <div class="icon">
+        <i class="bi bi-exclamation-triangle"></i>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Resumen Financiero -->
+<div class="row mb-4">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">
+          <i class="bi bi-calculator"></i> Resumen Financiero
+        </h3>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-3">
+            <div class="info-box bg-primary">
+              <span class="info-box-icon"><i class="bi bi-cash-coin"></i></span>
+              <div class="info-box-content">
+                <span class="info-box-text">Total Saldo Inicial</span>
+                <span class="info-box-number">Gs. {{ total_saldo_inicial|intcomma_dot }}</span>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="info-box bg-success">
+              <span class="info-box-icon"><i class="bi bi-plus-circle"></i></span>
+              <div class="info-box-content">
+                <span class="info-box-text">Total Ingresos</span>
+                <span class="info-box-number">Gs. {{ total_ingresos|intcomma_dot }}</span>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="info-box bg-danger">
+              <span class="info-box-icon"><i class="bi bi-dash-circle"></i></span>
+              <div class="info-box-content">
+                <span class="info-box-text">Total Egresos</span>
+                <span class="info-box-number">Gs. {{ total_egresos|intcomma_dot }}</span>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="info-box bg-info">
+              <span class="info-box-icon"><i class="bi bi-calculator"></i></span>
+              <div class="info-box-content">
+                <span class="info-box-text">Total Saldo Final</span>
+                <span class="info-box-number">Gs. {{ total_saldo_final|intcomma_dot }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Análisis por Categoría -->
+<div class="row mb-4">
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">
+          <i class="bi bi-pie-chart"></i> Análisis por Categoría
+        </h3>
+      </div>
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="table table-sm">
+            <thead>
+              <tr>
+                <th>Categoría</th>
+                <th>Cantidad</th>
+                <th>Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for item in analisis_categoria %}
+              <tr>
+                <td>{{ item.categoria|title }}</td>
+                <td>{{ item.cantidad }}</td>
+                <td class="text-end">Gs. {{ item.total|intcomma_dot }}</td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="3" class="text-center text-muted">No hay datos para mostrar</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">
+          <i class="bi bi-arrow-left-right"></i> Análisis por Tipo de Movimiento
+        </h3>
+      </div>
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="table table-sm">
+            <thead>
+              <tr>
+                <th>Tipo</th>
+                <th>Cantidad</th>
+                <th>Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for item in analisis_tipo %}
+              <tr>
+                <td>
+                  {% if item.tipo == 'ingreso' %}
+                    <span class="badge bg-success">Ingreso</span>
+                  {% else %}
+                    <span class="badge bg-danger">Egreso</span>
+                  {% endif %}
+                </td>
+                <td>{{ item.cantidad }}</td>
+                <td class="text-end">Gs. {{ item.total|intcomma_dot }}</td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="3" class="text-center text-muted">No hay datos para mostrar</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Top 10 Gastos Más Altos -->
+{% if top_gastos %}
+<div class="row mb-4">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">
+          <i class="bi bi-trophy"></i> Top 10 Gastos Más Altos
+        </h3>
+      </div>
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="table table-striped">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Fecha</th>
+                <th>Categoría</th>
+                <th>Descripción</th>
+                <th>Monto</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for gasto in top_gastos %}
+              <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ gasto.caja.fecha|date:"d/m/Y" }}</td>
+                <td>{{ gasto.get_categoria_display }}</td>
+                <td>{{ gasto.descripcion|truncatechars:50 }}</td>
+                <td class="text-end text-danger">Gs. {{ gasto.monto|intcomma_dot }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- Lista de Cajas -->
+<div class="row">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">
+          <i class="bi bi-list-ul"></i> Lista de Cajas en el Período
+        </h3>
+      </div>
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="table table-striped">
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Saldo Inicial</th>
+                <th>Saldo Final</th>
+                <th>Saldo Real</th>
+                <th>Diferencia</th>
+                <th>Estado</th>
+                <th>Usuario</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for caja in cajas %}
+              <tr>
+                <td>{{ caja.fecha|date:"d/m/Y" }}</td>
+                <td>Gs. {{ caja.saldo_inicial|intcomma_dot }}</td>
+                <td>Gs. {{ caja.saldo_final|intcomma_dot }}</td>
+                <td>
+                  {% if caja.cerrada %}
+                    Gs. {{ caja.saldo_real|intcomma_dot }}
+                  {% else %}
+                    <span class="text-muted">-</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if caja.cerrada %}
+                    {% if caja.diferencia == 0 %}
+                      <span class="badge bg-success">Sin diferencia</span>
+                    {% elif caja.diferencia > 0 %}
+                      <span class="badge bg-warning">+Gs. {{ caja.diferencia|intcomma_dot }}</span>
+                    {% else %}
+                      <span class="badge bg-danger">Gs. {{ caja.diferencia|intcomma_dot }}</span>
+                    {% endif %}
+                  {% else %}
+                    <span class="text-muted">-</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if caja.cerrada %}
+                    <span class="badge bg-success">Cerrada</span>
+                  {% else %}
+                    <span class="badge bg-warning">Abierta</span>
+                  {% endif %}
+                </td>
+                <td>{{ caja.usuario_apertura.username }}</td>
+                <td>
+                  <a href="{% url 'caja_ver' caja.id %}" class="btn btn-sm btn-primary">
+                    <i class="bi bi-eye"></i>
+                  </a>
+                </td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="8" class="text-center text-muted">
+                  No hay cajas registradas en el período seleccionado
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

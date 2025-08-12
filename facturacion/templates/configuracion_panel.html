@@ -1,0 +1,247 @@
+{% extends 'base.html' %}
+{% load humanize custom_filters %}
+
+{% block title %}Configuración del Sistema - Avícola CVA{% endblock %}
+
+{% block page_title %}{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item active">Configuración del Sistema</li>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+  <!-- Header -->
+  <div class="card shadow mb-4">
+    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+      <h4 class="mb-0"><i class="bi bi-gear"></i> Configuración del Sistema</h4>
+      <div class="d-flex justify-content-end w-100 ms-3">
+        <button class="btn btn-outline-light me-2" type="button" onclick="resetearConfiguraciones()" title="Resetear a valores por defecto">
+          <i class="bi bi-arrow-clockwise"></i> Resetear
+        </button>
+        <a href="{% url 'dashboard' %}" class="btn btn-outline-light">
+          <i class="bi bi-arrow-left"></i> Volver
+        </a>
+      </div>
+    </div>
+    <div class="card-body">
+      <p class="text-muted mb-0">
+        Configura los parámetros del sistema según tus necesidades. Los cambios se aplican inmediatamente.
+      </p>
+    </div>
+  </div>
+
+
+
+  <!-- Configuraciones por Categoría -->
+  <div class="row">
+    {% for categoria, data in configuraciones.items %}
+    <div class="col-lg-6 mb-4">
+      <div class="card shadow h-100">
+        <div class="card-header bg-light">
+          <h5 class="mb-0">
+            {% if categoria == 'general' %}
+              <i class="bi bi-building text-primary"></i>
+            {% elif categoria == 'alertas' %}
+                              <i class="bi bi-bell text-danger"></i>
+            {% elif categoria == 'email' %}
+              <i class="bi bi-envelope text-info"></i>
+            {% elif categoria == 'stock' %}
+              <i class="bi bi-box-seam text-success"></i>
+            {% elif categoria == 'facturacion' %}
+              <i class="bi bi-receipt text-danger"></i>
+            {% elif categoria == 'tema' %}
+              <i class="bi bi-palette text-primary"></i>
+            {% endif %}
+            {{ data.nombre }}
+          </h5>
+        </div>
+        <div class="card-body">
+          {% if data.configs %}
+            <div class="table-responsive">
+              <table class="table table-sm">
+                <thead class="table-light">
+                  <tr>
+                    <th style="width: 30%;">Configuración</th>
+                    <th style="width: 50%;">Valor</th>
+                    <th style="width: 20%;">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for config in data.configs %}
+                  <tr>
+                    <td>
+                      <strong>{{ config.clave }}</strong>
+                      {% if config.descripcion %}
+                        <br><small class="text-muted">{{ config.descripcion }}</small>
+                      {% endif %}
+                    </td>
+                    <td>
+                      {% if config.clave == 'tema_visual' %}
+                        <div class="d-flex align-items-center">
+                          <span class="badge bg-primary me-2">{{ config.valor|title }}</span>
+                          <a href="{% url 'configuracion_temas' %}" class="btn btn-outline-primary btn-sm">
+                            <i class="bi bi-palette"></i> Cambiar Tema
+                          </a>
+                        </div>
+                      {% else %}
+                        <div class="input-group input-group-sm">
+                          <input type="text" 
+                                 class="form-control config-input" 
+                                 value="{{ config.valor }}"
+                                 data-clave="{{ config.clave }}"
+                                 data-categoria="{{ config.categoria }}"
+                                 placeholder="Valor">
+                          <button class="btn btn-outline-primary btn-sm" 
+                                  type="button"
+                                  onclick="guardarConfiguracion('{{ config.clave }}', this.previousElementSibling.value, '{{ config.categoria }}')">
+                            <i class="bi bi-check"></i>
+                          </button>
+                        </div>
+                      {% endif %}
+                    </td>
+                    <td>
+                      <a href="{% url 'configuracion_editar' config.pk %}" 
+                         class="btn btn-outline-secondary btn-sm" 
+                         title="Editar">
+                        <i class="bi bi-pencil"></i>
+                      </a>
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          {% else %}
+            <div class="text-center py-3">
+              <i class="bi bi-inbox text-muted" style="font-size: 2rem;"></i>
+              <p class="text-muted mt-2">No hay configuraciones en esta categoría</p>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Información Adicional -->
+  <div class="row mt-4">
+    <div class="col-12">
+      <div class="card shadow">
+        <div class="card-header bg-info text-white">
+          <h5 class="mb-0"><i class="bi bi-info-circle"></i> Información</h5>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-6">
+              <h6>Configuraciones Generales</h6>
+              <ul class="list-unstyled">
+                <li><strong>Nombre de Empresa:</strong> Configura el nombre que aparece en el sistema</li>
+                <li><strong>Moneda:</strong> Símbolo de moneda para facturas y reportes</li>
+                <li><strong>País:</strong> País de la empresa</li>
+              </ul>
+            </div>
+            <div class="col-md-6">
+              <h6>Configuraciones de Alertas</h6>
+              <ul class="list-unstyled">
+                <li><strong>Frecuencia:</strong> Cada cuántas horas se verifican las alertas</li>
+                <li><strong>Días Factura Vencida:</strong> Después de cuántos días se considera vencida</li>
+                <li><strong>Alertas Habilitadas:</strong> Activar/desactivar tipos de alertas</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function guardarConfiguracion(clave, valor, categoria) {
+  const formData = new FormData();
+  formData.append('clave', clave);
+  formData.append('valor', valor);
+  formData.append('categoria', categoria);
+  formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+  
+  fetch('{% url "configuracion_guardar_ajax" %}', {
+    method: 'POST',
+    body: formData
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      // Mostrar notificación de éxito
+      mostrarNotificacion(data.message, 'success');
+    } else {
+      // Mostrar notificación de error
+      mostrarNotificacion(data.message, 'error');
+    }
+  })
+  .catch(error => {
+    console.error('Error:', error);
+    mostrarNotificacion('Error al guardar la configuración', 'error');
+  });
+}
+
+function resetearConfiguraciones() {
+  if (confirm('¿Estás seguro de que quieres resetear todas las configuraciones a valores por defecto? Esta acción no se puede deshacer.')) {
+    window.location.href = '{% url "configuracion_resetear" %}';
+  }
+}
+
+function mostrarNotificacion(mensaje, tipo) {
+  // Crear notificación toast
+  const toast = document.createElement('div');
+  toast.className = `toast align-items-center text-white bg-${tipo === 'success' ? 'success' : 'danger'} border-0`;
+  toast.setAttribute('role', 'alert');
+  toast.setAttribute('aria-live', 'assertive');
+  toast.setAttribute('aria-atomic', 'true');
+  
+  toast.innerHTML = `
+    <div class="d-flex">
+      <div class="toast-body">
+        ${mensaje}
+      </div>
+      <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+    </div>
+  `;
+  
+  // Agregar al contenedor de toasts
+  let toastContainer = document.getElementById('toast-container');
+  if (!toastContainer) {
+    toastContainer = document.createElement('div');
+    toastContainer.id = 'toast-container';
+    toastContainer.className = 'toast-container position-fixed top-0 end-0 p-3';
+    toastContainer.style.zIndex = '9999';
+    document.body.appendChild(toastContainer);
+  }
+  
+  toastContainer.appendChild(toast);
+  
+  // Mostrar toast
+  const bsToast = new bootstrap.Toast(toast);
+  bsToast.show();
+  
+  // Remover después de que se oculte
+  toast.addEventListener('hidden.bs.toast', () => {
+    toast.remove();
+  });
+}
+
+// Guardar al presionar Enter
+document.addEventListener('DOMContentLoaded', function() {
+  const inputs = document.querySelectorAll('.config-input');
+  inputs.forEach(input => {
+    input.addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        const clave = this.dataset.clave;
+        const valor = this.value;
+        const categoria = this.dataset.categoria;
+        guardarConfiguracion(clave, valor, categoria);
+      }
+    });
+  });
+});
+</script>
+{% endblock %} 

@@ -1,0 +1,360 @@
+{% extends 'base.html' %}
+{% load humanize custom_filters %}
+{% block content %}
+<div class="container-fluid mt-4">
+  <div class="card shadow">
+    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+      <h4 class="mb-0">
+        <i class="bi bi-eye"></i> Factura #{{ factura.id }} 
+        <span class="badge bg-{% if factura.estado == 'pagada' %}success{% elif factura.estado == 'anulada' %}danger{% else %}warning{% endif %} ms-2">{{ factura.get_estado_display }}</span>
+      </h4>
+      <div class="d-flex justify-content-end w-100 ms-3">
+        {% if factura.estado != 'anulada' %}
+          {% if factura.estado == 'pendiente' and factura.tipo == 'compra' %}
+          <a href="{% url 'pago_proveedor_crear' %}?factura={{ factura.id }}&next={{ request.path|urlencode }}" class="btn btn-success me-2" title="Gestionar pagos">
+            <i class="bi bi-credit-card-2-front"></i> Pagos
+          </a>
+          {% endif %}
+          {% if factura.total_pagado == 0 %}
+          <a href="{% url 'factura_anular' factura.pk %}" class="btn btn-danger me-2" title="Anular factura">
+            <i class="bi bi-x-circle"></i> Anular
+          </a>
+          {% endif %}
+        {% endif %}
+         
+                 <a href="{% url 'exportar_detalles_facturas_excel' %}?tipo={{ factura.tipo }}&q={{ factura.id }}" class="btn btn-outline-light me-2" title="Exportar detalles a Excel">
+           <i class="bi bi-file-earmark-excel"></i> Exportar
+         </a>
+         <a href="javascript:history.back()" class="btn btn-outline-light">
+           <i class="bi bi-arrow-left"></i> Volver
+         </a>
+      </div>
+    </div>
+    <div class="card-body">
+      <!-- Información de la factura -->
+      <div class="row mb-4">
+        <div class="col-md-3">
+          <div class="card bg-light">
+            <div class="card-body text-center">
+              <i class="bi bi-calendar3 text-primary" style="font-size: 2rem;"></i>
+              <h6 class="mt-2 mb-1">Fecha</h6>
+              <p class="mb-0 fw-bold">{{ factura.fecha|date:'d/m/Y H:i' }}</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="card bg-light">
+            <div class="card-body text-center">
+              {% if factura.tipo == 'venta' %}
+                <i class="bi bi-person text-success" style="font-size: 2rem;"></i>
+                <h6 class="mt-2 mb-1">Cliente</h6>
+                <p class="mb-0 fw-bold">{{ factura.cliente }}</p>
+              {% else %}
+                <i class="bi bi-truck text-danger" style="font-size: 2rem;"></i>
+                <h6 class="mt-2 mb-1">Proveedor</h6>
+                <p class="mb-0 fw-bold">{{ factura.proveedor }}</p>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="card bg-light">
+            <div class="card-body text-center">
+              <i class="bi bi-hash text-info" style="font-size: 2rem;"></i>
+              <h6 class="mt-2 mb-1">Número</h6>
+              <p class="mb-0 fw-bold">#{{ factura.id }}</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="card bg-light">
+            <div class="card-body text-center">
+              <i class="bi bi-currency-dollar text-success" style="font-size: 2rem;"></i>
+              <h6 class="mt-2 mb-1">Total</h6>
+                             <p class="mb-0 fw-bold h5">Gs. {{ factura.total|floatformat:0|intcomma_dot }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Detalles de la factura -->
+      <div class="card mb-4">
+        <div class="card-body p-0">
+          <!-- Header de la tabla -->
+          <div class="table-dark text-white p-3">
+            <div class="row align-items-center">
+              <div style="width: {% if factura.tipo == 'compra' %}30%{% else %}35%{% endif %};">
+                <span class="fw-bold">Producto</span>
+              </div>
+              <div style="width: {% if factura.tipo == 'compra' %}10%{% else %}15%{% endif %};" class="text-center">
+                <span class="fw-bold">Cantidad</span>
+              </div>
+              <div style="width: {% if factura.tipo == 'compra' %}20%{% else %}15%{% endif %};" class="text-end">
+                <span class="fw-bold">{% if factura.tipo == 'compra' %}Costo{% else %}Precio{% endif %}</span>
+              </div>
+              {% if factura.tipo == 'compra' %}
+              <div style="width: 20%;" class="text-end">
+                <span class="fw-bold">Precio</span>
+              </div>
+              <div style="width: 20%;" class="text-end">
+                <span class="fw-bold">Total</span>
+              </div>
+              {% endif %}
+              {% if factura.tipo != 'compra' %}
+              <div style="width: 17.5%;" class="text-end">
+                <span class="fw-bold">Subtotal 5%</span>
+              </div>
+              <div style="width: 17.5%;" class="text-end">
+                <span class="fw-bold">Subtotal 10%</span>
+              </div>
+              {% endif %}
+            </div>
+          </div>
+          
+          <!-- Cuerpo de la tabla -->
+          <div class="table-responsive">
+            <table class="table table-striped table-hover mb-0">
+              <tbody>
+                {% for d in factura.detalles.all %}
+                <tr>
+                  <td style="width: {% if factura.tipo == 'compra' %}30%{% else %}35%{% endif %};">
+                    <strong>{{ d.producto.nombre }}</strong><br>
+                    <small class="text-muted">{{ d.producto.codigo }}</small>
+                  </td>
+                  <td style="width: {% if factura.tipo == 'compra' %}10%{% else %}15%{% endif %};" class="text-center">{{ d.cantidad }}</td>
+                  <td style="width: {% if factura.tipo == 'compra' %}20%{% else %}15%{% endif %};" class="text-end">
+                    Gs. {{ d.precio_unitario|floatformat:0|intcomma_dot }}
+                  </td>
+                  {% if factura.tipo == 'compra' %}
+                  <td style="width: 20%;" class="text-end">
+                    Gs. {{ d.producto.precio|floatformat:0|intcomma_dot }}
+                  </td>
+                  <td style="width: 20%;" class="text-end">
+                    Gs. {{ d.subtotal|floatformat:0|intcomma_dot }}
+                  </td>
+                  {% endif %}
+                  {% if factura.tipo != 'compra' %}
+                  <td style="width: 17.5%;" class="text-end">
+                    {% if d.producto.iva == 5 %}
+                      Gs. {{ d.subtotal|floatformat:0|intcomma_dot }}
+                    {% else %}
+                      Gs. 0
+                    {% endif %}
+                  </td>
+                  <td style="width: 17.5%;" class="text-end">
+                    {% if d.producto.iva == 10 %}
+                      Gs. {{ d.subtotal|floatformat:0|intcomma_dot }}
+                    {% else %}
+                      Gs. 0
+                    {% endif %}
+                  </td>
+                  {% endif %}
+                </tr>
+                {% empty %}
+                <tr>
+                  <td colspan="{% if factura.tipo == 'compra' %}5{% else %}5{% endif %}" class="text-center py-4">
+                    <i class="bi bi-exclamation-triangle text-danger" style="font-size: 2rem;"></i>
+                    <p class="text-muted mt-2">No hay detalles registrados para esta factura.</p>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Totales -->
+      <div class="row">
+        {% if factura.tipo != 'compra' %}
+        <div class="col-md-6">
+          <div class="card">
+            <div class="card-body">
+              <div class="row align-items-center">
+                <div class="col-md-4">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <span>IVA 5%:</span>
+                    <span class="fw-bold" id="total-iva-5">Gs. 0</span>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <span>IVA 10%:</span>
+                    <span class="fw-bold" id="total-iva-10">Gs. 0</span>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <span>Total IVA:</span>
+                    <span class="fw-bold">Gs. {{ factura.iva|floatformat:0|intcomma_dot }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="card">
+            <div class="card-body">
+                             <div class="row align-items-center mb-2">
+                 <div class="col-md-6">
+                   <div class="d-flex justify-content-between align-items-center">
+                     <span>Subtotal 5%:</span>
+                     <span class="fw-bold" id="total-subtotal-5">Gs. 0</span>
+                   </div>
+                 </div>
+                 <div class="col-md-6">
+                   <div class="d-flex justify-content-between align-items-center">
+                     <span>Subtotal 10%:</span>
+                     <span class="fw-bold" id="total-subtotal-10">Gs. 0</span>
+                   </div>
+                 </div>
+               </div>
+               <hr>
+                               <div class="d-flex justify-content-between align-items-center">
+                  <span class="h5 mb-0 fw-bold">Total General:</span>
+                  <span class="h5 mb-0 fw-bold">Gs. {{ factura.total|floatformat:0|intcomma_dot }}</span>
+                </div>
+            </div>
+          </div>
+        </div>
+        {% else %}
+        <!-- Total para Compras -->
+        <div class="col-md-12">
+          <div class="card">
+            <div class="card-body">
+              <div class="d-flex justify-content-between align-items-center">
+                <span class="h5 mb-0 fw-bold">Total General:</span>
+                <span class="h5 mb-0 fw-bold">Gs. {{ factura.total|floatformat:0|intcomma_dot }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Datos de los detalles de la factura
+const detallesFactura = [
+  {% for d in factura.detalles.all %}
+  {
+    producto: "{{ d.producto.nombre }}",
+    codigo: "{{ d.producto.codigo }}",
+    cantidad: {{ d.cantidad }},
+    precio: {{ d.precio_unitario }},
+    subtotal: {{ d.subtotal }},
+    iva: {{ d.iva }},
+    iva_porcentaje: {{ d.producto.iva }}
+  }{% if not forloop.last %},{% endif %}
+  {% endfor %}
+];
+
+console.log('Detalles de la factura:', detallesFactura);
+
+// Calcular totales discriminados
+function calcularTotales() {
+  {% if factura.tipo != 'compra' %}
+  let totalIva5 = 0;
+  let totalIva10 = 0;
+  let totalSubtotal5 = 0;
+  let totalSubtotal10 = 0;
+
+  detallesFactura.forEach(detalle => {
+    if (detalle.iva_porcentaje === 5) {
+      totalIva5 += detalle.iva;
+      totalSubtotal5 += detalle.subtotal;
+    } else if (detalle.iva_porcentaje === 10) {
+      totalIva10 += detalle.iva;
+      totalSubtotal10 += detalle.subtotal;
+    }
+  });
+
+  // Actualizar los elementos en el DOM
+  document.getElementById('total-iva-5').textContent = 'Gs. ' + totalIva5.toLocaleString();
+  document.getElementById('total-iva-10').textContent = 'Gs. ' + totalIva10.toLocaleString();
+  document.getElementById('total-subtotal-5').textContent = 'Gs. ' + totalSubtotal5.toLocaleString();
+  document.getElementById('total-subtotal-10').textContent = 'Gs. ' + totalSubtotal10.toLocaleString();
+  
+  // Verificar que el total general coincida con la suma de subtotales
+  const totalCalculado = totalSubtotal5 + totalSubtotal10;
+  console.log('Total calculado por JavaScript:', totalCalculado);
+  console.log('Total de la factura:', {{ factura.total }});
+  {% else %}
+  console.log('Factura de compra - no se calculan totales discriminados');
+  {% endif %}
+}
+
+// Ejecutar cuando el DOM esté listo
+document.addEventListener('DOMContentLoaded', function() {
+  {% if factura.tipo != 'compra' %}
+  calcularTotales();
+  {% endif %}
+});
+</script>
+
+<style>
+.card {
+  border: none;
+  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+.table th {
+  border-top: none;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.table td {
+  vertical-align: middle;
+  font-size: 0.9rem;
+}
+
+.badge {
+  font-size: 0.8em;
+}
+
+.fw-bold {
+  font-weight: 600 !important;
+}
+
+.text-success {
+  color: #28a745 !important;
+}
+
+.table tbody tr:hover {
+  background-color: rgba(0,123,255,0.05) !important;
+}
+
+/* Consistencia con otros módulos */
+.table-dark {
+  background-color: #343a40 !important;
+  color: white !important;
+}
+
+.table-bordered {
+  border: 1px solid #dee2e6;
+}
+
+.table-bordered th,
+.table-bordered td {
+  border: 1px solid #dee2e6;
+}
+
+.bg-primary {
+  background-color: #007bff !important;
+}
+
+.btn-outline-light:hover {
+  background-color: #f8f9fa;
+  color: #007bff;
+}
+
+/* Estilos específicos para el header azul */
+.bg-primary .row {
+  margin: 0;
+}
+</style>
+{% endblock %} 

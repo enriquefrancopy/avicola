@@ -1,0 +1,204 @@
+{% extends 'base.html' %}
+{% load humanize custom_filters %}
+
+{% block title %}Reportes Avanzados - Avícola CVA{% endblock %}
+
+{% block page_title %}{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item active">Reportes Avanzados</li>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+  <!-- Header -->
+  <div class="card shadow mb-4">
+    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+      <h4 class="mb-0"><i class="bi bi-graph-up"></i> Reportes Avanzados</h4>
+      <div class="d-flex ms-auto justify-content-end">
+        <a href="{% url 'reporte_ventas_detallado' %}" class="btn btn-outline-light me-2">
+          <i class="bi bi-receipt"></i> Ventas Detallado
+        </a>
+        <a href="{% url 'reporte_productos_analisis' %}" class="btn btn-outline-light me-2">
+          <i class="bi bi-box-seam"></i> Análisis Productos
+        </a>
+        <a href="{% url 'reporte_clientes_proveedores' %}" class="btn btn-outline-light me-2">
+          <i class="bi bi-people"></i> Clientes/Proveedores
+        </a>
+        <a href="{% url 'reporte_pagos_proveedores' %}" class="btn btn-outline-light me-2">
+          <i class="bi bi-credit-card"></i> Pagos Proveedores
+        </a>
+        <div class="d-flex justify-content-end w-100 ms-3">
+          <a href="{% url 'dashboard' %}" class="btn btn-outline-light">
+            <i class="bi bi-arrow-left"></i> Volver
+          </a>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <p class="text-muted mb-0">
+        Análisis completo del negocio con estadísticas detalladas y métricas clave.
+      </p>
+    </div>
+  </div>
+
+  <!-- Estadísticas Rápidas -->
+  <div class="row mb-4">
+    <div class="col-md-3">
+      <div class="card bg-gradient-primary text-white">
+        <div class="card-body text-center">
+          <h3 class="mb-0">Gs. {{ total_ventas|floatformat:0|intcomma_dot }}</h3>
+          <p class="mb-0">Total Ventas</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card bg-gradient-success text-white">
+        <div class="card-body text-center">
+          <h3 class="mb-0">{{ total_facturas }}</h3>
+          <p class="mb-0">Total Facturas</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card bg-gradient-info text-white">
+        <div class="card-body text-center">
+          <h3 class="mb-0">{{ productos_activos }}</h3>
+          <p class="mb-0">Productos Activos</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card bg-gradient-warning text-white">
+        <div class="card-body text-center">
+          <h3 class="mb-0">Gs. {{ valor_inventario|floatformat:0|intcomma_dot }}</h3>
+          <p class="mb-0">Valor Inventario</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Gráficos y Tablas -->
+  <div class="row">
+    <!-- Productos Más Vendidos -->
+    <div class="col-lg-6 mb-4">
+      <div class="card shadow">
+        <div class="card-header bg-success text-white">
+          <h5 class="mb-0"><i class="bi bi-bar-chart"></i> Productos Más Vendidos</h5>
+        </div>
+        <div class="card-body">
+          {% if productos_vendidos %}
+            <div class="table-responsive">
+              <table class="table table-sm">
+                <thead>
+                  <tr>
+                    <th>Producto</th>
+                    <th class="text-end">Cantidad Vendida</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for producto in productos_vendidos %}
+                  <tr>
+                    <td>{{ producto.producto__nombre }}</td>
+                    <td class="text-end">{{ producto.cantidad_vendida }}</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          {% else %}
+            <p class="text-muted text-center">No hay datos de ventas disponibles</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Top Clientes -->
+    <div class="col-lg-6 mb-4">
+      <div class="card shadow">
+        <div class="card-header bg-info text-white">
+          <h5 class="mb-0"><i class="bi bi-people"></i> Top Clientes</h5>
+        </div>
+        <div class="card-body">
+          {% if clientes_compras %}
+            <div class="table-responsive">
+              <table class="table table-sm">
+                <thead>
+                  <tr>
+                    <th>Cliente</th>
+                    <th class="text-end">Total Compras</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for cliente in clientes_compras %}
+                  <tr>
+                    <td>{{ cliente.cliente__nombre }}</td>
+                    <td class="text-end">Gs. {{ cliente.total_compras|floatformat:0|intcomma_dot }}</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          {% else %}
+            <p class="text-muted text-center">No hay datos de clientes disponibles</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Resumen de Métricas -->
+  <div class="row">
+    <div class="col-12">
+      <div class="card shadow">
+        <div class="card-header bg-dark text-white">
+          <h5 class="mb-0"><i class="bi bi-table"></i> Resumen de Métricas</h5>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-3 text-center">
+              <div class="border rounded p-3">
+                <h4 class="text-primary">{{ total_facturas }}</h4>
+                <p class="text-muted mb-0">Facturas Totales</p>
+              </div>
+            </div>
+            <div class="col-md-3 text-center">
+              <div class="border rounded p-3">
+                <h4 class="text-success">Gs. {{ total_ventas|floatformat:0|intcomma_dot }}</h4>
+                <p class="text-muted mb-0">Ventas Totales</p>
+              </div>
+            </div>
+            <div class="col-md-3 text-center">
+              <div class="border rounded p-3">
+                <h4 class="text-info">{{ productos_activos }}</h4>
+                <p class="text-muted mb-0">Productos Activos</p>
+              </div>
+            </div>
+            <div class="col-md-3 text-center">
+              <div class="border rounded p-3">
+                <h4 class="text-danger">Gs. {{ valor_inventario|floatformat:0|intcomma_dot }}</h4>
+                <p class="text-muted mb-0">Valor Inventario</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.bg-gradient-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+.bg-gradient-success {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+.bg-gradient-info {
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+}
+.bg-gradient-warning {
+  background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+}
+</style>
+{% endblock %} 

@@ -1,0 +1,152 @@
+{% extends 'base.html' %}
+{% load humanize custom_filters %}
+
+{% block title %}Análisis de Productos - Avícola CVA{% endblock %}
+
+{% block page_title %}{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'reportes_dashboard' %}">Reportes</a></li>
+<li class="breadcrumb-item active">Análisis Productos</li>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+  <!-- Header -->
+  <div class="card shadow mb-4">
+    <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+      <h4 class="mb-0"><i class="bi bi-box-seam"></i> {{ titulo }}</h4>
+      <div class="d-flex justify-content-end w-100 ms-3">
+        <a href="{% url 'reportes_dashboard' %}" class="btn btn-outline-light">
+          <i class="bi bi-arrow-left"></i> Volver
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Productos Más Vendidos -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card shadow">
+        <div class="card-header bg-success text-white">
+          <h5 class="mb-0"><i class="bi bi-bar-chart"></i> Productos Más Vendidos</h5>
+        </div>
+        <div class="card-body">
+          {% if productos_mas_vendidos %}
+            <div class="table-responsive">
+              <table class="table table-striped">
+                <thead>
+                  <tr>
+                    <th>Producto</th>
+                    <th class="text-end">Cantidad Vendida</th>
+                    <th class="text-end">Total Vendido</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for producto in productos_mas_vendidos %}
+                  <tr>
+                    <td>{{ producto.producto__nombre }}</td>
+                    <td class="text-end">{{ producto.cantidad_vendida }}</td>
+                    <td class="text-end">Gs. {{ producto.total_vendido|floatformat:0|intcomma_dot }}</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          {% else %}
+            <p class="text-muted text-center">No hay datos de ventas disponibles</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Productos con Stock Bajo -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card shadow">
+        <div class="card-header bg-danger text-white">
+          <h5 class="mb-0"><i class="bi bi-exclamation-triangle"></i> Productos con Stock Bajo</h5>
+        </div>
+        <div class="card-body">
+          {% if productos_stock_bajo %}
+            <div class="table-responsive">
+              <table class="table table-striped">
+                <thead>
+                  <tr>
+                    <th>Producto</th>
+                    <th class="text-end">Stock Actual</th>
+                    <th class="text-end">Stock Mínimo</th>
+                    <th class="text-end">Precio</th>
+                    <th class="text-end">Estado</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for producto in productos_stock_bajo %}
+                  <tr>
+                    <td>{{ producto.nombre }}</td>
+                    <td class="text-end">{{ producto.stock }}</td>
+                    <td class="text-end">{{ producto.stock_minimo }}</td>
+                    <td class="text-end">Gs. {{ producto.precio|floatformat:0|intcomma_dot }}</td>
+                    <td class="text-end">
+                      {% if producto.stock == 0 %}
+                        <span class="badge bg-danger">Agotado</span>
+                      {% else %}
+                        <span class="badge bg-danger">Stock Bajo</span>
+                      {% endif %}
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          {% else %}
+            <p class="text-muted text-center">No hay productos con stock bajo</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Productos Agotados -->
+  <div class="row">
+    <div class="col-12">
+      <div class="card shadow">
+        <div class="card-header bg-danger text-white">
+          <h5 class="mb-0"><i class="bi bi-x-circle"></i> Productos Agotados</h5>
+        </div>
+        <div class="card-body">
+          {% if productos_agotados %}
+            <div class="table-responsive">
+              <table class="table table-striped">
+                <thead>
+                  <tr>
+                    <th>Producto</th>
+                    <th class="text-end">Precio</th>
+                    <th class="text-end">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for producto in productos_agotados %}
+                  <tr>
+                    <td>{{ producto.nombre }}</td>
+                    <td class="text-end">Gs. {{ producto.precio|floatformat:0|intcomma_dot }}</td>
+                    <td class="text-end">
+                      <a href="{% url 'productos_list' %}" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-plus-circle"></i> Reponer Stock
+                      </a>
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          {% else %}
+            <p class="text-muted text-center">No hay productos agotados</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %} 

@@ -1,0 +1,111 @@
+{% extends 'emails/base_email.html' %}
+
+{% block content %}
+<h2>🚨 Reporte de Alertas del Sistema</h2>
+<p>Hola,</p>
+<p>El sistema Avícola CVA ha detectado las siguientes alertas que requieren tu atención:</p>
+
+{% if alertas.stock_bajo %}
+<div class="alert alert-warning">
+    <h3>📦 Productos con Stock Bajo ({{ alertas.stock_bajo.count }})</h3>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Código</th>
+                <th>Producto</th>
+                <th>Stock Actual</th>
+                <th>Stock Mínimo</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for producto in alertas.stock_bajo %}
+            <tr>
+                <td>{{ producto.codigo }}</td>
+                <td>{{ producto.nombre }}</td>
+                <td>{{ producto.stock }}</td>
+                <td>{{ producto.stock_minimo }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+{% if alertas.agotados %}
+<div class="alert alert-danger">
+    <h3>❌ Productos Agotados ({{ alertas.agotados.count }})</h3>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Código</th>
+                <th>Producto</th>
+                <th>Stock</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for producto in alertas.agotados %}
+            <tr>
+                <td>{{ producto.codigo }}</td>
+                <td>{{ producto.nombre }}</td>
+                <td>0</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+{% if alertas.facturas_vencidas %}
+<div class="alert alert-danger">
+    <h3>💰 Facturas Vencidas ({{ alertas.facturas_vencidas.count }})</h3>
+    <table class="table">
+        <thead>
+            <tr>
+                <th># Factura</th>
+                <th>Tipo</th>
+                <th>Cliente/Proveedor</th>
+                <th>Total</th>
+                <th>Días Vencida</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for factura in alertas.facturas_vencidas %}
+            <tr>
+                <td>{{ factura.numero }}</td>
+                <td>{{ factura.get_tipo_display }}</td>
+                <td>
+                    {% if factura.tipo == 'compra' %}
+                        {{ factura.proveedor.nombre }}
+                    {% else %}
+                        {{ factura.cliente.nombre }}
+                    {% endif %}
+                </td>
+                <td>Gs. {{ factura.total|floatformat:0|intcomma_dot }}</td>
+                <td>{{ factura.dias_vencida }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+{% if not alertas.stock_bajo and not alertas.agotados and not alertas.facturas_vencidas %}
+<div class="alert alert-info">
+    <h3>✅ ¡Todo bajo control!</h3>
+    <p>No hay alertas pendientes en el sistema. Todo está funcionando correctamente.</p>
+</div>
+{% endif %}
+
+<div style="text-align: center; margin-top: 30px;">
+    <a href="http://127.0.0.1:8000/" class="btn">Acceder al Sistema</a>
+    <a href="http://127.0.0.1:8000/notificaciones/" class="btn">Ver Todas las Alertas</a>
+</div>
+
+<p style="margin-top: 20px;">
+    <strong>Resumen:</strong><br>
+    • Productos con stock bajo: {{ alertas.stock_bajo.count }}<br>
+    • Productos agotados: {{ alertas.agotados.count }}<br>
+    • Facturas vencidas: {{ alertas.facturas_vencidas.count }}<br>
+    • Total de alertas: {{ total_alertas }}
+</p>
+{% endblock %} 

@@ -1,0 +1,128 @@
+{% extends 'base.html' %}
+{% load humanize custom_filters %}
+
+{% block title %}{{ titulo }} - Avícola CVA{% endblock %}
+
+{% block page_title %}{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'configuracion_panel' %}">Configuración</a></li>
+<li class="breadcrumb-item active">Editar</li>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <div class="card shadow">
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+          <h4 class="mb-0"><i class="bi bi-pencil"></i> {{ titulo }}</h4>
+          <div class="d-flex justify-content-end w-100 ms-3">
+            <a href="{% url 'configuracion_panel' %}" class="btn btn-outline-light">
+              <i class="bi bi-arrow-left"></i> Volver
+            </a>
+          </div>
+        </div>
+        <div class="card-body">
+          <form method="post">
+            {% csrf_token %}
+            
+            <div class="row">
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="clave" class="form-label">Clave de Configuración</label>
+                  <input type="text" class="form-control" id="clave" value="{{ config.clave }}" readonly>
+                  <div class="form-text">Identificador único de la configuración</div>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="categoria" class="form-label">Categoría</label>
+                  <input type="text" class="form-control" id="categoria" value="{{ config.get_categoria_display }}" readonly>
+                  <div class="form-text">Categoría a la que pertenece</div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="mb-3">
+              <label for="valor" class="form-label">Valor</label>
+              <input type="text" class="form-control" id="valor" name="valor" value="{{ config.valor }}" required>
+              <div class="form-text">Valor actual de la configuración</div>
+            </div>
+            
+            <div class="mb-3">
+              <label for="descripcion" class="form-label">Descripción</label>
+              <textarea class="form-control" id="descripcion" name="descripcion" rows="3">{{ config.descripcion }}</textarea>
+              <div class="form-text">Descripción detallada de esta configuración</div>
+            </div>
+            
+            <div class="row">
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label class="form-label">Estado</label>
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="activo" {% if config.activo %}checked{% endif %} disabled>
+                    <label class="form-check-label" for="activo">
+                      Configuración activa
+                    </label>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label class="form-label">Información</label>
+                  <div class="text-muted">
+                    <small>
+                      <strong>Creado:</strong> {{ config.fecha_creacion|date:'d/m/Y H:i' }}<br>
+                      <strong>Actualizado:</strong> {{ config.fecha_actualizacion|date:'d/m/Y H:i' }}
+                    </small>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <hr>
+            
+            <div class="d-flex justify-content-between">
+              <a href="{% url 'configuracion_panel' %}" class="btn btn-secondary">
+                <i class="bi bi-x-circle"></i> Cancelar
+              </a>
+              <button type="submit" class="btn btn-primary">
+                <i class="bi bi-check-circle"></i> Guardar Cambios
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+      
+      <!-- Información Adicional -->
+      <div class="card shadow mt-4">
+        <div class="card-header bg-info text-white">
+          <h5 class="mb-0"><i class="bi bi-info-circle"></i> Información de la Configuración</h5>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-6">
+              <h6>Detalles Técnicos</h6>
+              <ul class="list-unstyled">
+                <li><strong>ID:</strong> {{ config.id }}</li>
+                <li><strong>Clave:</strong> {{ config.clave }}</li>
+                <li><strong>Categoría:</strong> {{ config.get_categoria_display }}</li>
+                <li><strong>Estado:</strong> {% if config.activo %}Activo{% else %}Inactivo{% endif %}</li>
+              </ul>
+            </div>
+            <div class="col-md-6">
+              <h6>Fechas</h6>
+              <ul class="list-unstyled">
+                <li><strong>Creado:</strong> {{ config.fecha_creacion|date:'d/m/Y H:i' }}</li>
+                <li><strong>Última actualización:</strong> {{ config.fecha_actualizacion|date:'d/m/Y H:i' }}</li>
+                <li><strong>Hace:</strong> {{ config.fecha_actualizacion|timesince }}</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %} 

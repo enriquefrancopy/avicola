@@ -1,0 +1,226 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Configuración de Temas - Avícola CVA{% endblock %}
+
+{% block page_title %}Configuración de Temas Visuales{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'configuracion_panel' %}">Configuración</a></li>
+<li class="breadcrumb-item active">Temas Visuales</li>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">
+                        <i class="bi bi-palette"></i> 
+                        Seleccionar Tema Visual
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-4">
+                        Elige el tema visual que mejor se adapte a tus preferencias. Los cambios se aplicarán inmediatamente.
+                    </p>
+                    
+                    <div class="row">
+                        <!-- Tema Azul Corporativo -->
+                        <div class="col-md-6 col-lg-3 mb-4">
+                            <div class="card tema-card h-100" data-tema="azul">
+                                <div class="card-body text-center p-4">
+                                    <div class="tema-preview mb-3">
+                                        <div class="tema-header" style="background: linear-gradient(135deg, #1976D2 0%, #0D47A1 100%); height: 60px; border-radius: 8px 8px 0 0; position: relative;">
+                                            <div style="position: absolute; top: 10px; left: 15px; width: 20px; height: 20px; background: white; border-radius: 3px;"></div>
+                                            <div style="position: absolute; top: 15px; right: 15px; width: 30px; height: 10px; background: rgba(255,255,255,0.3); border-radius: 2px;"></div>
+                                        </div>
+                                        <div class="tema-content" style="background: #F8F9FA; height: 80px; border-radius: 0 0 8px 8px; padding: 10px;">
+                                            <div style="background: white; height: 20px; border-radius: 4px; margin-bottom: 8px;"></div>
+                                            <div style="background: #1976D2; height: 15px; border-radius: 4px; width: 60%;"></div>
+                                        </div>
+                                    </div>
+                                    <h5 class="card-title">Azul Corporativo</h5>
+                                    <p class="card-text text-muted small">Tema azul profesional y moderno</p>
+                                    <div class="tema-colores d-flex justify-content-center gap-2 mb-3">
+                                        <span class="badge" style="background-color: #1976D2; width: 20px; height: 20px; border-radius: 50%;"></span>
+                                        <span class="badge" style="background-color: #FF6B35; width: 20px; height: 20px; border-radius: 50%;"></span>
+                                        <span class="badge" style="background-color: #7B1FA2; width: 20px; height: 20px; border-radius: 50%;"></span>
+                                    </div>
+                                    {% if tema_actual == 'azul' %}
+                                        <button class="btn btn-success btn-sm w-100" disabled>
+                                            <i class="bi bi-check-circle"></i> Tema Activo
+                                        </button>
+                                    {% else %}
+                                        <button class="btn btn-outline-primary btn-sm w-100" onclick="cambiarTema('azul')">
+                                            <i class="bi bi-check"></i> Activar
+                                        </button>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tema Oscuro -->
+                        <div class="col-md-6 col-lg-3 mb-4">
+                            <div class="card tema-card h-100" data-tema="oscuro">
+                                <div class="card-body text-center p-4">
+                                    <div class="tema-preview mb-3">
+                                        <div class="tema-header" style="background: #1F2937; height: 60px; border-radius: 8px 8px 0 0; position: relative;">
+                                            <div style="position: absolute; top: 10px; left: 15px; width: 20px; height: 20px; background: #6366F1; border-radius: 3px;"></div>
+                                            <div style="position: absolute; top: 15px; right: 15px; width: 30px; height: 10px; background: #374151; border-radius: 2px;"></div>
+                                        </div>
+                                        <div class="tema-content" style="background: #111827; height: 80px; border-radius: 0 0 8px 8px; padding: 10px;">
+                                            <div style="background: #1F2937; height: 20px; border-radius: 4px; margin-bottom: 8px;"></div>
+                                            <div style="background: #6366F1; height: 15px; border-radius: 4px; width: 60%;"></div>
+                                        </div>
+                                    </div>
+                                    <h5 class="card-title">Tema Oscuro</h5>
+                                    <p class="card-text text-muted small">Tema oscuro moderno y elegante</p>
+                                    <div class="tema-colores d-flex justify-content-center gap-2 mb-3">
+                                        <span class="badge" style="background-color: #6366F1; width: 20px; height: 20px; border-radius: 50%;"></span>
+                                        <span class="badge" style="background-color: #FFC107; width: 20px; height: 20px; border-radius: 50%;"></span>
+                                        <span class="badge" style="background-color: #EC4899; width: 20px; height: 20px; border-radius: 50%;"></span>
+                                    </div>
+                                    {% if tema_actual == 'oscuro' %}
+                                        <button class="btn btn-success btn-sm w-100" disabled>
+                                            <i class="bi bi-check-circle"></i> Tema Activo
+                                        </button>
+                                    {% else %}
+                                        <button class="btn btn-outline-primary btn-sm w-100" onclick="cambiarTema('oscuro')">
+                                            <i class="bi bi-check"></i> Activar
+                                        </button>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tema Minimalista -->
+                        <div class="col-md-6 col-lg-3 mb-4">
+                            <div class="card tema-card h-100" data-tema="minimalista">
+                                <div class="card-body text-center p-4">
+                                    <div class="tema-preview mb-3">
+                                        <div class="tema-header" style="background: white; border: 1px solid #E5E7EB; height: 60px; border-radius: 8px 8px 0 0; position: relative;">
+                                            <div style="position: absolute; top: 10px; left: 15px; width: 20px; height: 20px; background: #6B7280; border-radius: 3px;"></div>
+                                            <div style="position: absolute; top: 15px; right: 15px; width: 30px; height: 10px; background: #F3F4F6; border-radius: 2px;"></div>
+                                        </div>
+                                        <div class="tema-content" style="background: #F9FAFB; height: 80px; border-radius: 0 0 8px 8px; padding: 10px;">
+                                            <div style="background: white; height: 20px; border-radius: 4px; margin-bottom: 8px;"></div>
+                                            <div style="background: #6B7280; height: 15px; border-radius: 4px; width: 60%;"></div>
+                                        </div>
+                                    </div>
+                                    <h5 class="card-title">Minimalista</h5>
+                                    <p class="card-text text-muted small">Tema limpio y minimalista</p>
+                                    <div class="tema-colores d-flex justify-content-center gap-2 mb-3">
+                                        <span class="badge" style="background-color: #6B7280; width: 20px; height: 20px; border-radius: 50%;"></span>
+                                        <span class="badge" style="background-color: #F3F4F6; width: 20px; height: 20px; border-radius: 50%;"></span>
+                                        <span class="badge" style="background-color: #8B5CF6; width: 20px; height: 20px; border-radius: 50%;"></span>
+                                    </div>
+                                    {% if tema_actual == 'minimalista' %}
+                                        <button class="btn btn-success btn-sm w-100" disabled>
+                                            <i class="bi bi-check-circle"></i> Tema Activo
+                                        </button>
+                                    {% else %}
+                                        <button class="btn btn-outline-primary btn-sm w-100" onclick="cambiarTema('minimalista')">
+                                            <i class="bi bi-check"></i> Activar
+                                        </button>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Información adicional -->
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <div class="alert alert-info">
+                                <h6><i class="bi bi-info-circle"></i> Información sobre los Temas</h6>
+                                <ul class="mb-0">
+                                    <li><strong>Azul Corporativo:</strong> Tema profesional con colores azules, ideal para entornos empresariales (tema predeterminado).</li>
+                                    <li><strong>Tema Oscuro:</strong> Tema moderno con fondo oscuro, reduce la fatiga visual en entornos con poca luz.</li>
+                                    <li><strong>Minimalista:</strong> Tema limpio y simple, enfocado en la funcionalidad sin distracciones visuales.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.tema-card {
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+}
+
+.tema-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+.tema-card[data-tema="{{ tema_actual }}"] {
+    border-color: var(--primary-color);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.tema-preview {
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.tema-colores .badge {
+    border: 2px solid white;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+</style>
+
+{% csrf_token %}
+<script>
+function cambiarTema(tema) {
+    // Mostrar loading
+    const btn = event.target;
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Cambiando...';
+    btn.disabled = true;
+    
+    // Obtener el token CSRF
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    
+    // Enviar petición AJAX
+    fetch('{% url "configuracion_guardar_ajax" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
+        },
+        body: JSON.stringify({
+            clave: 'tema_visual',
+            valor: tema,
+            descripcion: 'Tema visual del sistema',
+            categoria: 'tema'
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Recargar la página para aplicar el nuevo tema
+            location.reload();
+        } else {
+            alert('Error al cambiar el tema: ' + (data.error || 'Error desconocido'));
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error al cambiar el tema: ' + error.message);
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    });
+}
+</script>
+
+{% endblock %} 

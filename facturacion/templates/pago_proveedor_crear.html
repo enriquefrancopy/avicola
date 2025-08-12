@@ -1,0 +1,298 @@
+{% extends 'base.html' %}
+{% load humanize custom_filters %}
+
+{% block title %}Crear Pago a Proveedor{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'pagos_proveedores_dashboard' %}">Pagos</a></li>
+<li class="breadcrumb-item active">Crear Pago</li>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+  <div class="card shadow">
+    <div class="card-header bg-primary text-white">
+      <div class="d-flex justify-content-between align-items-center">
+                 <h4 class="mb-0">
+           <i class="bi bi-credit-card"></i> Crear Pago a Proveedor
+         </h4>
+        <div class="d-flex justify-content-end w-100 ms-3">
+          <a href="{% if request.GET.next %}{{ request.GET.next }}{% else %}{% url 'pagos_proveedores_dashboard' %}{% endif %}" class="btn btn-outline-light">
+            <i class="bi bi-arrow-left"></i> Volver
+          </a>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      
+             <!-- Información del proveedor -->
+       {% if proveedor %}
+       
+       
+       <div class="row mb-4">
+         <div class="col-md-6">
+           <div class="card bg-light">
+             <div class="card-body">
+               <h6 class="card-title">
+                 <i class="bi bi-truck"></i> Información del Proveedor
+               </h6>
+               <div class="row">
+                 <div class="col-6">
+                   <small class="text-muted">Nombre:</small><br>
+                   <strong>{{ proveedor.nombre }}</strong>
+                 </div>
+                 <div class="col-6">
+                   <small class="text-muted">RIF:</small><br>
+                   <strong>{{ proveedor.rif }}</strong>
+                 </div>
+               </div>
+               <div class="row mt-2">
+                 <div class="col-6">
+                   <small class="text-muted">Teléfono:</small><br>
+                   <strong>{{ proveedor.telefono|default:"—" }}</strong>
+                 </div>
+                 <div class="col-6">
+                   <small class="text-muted">Email:</small><br>
+                   <strong>{{ proveedor.email|default:"—" }}</strong>
+                 </div>
+               </div>
+             </div>
+           </div>
+         </div>
+                   <div class="col-md-6">
+            <div class="card {% if proveedor.saldo > 0 %}bg-warning text-dark{% else %}bg-success text-white{% endif %}">
+              <div class="card-body">
+                <h6 class="card-title">
+                  <i class="bi bi-{% if proveedor.saldo > 0 %}exclamation-triangle{% else %}check-circle{% endif %}"></i> Saldo Pendiente
+                </h6>
+                <div class="row">
+                  <div class="col-6">
+                    <small class="text-center d-block">Saldo Actual:</small>
+                    <strong class="text-center d-block {% if proveedor.saldo > 0 %}text-dark{% else %}text-white{% endif %} fs-4">Gs. {{ proveedor.saldo|floatformat:0|intcomma_dot }}</strong>
+                  </div>
+                  <div class="col-6">
+                    <small class="text-center d-block">Facturas Pendientes:</small>
+                    <strong class="text-center d-block {% if proveedor.saldo > 0 %}text-dark{% else %}text-white{% endif %} fs-4">{{ facturas_pendientes.count }}</strong>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+       </div>
+               {% endif %}
+
+      <!-- Información de factura específica -->
+      {% if factura_especifica %}
+      <div class="row mb-4">
+        <div class="col-12">
+          <div class="card bg-info text-white">
+            <div class="card-body">
+              <h6 class="card-title">
+                <i class="bi bi-receipt"></i> Pago de Factura Específica
+              </h6>
+              <div class="row">
+                <div class="col-md-3">
+                  <small class="text-center d-block">Factura:</small>
+                  <strong class="text-center d-block">#{{ factura_especifica.numero }}</strong>
+                </div>
+                <div class="col-md-3">
+                  <small class="text-center d-block">Fecha:</small>
+                  <strong class="text-center d-block">{{ factura_especifica.fecha|date:'d/m/Y' }}</strong>
+                </div>
+                <div class="col-md-3">
+                  <small class="text-center d-block">Total:</small>
+                  <strong class="text-center d-block">Gs. {{ factura_especifica.total|floatformat:0|intcomma_dot }}</strong>
+                </div>
+                <div class="col-md-3">
+                  <small class="text-center d-block">Saldo Pendiente:</small>
+                  <strong class="text-center d-block">Gs. {{ factura_especifica.saldo_pendiente|floatformat:0|intcomma_dot }}</strong>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Formulario de pago -->
+      <div class="card mb-4">
+        <div class="card-header bg-success text-white">
+          <h6 class="mb-0">
+            <i class="bi bi-plus-circle"></i> Información del Pago
+          </h6>
+        </div>
+        <div class="card-body">
+          <div class="alert alert-info">
+            <i class="bi bi-info-circle"></i> 
+            <strong>Asignación Automática:</strong> 
+            {% if factura_especifica %}
+              Al crear el pago, se asignará automáticamente a la factura #{{ factura_especifica.numero }}.
+            {% else %}
+              Al crear el pago, se asignará automáticamente a las facturas pendientes 
+              comenzando desde la más antigua hasta agotar el monto del pago.
+            {% endif %}
+          </div>
+          
+          <form method="post">
+            {% csrf_token %}
+            
+            <!-- Selección de proveedor (si no está pre-seleccionado) -->
+            {% if not proveedor %}
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label for="{{ form.proveedor.id_for_label }}" class="form-label">Proveedor</label>
+                {{ form.proveedor }}
+                {% if form.proveedor.errors %}
+                  <div class="text-danger small">{{ form.proveedor.errors.0 }}</div>
+                {% endif %}
+              </div>
+            </div>
+            {% endif %}
+            
+            <div class="row">
+              <div class="col-md-6">
+                <label for="{{ form.monto_total.id_for_label }}" class="form-label">Monto Total del Pago</label>
+                <div class="input-group">
+                  <span class="input-group-text">Gs.</span>
+                  {{ form.monto_total }}
+                </div>
+                {% if form.monto_total.errors %}
+                  <div class="text-danger small">{{ form.monto_total.errors.0 }}</div>
+                {% endif %}
+                {% if form.monto_total.help_text %}
+                  <small class="text-muted">{{ form.monto_total.help_text }}</small>
+                {% endif %}
+              </div>
+              <div class="col-md-6">
+                <label for="{{ form.tipo.id_for_label }}" class="form-label">Tipo de Pago</label>
+                {{ form.tipo }}
+                {% if form.tipo.errors %}
+                  <div class="text-danger small">{{ form.tipo.errors.0 }}</div>
+                {% endif %}
+              </div>
+            </div>
+            
+            <div class="row mt-3">
+              <div class="col-md-6">
+                <label for="{{ form.referencia.id_for_label }}" class="form-label">Referencia</label>
+                {{ form.referencia }}
+                {% if form.referencia.errors %}
+                  <div class="text-danger small">{{ form.referencia.errors.0 }}</div>
+                {% endif %}
+              </div>
+            </div>
+            
+            <div class="row mt-3">
+              <div class="col-12">
+                                 <button type="submit" class="btn btn-success">
+                   <i class="bi bi-check-circle"></i> Pagar
+                 </button>
+                <a href="{% if request.GET.next %}{{ request.GET.next }}{% else %}{% url 'pagos_proveedores_dashboard' %}{% endif %}" class="btn btn-secondary">
+                  <i class="bi bi-x-circle"></i> Cancelar
+                </a>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Lista de facturas pendientes (solo mostrar si no hay factura específica) -->
+      {% if facturas_pendientes and not factura_especifica %}
+      <div class="card">
+        <div class="card-header bg-danger text-white">
+          <h6 class="mb-0">
+            <i class="bi bi-list-ul"></i> Facturas Pendientes Disponibles
+          </h6>
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table table-striped table-hover">
+              <thead class="table-dark">
+                <tr>
+                  <th>Número</th>
+                  <th>Fecha</th>
+                  <th>Total</th>
+                  <th>Pagado</th>
+                  <th>Saldo Pendiente</th>
+                  <th>Estado</th>
+                  <th>Días Vencida</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for factura in facturas_pendientes %}
+                <tr class="{% if factura.dias_vencida > 30 %}table-danger{% elif factura.dias_vencida > 15 %}table-warning{% endif %}">
+                  <td>
+                    <a href="{% url 'factura_ver' factura.pk %}" class="text-decoration-none">
+                      {{ factura.numero }}
+                    </a>
+                  </td>
+                  <td>{{ factura.fecha|date:'d/m/Y' }}</td>
+                  <td class="fw-bold">Gs. {{ factura.total|floatformat:0|intcomma_dot }}</td>
+                  <td class="text-success">Gs. {{ factura.total_pagado|floatformat:0|intcomma_dot }}</td>
+                  <td class="text-danger fw-bold">Gs. {{ factura.saldo_pendiente|floatformat:0|intcomma_dot }}</td>
+                  <td>
+                    <span class="badge bg-{% if factura.estado == 'pagada' %}success{% elif factura.estado == 'anulada' %}danger{% else %}warning{% endif %}">{{ factura.get_estado_display }}</span>
+                  </td>
+                  <td>
+                    {% if factura.dias_vencida > 0 %}
+                      <span class="badge bg-danger">{{ factura.dias_vencida }} días</span>
+                    {% else %}
+                      <span class="badge bg-success">Al día</span>
+                    {% endif %}
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      {% elif not factura_especifica %}
+      <div class="alert alert-info">
+        <i class="bi bi-info-circle"></i> 
+        <strong>No hay facturas pendientes</strong> para este proveedor.
+      </div>
+      {% endif %}
+
+    </div>
+  </div>
+</div>
+
+<style>
+.form-control:focus {
+  border-color: #80bdff;
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.table th {
+  border-top: none;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.table td {
+  vertical-align: middle;
+  font-size: 0.9rem;
+}
+
+.badge {
+  font-size: 0.8em;
+}
+
+.fs-4 {
+  font-size: 1.5rem !important;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Hacer focus en el campo de monto total
+  const montoInput = document.getElementById('{{ form.monto_total.id_for_label }}');
+  if (montoInput) {
+    montoInput.focus();
+    // Seleccionar todo el texto si hay algún valor
+    montoInput.select();
+  }
+});
+</script>
+{% endblock %} 

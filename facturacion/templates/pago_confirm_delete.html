@@ -1,0 +1,173 @@
+{% extends 'base.html' %}
+{% load humanize custom_filters %}
+
+{% block title %}Confirmar Eliminación de Pago{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'factura_list' %}">Facturas</a></li>
+<li class="breadcrumb-item"><a href="{% url 'pago_ver' pago.pk %}">Pago #{{ pago.id }}</a></li>
+<li class="breadcrumb-item active">Confirmar Eliminación</li>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+  <div class="row justify-content-center">
+    <div class="col-md-8">
+      <div class="card shadow border-danger">
+        <div class="card-header bg-danger text-white">
+          <h4 class="mb-0">
+            <i class="bi bi-exclamation-triangle"></i> Confirmar Eliminación de Pago
+          </h4>
+        </div>
+        <div class="card-body">
+          
+          <!-- Información del pago -->
+          <div class="alert alert-warning">
+            <h6 class="alert-heading">
+              <i class="bi bi-exclamation-triangle"></i> ¡Atención!
+            </h6>
+            <p class="mb-0">
+              Está a punto de eliminar el <strong>Pago #{{ pago.id }}</strong>. Esta acción no se puede deshacer.
+            </p>
+          </div>
+
+          <div class="row mb-4">
+            <div class="col-md-6">
+              <div class="card bg-light">
+                <div class="card-body">
+                  <h6 class="card-title"><i class="bi bi-credit-card"></i> Información del Pago</h6>
+                  <div class="row">
+                    <div class="col-6">
+                      <small class="text-muted">Fecha:</small><br>
+                      <strong>{{ pago.fecha|date:'d/m/Y H:i' }}</strong>
+                    </div>
+                    <div class="col-6">
+                      <small class="text-muted">Tipo:</small><br>
+                      <strong>{{ pago.get_tipo_display }}</strong>
+                    </div>
+                  </div>
+                  <div class="row mt-2">
+                    <div class="col-6">
+                      <small class="text-muted">Monto Total:</small><br>
+                      <strong class="text-success">Gs. {{ pago.monto_total|floatformat:0|intcomma_dot }}</strong>
+                    </div>
+                    <div class="col-6">
+                      <small class="text-muted">Referencia:</small><br>
+                      <strong>{{ pago.referencia|default:"—" }}</strong>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="card bg-danger text-white">
+                <div class="card-body">
+                  <h6 class="card-title"><i class="bi bi-calculator"></i> Efecto de la Eliminación</h6>
+                  <div class="row">
+                    <div class="col-6">
+                      <small class="text-center d-block">Facturas Afectadas:</small>
+                      <strong class="text-center d-block">{{ pago.pagos_facturas.count }}</strong>
+                    </div>
+                    <div class="col-6">
+                      <small class="text-center d-block">Monto a Restaurar:</small>
+                      <strong class="text-center d-block">Gs. {{ pago.monto_asignado|floatformat:0|intcomma_dot }}</strong>
+                    </div>
+                  </div>
+                  <div class="mt-2">
+                    <small>
+                      <i class="bi bi-info-circle"></i> 
+                      Los saldos de las facturas se restaurarán automáticamente.
+                    </small>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Lista de facturas afectadas -->
+          {% if pago.pagos_facturas.exists %}
+          <div class="card mb-4">
+            <div class="card-header bg-danger text-white">
+              <h6 class="mb-0">
+                <i class="bi bi-list-ul"></i> Facturas que se Verán Afectadas
+              </h6>
+            </div>
+            <div class="card-body">
+              <div class="table-responsive">
+                <table class="table table-sm table-striped">
+                  <thead class="table-dark">
+                    <tr>
+                      <th>Número</th>
+                      <th>Tipo</th>
+                      <th>Monto Asignado</th>
+                      <th>Saldo Actual</th>
+                      <th>Saldo Después</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for asignacion in pago.pagos_facturas.all %}
+                    <tr>
+                      <td>{{ asignacion.factura.numero }}</td>
+                      <td>
+                        <span class="badge {% if asignacion.factura.tipo == 'compra' %}bg-danger{% else %}bg-success{% endif %}">
+                          {{ asignacion.factura.get_tipo_display }}
+                        </span>
+                      </td>
+                      <td class="text-primary fw-bold">Gs. {{ asignacion.monto|floatformat:0|intcomma_dot }}</td>
+                      <td class="text-success">Gs. {{ asignacion.factura.saldo_pendiente|floatformat:0|intcomma_dot }}</td>
+                      <td class="text-danger fw-bold">
+                        Gs. {{ asignacion.factura.saldo_pendiente|add:asignacion.monto|floatformat:0|intcomma_dot }}
+                      </td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+          {% endif %}
+
+          <!-- Formulario de confirmación -->
+          <form method="post">
+            {% csrf_token %}
+            <div class="row">
+              <div class="col-md-6">
+                <a href="{% url 'pago_ver' pago.pk %}" class="btn btn-secondary w-100">
+                  <i class="bi bi-arrow-left"></i> Cancelar
+                </a>
+              </div>
+              <div class="col-md-6">
+                <button type="submit" class="btn btn-danger w-100">
+                  <i class="bi bi-trash"></i> Confirmar Eliminación
+                </button>
+              </div>
+            </div>
+          </form>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.card {
+  border-radius: 0.5rem;
+}
+
+.table th {
+  border-top: none;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.table td {
+  vertical-align: middle;
+  font-size: 0.9rem;
+}
+
+.badge {
+  font-size: 0.8em;
+}
+</style>
+{% endblock %} 

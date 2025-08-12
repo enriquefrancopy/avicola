@@ -1,0 +1,54 @@
+{% extends 'emails/base_email.html' %}
+
+{% block content %}
+<h2>💰 Alerta: Factura Vencida</h2>
+<p>Hola,</p>
+<p>El sistema ha detectado una factura vencida que requiere atención:</p>
+
+<div class="alert alert-danger">
+    <h3>Factura #{{ factura.numero }}</h3>
+    <table class="table">
+        <tr>
+            <th>Tipo:</th>
+            <td>{{ factura.get_tipo_display }}</td>
+        </tr>
+        <tr>
+            <th>Fecha:</th>
+            <td>{{ factura.fecha|date:'d/m/Y' }}</td>
+        </tr>
+        <tr>
+            <th>Cliente/Proveedor:</th>
+            <td>
+                {% if factura.tipo == 'compra' %}
+                    {{ factura.proveedor.nombre }}
+                {% else %}
+                    {{ factura.cliente.nombre }}
+                {% endif %}
+            </td>
+        </tr>
+        <tr>
+            <th>Total:</th>
+            <td>Gs. {{ factura.total|floatformat:0|intcomma_dot }}</td>
+        </tr>
+        <tr>
+            <th>Días Vencida:</th>
+            <td>{{ dias_vencida }} días</td>
+        </tr>
+        <tr>
+            <th>Estado:</th>
+            <td>{{ factura.get_estado_display }}</td>
+        </tr>
+    </table>
+</div>
+
+<p><strong>Acción requerida:</strong> Contactar al cliente/proveedor para gestionar el pago.</p>
+
+<div style="text-align: center; margin-top: 30px;">
+    <a href="http://127.0.0.1:8000/facturas/{{ factura.id }}/" class="btn">Ver Factura</a>
+    <a href="http://127.0.0.1:8000/facturas/{{ factura.id }}/pagos/" class="btn">Gestionar Pagos</a>
+</div>
+
+<p style="margin-top: 20px; font-size: 12px; color: #666;">
+    Fecha de alerta: {{ fecha }}
+</p>
+{% endblock %} 

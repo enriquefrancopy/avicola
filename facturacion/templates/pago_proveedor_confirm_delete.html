@@ -1,0 +1,211 @@
+{% extends 'base.html' %}
+{% load humanize custom_filters %}
+
+{% block title %}Eliminar Pago #{{ pago.id }}{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'pagos_proveedores_dashboard' %}">Pagos a Proveedores</a></li>
+<li class="breadcrumb-item"><a href="{% url 'pago_proveedor_ver' pago.id %}">Pago #{{ pago.id }}</a></li>
+<li class="breadcrumb-item active">Eliminar</li>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+  <div class="row justify-content-center">
+    <div class="col-md-8">
+      <div class="card shadow border-danger">
+        <div class="card-header bg-danger text-white">
+          <h4 class="mb-0">
+            <i class="bi bi-exclamation-triangle"></i> Confirmar Eliminación
+          </h4>
+        </div>
+        <div class="card-body">
+          
+          <div class="alert alert-warning">
+            <i class="bi bi-exclamation-triangle"></i>
+            <strong>¡Atención!</strong> Está a punto de eliminar el pago #{{ pago.id }}. Esta acción no se puede deshacer.
+          </div>
+          
+          <!-- Información del pago -->
+          <div class="row mb-4">
+            <div class="col-md-6">
+              <div class="card bg-light">
+                <div class="card-header bg-info text-white">
+                  <h6 class="mb-0">
+                    <i class="bi bi-info-circle"></i> Información del Pago
+                  </h6>
+                </div>
+                <div class="card-body">
+                  <div class="row">
+                    <div class="col-6">
+                      <small class="text-muted">ID del Pago:</small><br>
+                      <strong>#{{ pago.id }}</strong>
+                    </div>
+                    <div class="col-6">
+                      <small class="text-muted">Fecha:</small><br>
+                      <strong>{{ pago.fecha|date:'d/m/Y H:i' }}</strong>
+                    </div>
+                  </div>
+                  <div class="row mt-2">
+                    <div class="col-6">
+                      <small class="text-muted">Proveedor:</small><br>
+                      <strong>{{ pago.proveedor.nombre }}</strong>
+                    </div>
+                    <div class="col-6">
+                      <small class="text-muted">Tipo:</small><br>
+                      <span class="badge bg-info">{{ pago.get_tipo_display }}</span>
+                    </div>
+                  </div>
+                  {% if pago.referencia %}
+                  <div class="row mt-2">
+                    <div class="col-12">
+                      <small class="text-muted">Referencia:</small><br>
+                      <strong>{{ pago.referencia }}</strong>
+                    </div>
+                  </div>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+            
+            <div class="col-md-6">
+              <div class="card bg-danger text-white">
+                <div class="card-header">
+                  <h6 class="mb-0">
+                    <i class="bi bi-calculator"></i> Impacto Financiero
+                  </h6>
+                </div>
+                <div class="card-body">
+                  <div class="row">
+                    <div class="col-6">
+                      <small class="text-center d-block">Monto Total:</small>
+                      <strong class="text-center d-block fs-4">Gs. {{ pago.monto_total|floatformat:0|intcomma_dot }}</strong>
+                    </div>
+                    <div class="col-6">
+                      <small class="text-center d-block">Asignado:</small>
+                      <strong class="text-center d-block fs-4">Gs. {{ pago.monto_asignado|floatformat:0|intcomma_dot }}</strong>
+                    </div>
+                  </div>
+                  <div class="row mt-3">
+                    <div class="col-12">
+                      <small class="text-center d-block">Saldo a Restaurar:</small>
+                      <strong class="text-center d-block fs-4 text-danger">
+                        Gs. {{ pago.monto_total|floatformat:0|intcomma_dot }}
+                      </strong>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Facturas afectadas -->
+          {% if pago.facturas_afectadas %}
+          <div class="card mb-4">
+            <div class="card-header bg-danger text-white">
+              <h6 class="mb-0">
+                <i class="bi bi-exclamation-triangle"></i> Facturas que se verán afectadas
+              </h6>
+            </div>
+            <div class="card-body">
+              <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                  <thead class="table-dark">
+                    <tr>
+                      <th>Número</th>
+                      <th>Fecha</th>
+                      <th>Total</th>
+                      <th>Pagado Actual</th>
+                      <th>Saldo Actual</th>
+                      <th>Saldo Después</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for factura in pago.facturas_afectadas %}
+                    <tr>
+                      <td>
+                        <a href="{% url 'factura_ver' factura.pk %}" class="text-decoration-none">
+                          {{ factura.numero }}
+                        </a>
+                      </td>
+                      <td>{{ factura.fecha|date:'d/m/Y' }}</td>
+                      <td class="fw-bold">Gs. {{ factura.total|floatformat:0|intcomma_dot }}</td>
+                      <td class="text-success">Gs. {{ factura.total_pagado|floatformat:0|intcomma_dot }}</td>
+                      <td class="text-danger fw-bold">Gs. {{ factura.saldo_pendiente|floatformat:0|intcomma_dot }}</td>
+                      <td class="text-danger fw-bold">
+                        Gs. {{ factura.saldo_pendiente|add:pago.monto_total|floatformat:0|intcomma_dot }}
+                      </td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+          {% endif %}
+
+          <!-- Confirmación -->
+          <div class="alert alert-danger">
+            <h6 class="alert-heading">
+              <i class="bi bi-exclamation-triangle"></i> Consecuencias de esta acción:
+            </h6>
+            <ul class="mb-0">
+              <li>El pago será eliminado permanentemente</li>
+              <li>Se restaurará el saldo del proveedor ({{ pago.proveedor.nombre }})</li>
+              <li>Las facturas afectadas volverán a su estado anterior</li>
+              <li>Esta acción no se puede deshacer</li>
+            </ul>
+          </div>
+
+          <!-- Botones de acción -->
+          <div class="row">
+            <div class="col-12 text-center">
+              <form method="post" class="d-inline">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger btn-lg me-3">
+                  <i class="bi bi-trash"></i> Sí, Eliminar Pago
+                </button>
+              </form>
+              <a href="{% if request.GET.next %}{{ request.GET.next }}{% else %}{% url 'pago_proveedor_ver' pago.id %}{% endif %}" class="btn btn-secondary btn-lg">
+                <i class="bi bi-x-circle"></i> Cancelar
+              </a>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.card {
+  border-radius: 0.5rem;
+  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+.table th {
+  border-top: none;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.table td {
+  vertical-align: middle;
+  font-size: 0.9rem;
+}
+
+.badge {
+  font-size: 0.8em;
+}
+
+.fs-4 {
+  font-size: 1.5rem !important;
+}
+
+.btn-lg {
+  padding: 0.75rem 1.5rem;
+  font-size: 1.1rem;
+}
+</style>
+{% endblock %} 

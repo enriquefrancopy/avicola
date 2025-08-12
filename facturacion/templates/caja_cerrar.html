@@ -1,0 +1,122 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load humanize custom_filters %}
+
+{% block title %}Cerrar Caja - Avícola CVA{% endblock %}
+
+{% block page_title %}Cerrar Caja{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Inicio</a></li>
+<li class="breadcrumb-item"><a href="{% url 'caja_list' %}">Control de Caja</a></li>
+<li class="breadcrumb-item active">Cerrar Caja</li>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">
+          <i class="bi bi-lock"></i> Cerrar Caja del {{ caja.fecha|date:"d/m/Y" }}
+        </h3>
+      </div>
+      <div class="card-body">
+        <!-- Información de la caja -->
+        <div class="alert alert-info">
+          <h5 class="mb-2">
+            <i class="bi bi-info-circle"></i> Resumen de la Caja
+          </h5>
+          <div class="row">
+            <div class="col-md-6">
+              <strong>Saldo Inicial:</strong><br>
+              <span class="text-primary fs-4">Gs. {{ caja.saldo_inicial|intcomma_dot }}</span>
+            </div>
+            <div class="col-md-6">
+              <strong>Saldo Final Esperado:</strong><br>
+              <span class="text-success fs-4">Gs. {{ caja.saldo_final|intcomma_dot }}</span>
+            </div>
+          </div>
+        </div>
+        
+        <form method="post">
+          {% csrf_token %}
+          
+          <div class="alert alert-warning">
+            <i class="bi bi-exclamation-triangle"></i>
+            <strong>Importante:</strong> Una vez cerrada la caja, no podrás realizar más modificaciones.
+          </div>
+          
+          <div class="form-group mb-3">
+            <label for="saldo_real" class="form-label">
+              <strong>Saldo Real (Arqueo de Caja)</strong>
+            </label>
+            <input type="number" 
+                   class="form-control" 
+                   id="saldo_real" 
+                   name="saldo_real" 
+                   value="{{ caja.saldo_final }}" 
+                   step="100" 
+                   required>
+            <div class="form-text">
+              Ingresa el monto real contado en caja
+            </div>
+          </div>
+          
+          <div class="form-group mb-3">
+            <label for="observaciones" class="form-label">
+              <strong>Observaciones (Opcional)</strong>
+            </label>
+            <textarea class="form-control" 
+                      id="observaciones" 
+                      name="observaciones" 
+                      rows="3" 
+                      placeholder="Observaciones sobre el cierre de caja...">{{ caja.observaciones|default:"" }}</textarea>
+          </div>
+          
+          <div class="d-flex justify-content-end gap-2">
+            <a href="{% url 'caja_ver' caja.id %}" class="btn btn-outline-secondary">
+              <i class="bi bi-arrow-left"></i> Volver
+            </a>
+            <button type="submit" class="btn btn-danger">
+              <i class="bi bi-lock"></i> Cerrar Caja
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Función para formatear números con separadores de miles
+  function formatNumber(num) {
+    return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  }
+  
+  // Formatear el input de saldo real
+  const saldoRealInput = document.getElementById('saldo_real');
+  saldoRealInput.addEventListener('input', function() {
+    const value = this.value;
+    if (value) {
+      const numericValue = value.replace(/\D/g, '');
+      this.value = numericValue;
+    }
+  });
+  
+  // Validar que el saldo real sea un número válido
+  document.querySelector('form').addEventListener('submit', function(e) {
+    const saldoReal = parseFloat(saldoRealInput.value);
+    if (isNaN(saldoReal) || saldoReal < 0) {
+      e.preventDefault();
+      alert('El saldo real debe ser un número válido mayor o igual a 0.');
+      saldoRealInput.focus();
+      return false;
+    }
+  });
+});
+</script>
+{% endblock %}

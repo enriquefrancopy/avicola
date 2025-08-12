@@ -1,0 +1,224 @@
+{% extends 'base.html' %}
+{% load humanize custom_filters %}
+
+{% block title %}Crear Pago Múltiple{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'factura_list' %}">Facturas</a></li>
+<li class="breadcrumb-item active">Crear Pago Múltiple</li>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+  <div class="card shadow">
+    <div class="card-header bg-primary text-white">
+      <div class="d-flex justify-content-between align-items-center">
+        <h4 class="mb-0">
+          <i class="bi bi-credit-card"></i> Crear Pago Múltiple
+        </h4>
+        <div class="d-flex justify-content-end w-100 ms-3">
+          <a href="{% url 'factura_list' %}" class="btn btn-outline-light">
+            <i class="bi bi-arrow-left"></i> Volver
+          </a>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      
+      <!-- Información del proveedor/cliente -->
+      <div class="row mb-4">
+        <div class="col-md-6">
+          <div class="card bg-light">
+            <div class="card-body">
+              <h6 class="card-title">
+                <i class="bi bi-person"></i> 
+                {% if proveedor %}
+                  Proveedor: {{ proveedor.nombre }}
+                {% else %}
+                  Cliente: {{ cliente.nombre }}
+                {% endif %}
+              </h6>
+              <div class="row">
+                <div class="col-6">
+                  <small class="text-muted">RIF:</small><br>
+                  <strong>
+                    {% if proveedor %}
+                      {{ proveedor.rif }}
+                    {% else %}
+                      {{ cliente.rif }}
+                    {% endif %}
+                  </strong>
+                </div>
+                <div class="col-6">
+                  <small class="text-muted">Saldo Actual:</small><br>
+                  <strong class="{% if proveedor %}{% if proveedor.saldo > 0 %}text-danger{% else %}text-success{% endif %}{% else %}{% if cliente.saldo > 0 %}text-danger{% else %}text-success{% endif %}{% endif %}">
+                    Gs. 
+                    {% if proveedor %}
+                      {{ proveedor.saldo|floatformat:0|intcomma_dot }}
+                    {% else %}
+                      {{ cliente.saldo|floatformat:0|intcomma_dot }}
+                    {% endif %}
+                  </strong>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="card bg-info text-white">
+            <div class="card-body">
+              <h6 class="card-title"><i class="bi bi-receipt"></i> Facturas Pendientes</h6>
+              <div class="row">
+                <div class="col-6">
+                  <small class="text-center d-block">Cantidad:</small>
+                  <strong class="text-center d-block">{{ facturas_pendientes.count }}</strong>
+                </div>
+                <div class="col-6">
+                  <small class="text-center d-block">Total Pendiente:</small>
+                  <strong class="text-center d-block">Gs. {{ total_pendiente|floatformat:0|intcomma_dot }}</strong>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Formulario de pago -->
+      <div class="card mb-4">
+        <div class="card-header bg-success text-white">
+          <h6 class="mb-0">
+            <i class="bi bi-plus-circle"></i> Información del Pago
+          </h6>
+        </div>
+        <div class="card-body">
+          <div class="alert alert-info">
+            <i class="bi bi-info-circle"></i> 
+            <strong>Asignación Automática:</strong> Al crear el pago, se asignará automáticamente a las facturas pendientes 
+            comenzando desde la más antigua hasta agotar el monto del pago.
+          </div>
+          <form method="post">
+            {% csrf_token %}
+            <div class="row">
+              <div class="col-md-6">
+                <label for="{{ form.monto_total.id_for_label }}" class="form-label">Monto Total del Pago</label>
+                <div class="input-group">
+                  <span class="input-group-text">Gs.</span>
+                  {{ form.monto_total }}
+                </div>
+                {% if form.monto_total.errors %}
+                  <div class="text-danger small">{{ form.monto_total.errors.0 }}</div>
+                {% endif %}
+                {% if form.monto_total.help_text %}
+                  <small class="text-muted">{{ form.monto_total.help_text }}</small>
+                {% endif %}
+              </div>
+              <div class="col-md-6">
+                <label for="{{ form.tipo.id_for_label }}" class="form-label">Tipo de Pago</label>
+                {{ form.tipo }}
+              </div>
+            </div>
+            <div class="row mt-3">
+              <div class="col-md-6">
+                <label for="{{ form.referencia.id_for_label }}" class="form-label">Referencia</label>
+                {{ form.referencia }}
+              </div>
+              <div class="col-md-6">
+                <label for="{{ form.observacion.id_for_label }}" class="form-label">Observaciones</label>
+                {{ form.observacion }}
+              </div>
+            </div>
+            <div class="row mt-3">
+              <div class="col-12">
+                <button type="submit" class="btn btn-success">
+                  <i class="bi bi-check-circle"></i> Crear Pago y Asignar Automáticamente
+                </button>
+                <a href="{% url 'factura_list' %}" class="btn btn-secondary">
+                  <i class="bi bi-x-circle"></i> Cancelar
+                </a>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Lista de facturas pendientes -->
+      {% if facturas_pendientes %}
+      <div class="card">
+        <div class="card-header bg-danger text-white">
+          <h6 class="mb-0">
+            <i class="bi bi-list-ul"></i> Facturas Pendientes Disponibles
+          </h6>
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table table-striped table-hover">
+              <thead class="table-dark">
+                <tr>
+                  <th>Número</th>
+                  <th>Fecha</th>
+                  <th>Total</th>
+                  <th>Pagado</th>
+                  <th>Saldo Pendiente</th>
+                  <th>Estado</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for factura in facturas_pendientes %}
+                <tr>
+                  <td>
+                    <a href="{% url 'factura_ver' factura.pk %}" class="text-decoration-none">
+                      {{ factura.numero }}
+                    </a>
+                  </td>
+                  <td>{{ factura.fecha|date:'d/m/Y' }}</td>
+                  <td class="fw-bold">Gs. {{ factura.total|floatformat:0|intcomma_dot }}</td>
+                  <td class="text-success">Gs. {{ factura.total_pagado|floatformat:0|intcomma_dot }}</td>
+                  <td class="text-danger fw-bold">Gs. {{ factura.saldo_pendiente|floatformat:0|intcomma_dot }}</td>
+                  <td>
+                    <span class="badge bg-{% if factura.estado == 'pagada' %}success{% elif factura.estado == 'anulada' %}danger{% else %}warning{% endif %}">{{ factura.get_estado_display }}</span>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      {% else %}
+      <div class="alert alert-info">
+        <i class="bi bi-info-circle"></i> 
+        <strong>No hay facturas pendientes</strong> para 
+        {% if proveedor %}
+          este proveedor.
+        {% else %}
+          este cliente.
+        {% endif %}
+      </div>
+      {% endif %}
+
+    </div>
+  </div>
+</div>
+
+<style>
+.form-control:focus {
+  border-color: #80bdff;
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.table th {
+  border-top: none;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.table td {
+  vertical-align: middle;
+  font-size: 0.9rem;
+}
+
+.badge {
+  font-size: 0.8em;
+}
+</style>
+{% endblock %} 
