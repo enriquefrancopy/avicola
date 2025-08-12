@@ -1,6 +1,6 @@
 from django.urls import path
 from django.contrib.auth.views import LoginView, LogoutView
-from . import views
+from . import views, views_pagos
 
 urlpatterns = [
     # Authentication URLs
@@ -40,9 +40,9 @@ urlpatterns = [
     
     # Pagos
     path('facturas/<int:pk>/pagos/', views.factura_pagos, name='factura_pagos'),
-    path('pagos/', views.pagos_dashboard, name='pagos_dashboard'),
-    path('pagos/clientes/', views.pagos_clientes_list, name='pagos_clientes_list'),
-    path('pagos/proveedores/', views.pagos_proveedores_list, name='pagos_proveedores_list'),
+    path('pagos/', views_pagos.pagos_dashboard, name='pagos_dashboard'),
+    path('pagos/clientes/', views_pagos.pagos_clientes_list, name='pagos_clientes_list'),
+    path('pagos/proveedores/', views_pagos.pagos_proveedores_list, name='pagos_proveedores_list'),
     path('pagos/crear/<int:factura_id>/', views.pago_crear, name='pago_crear'),
     path('pagos/multiple/crear/', views.pago_multiple_crear, name='pago_multiple_crear'),
     path('pagos/<int:pago_id>/asignar/', views.pago_asignar_facturas, name='pago_asignar_facturas'),
