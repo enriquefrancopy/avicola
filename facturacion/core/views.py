@@ -897,6 +897,264 @@ def stock_movimientos(request):
     
     return render(request, 'stock_movimientos.html', context)
 
+# ============================================================================
+# PAGOS
+# ============================================================================
+
+@login_required
+def pagos_dashboard(request):
+    """Dashboard principal del módulo de pagos"""
+    # Obtener estadísticas de pagos
+    total_pagos_clientes = Pago.objects.filter(factura__tipo='venta').count()
+    total_pagos_proveedores = Pago.objects.filter(factura__tipo='compra').count()
+    
+    # Pagos recientes
+    pagos_recientes = Pago.objects.select_related('factura', 'usuario').order_by('-fecha')[:10]
+    
+    # Facturas pendientes
+    facturas_pendientes_clientes = Factura.objects.filter(
+        tipo='venta', 
+        estado='pendiente'
+    ).select_related('cliente').order_by('-fecha')[:5]
+    
+    facturas_pendientes_proveedores = Factura.objects.filter(
+        tipo='compra', 
+        estado='pendiente'
+    ).select_related('proveedor').order_by('-fecha')[:5]
+    
+    # Caja activa
+    caja_activa = Caja.obtener_caja_activa()
+    
+    context = {
+        'total_pagos_clientes': total_pagos_clientes,
+        'total_pagos_proveedores': total_pagos_proveedores,
+        'pagos_recientes': pagos_recientes,
+        'facturas_pendientes_clientes': facturas_pendientes_clientes,
+        'facturas_pendientes_proveedores': facturas_pendientes_proveedores,
+        'caja_activa': caja_activa,
+    }
+    
+    return render(request, 'pagos_dashboard.html', context)
+
+@login_required
+def pagos_clientes_list(request):
+    """Lista de pagos de clientes (facturas de venta)"""
+    # Obtener facturas de venta con pagos
+    facturas_venta = Factura.objects.filter(
+        tipo='venta'
+    ).select_related('cliente').prefetch_related('pagos').order_by('-fecha')
+    
+    # Filtros
+    q = request.GET.get('q', '')
+    estado = request.GET.get('estado', '')
+    desde = request.GET.get('desde', '')
+    hasta = request.GET.get('hasta', '')
+    
+    if q:
+        facturas_venta = facturas_venta.filter(
+            Q(cliente__nombre__icontains=q) | 
+            Q(numero__icontains=q) |
+            Q(cliente__ruc__icontains=q)
+        )
+    
+    if estado:
+        facturas_venta = facturas_venta.filter(estado=estado)
+    
+    if desde:
+        facturas_venta = facturas_venta.filter(fecha__date__gte=desde)
+    
+    if hasta:
+        facturas_venta = facturas_venta.filter(fecha__date__lte=hasta)
+    
+    # Paginación
+    from django.core.paginator import Paginator
+    paginator = Paginator(facturas_venta, 20)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'facturas': page_obj,
+        'tipo': 'venta',
+        'titulo': 'Pagos de Clientes',
+        'subtitulo': 'Facturas de Venta - Gestión de Cobros',
+    }
+    
+    return render(request, 'pagos_list.html', context)
+
+@login_required
+def pagos_proveedores_list(request):
+    """Lista de pagos a proveedores (facturas de compra)"""
+    # Obtener facturas de compra con pagos
+    facturas_compra = Factura.objects.filter(
+        tipo='compra'
+    ).select_related('proveedor').prefetch_related('pagos').order_by('-fecha')
+    
+    # Filtros
+    q = request.GET.get('q', '')
+    estado = request.GET.get('estado', '')
+    desde = request.GET.get('desde', '')
+    hasta = request.GET.get('hasta', '')
+    
+    if q:
+        facturas_compra = facturas_compra.filter(
+            Q(proveedor__nombre__icontains=q) | 
+            Q(numero__icontains=q) |
+            Q(proveedor__ruc__icontains=q)
+        )
+    
+    if estado:
+        facturas_compra = facturas_compra.filter(estado=estado)
+    
+    if desde:
+        facturas_compra = facturas_compra.filter(fecha__date__gte=desde)
+    
+    if hasta:
+        facturas_compra = facturas_compra.filter(fecha__date__lte=hasta)
+    
+    # Paginación
+    from django.core.paginator import Paginator
+    paginator = Paginator(facturas_compra, 20)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'facturas': page_obj,
+        'tipo': 'compra',
+        'titulo': 'Pagos a Proveedores',
+        'subtitulo': 'Facturas de Compra - Gestión de Pagos',
+    }
+    
+    return render(request, 'pagos_list.html', context)
+
+# ============================================================================
+# PAGOS
+# ============================================================================
+
+@login_required
+def pagos_dashboard(request):
+    """Dashboard principal del módulo de pagos"""
+    # Obtener estadísticas de pagos
+    total_pagos_clientes = Pago.objects.filter(factura__tipo='venta').count()
+    total_pagos_proveedores = Pago.objects.filter(factura__tipo='compra').count()
+    
+    # Pagos recientes
+    pagos_recientes = Pago.objects.select_related('factura', 'usuario').order_by('-fecha')[:10]
+    
+    # Facturas pendientes
+    facturas_pendientes_clientes = Factura.objects.filter(
+        tipo='venta', 
+        estado='pendiente'
+    ).select_related('cliente').order_by('-fecha')[:5]
+    
+    facturas_pendientes_proveedores = Factura.objects.filter(
+        tipo='compra', 
+        estado='pendiente'
+    ).select_related('proveedor').order_by('-fecha')[:5]
+    
+    # Caja activa
+    caja_activa = Caja.obtener_caja_activa()
+    
+    context = {
+        'total_pagos_clientes': total_pagos_clientes,
+        'total_pagos_proveedores': total_pagos_proveedores,
+        'pagos_recientes': pagos_recientes,
+        'facturas_pendientes_clientes': facturas_pendientes_clientes,
+        'facturas_pendientes_proveedores': facturas_pendientes_proveedores,
+        'caja_activa': caja_activa,
+    }
+    
+    return render(request, 'pagos_dashboard.html', context)
+
+@login_required
+def pagos_clientes_list(request):
+    """Lista de pagos de clientes (facturas de venta)"""
+    # Obtener facturas de venta con pagos
+    facturas_venta = Factura.objects.filter(
+        tipo='venta'
+    ).select_related('cliente').prefetch_related('pagos').order_by('-fecha')
+    
+    # Filtros
+    q = request.GET.get('q', '')
+    estado = request.GET.get('estado', '')
+    desde = request.GET.get('desde', '')
+    hasta = request.GET.get('hasta', '')
+    
+    if q:
+        facturas_venta = facturas_venta.filter(
+            Q(cliente__nombre__icontains=q) | 
+            Q(numero__icontains=q) |
+            Q(cliente__ruc__icontains=q)
+        )
+    
+    if estado:
+        facturas_venta = facturas_venta.filter(estado=estado)
+    
+    if desde:
+        facturas_venta = facturas_venta.filter(fecha__date__gte=desde)
+    
+    if hasta:
+        facturas_venta = facturas_venta.filter(fecha__date__lte=hasta)
+    
+    # Paginación
+    from django.core.paginator import Paginator
+    paginator = Paginator(facturas_venta, 20)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'facturas': page_obj,
+        'tipo': 'venta',
+        'titulo': 'Pagos de Clientes',
+        'subtitulo': 'Facturas de Venta - Gestión de Cobros',
+    }
+    
+    return render(request, 'pagos_list.html', context)
+
+@login_required
+def pagos_proveedores_list(request):
+    """Lista de pagos a proveedores (facturas de compra)"""
+    # Obtener facturas de compra con pagos
+    facturas_compra = Factura.objects.filter(
+        tipo='compra'
+    ).select_related('proveedor').prefetch_related('pagos').order_by('-fecha')
+    
+    # Filtros
+    q = request.GET.get('q', '')
+    estado = request.GET.get('estado', '')
+    desde = request.GET.get('desde', '')
+    hasta = request.GET.get('hasta', '')
+    
+    if q:
+        facturas_compra = facturas_compra.filter(
+            Q(proveedor__nombre__icontains=q) | 
+            Q(numero__icontains=q) |
+            Q(proveedor__ruc__icontains=q)
+        )
+    
+    if estado:
+        facturas_compra = facturas_compra.filter(estado=estado)
+    
+    if desde:
+        facturas_compra = facturas_compra.filter(fecha__date__gte=desde)
+    
+    if hasta:
+        facturas_compra = facturas_compra.filter(fecha__date__lte=hasta)
+    
+    # Paginación
+    from django.core.paginator import Paginator
+    paginator = Paginator(facturas_compra, 20)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'facturas': page_obj,
+        'tipo': 'compra',
+        'titulo': 'Pagos a Proveedores',
+        'subtitulo': 'Facturas de Compra - Gestión de Pagos',
+    }
+    
+    return render(request, 'pagos_list.html', context)
+
 # Pagos
 @login_required
 def pago_crear(request, factura_id):
@@ -4143,6 +4401,2143 @@ def reporte_caja(request):
     }
     
     return render(request, 'reporte_caja.html', context)
+
+
+
+
+# ============================================================================
+
+@login_required
+def caja_list(request):
+    """Lista de cajas"""
+    cajas = Caja.objects.select_related('usuario_apertura', 'usuario_cierre').order_by('-fecha')
+    
+    # Estadísticas generales
+    total_cajas = cajas.count()
+    cajas_abiertas = cajas.filter(cerrada=False).count()
+    cajas_cerradas = cajas.filter(cerrada=True).count()
+    
+    # Caja actual (hoy)
+    from datetime import date
+    caja_actual = cajas.filter(fecha=date.today()).first()
+    
+    context = {
+        'cajas': cajas,
+        'total_cajas': total_cajas,
+        'cajas_abiertas': cajas_abiertas,
+        'cajas_cerradas': cajas_cerradas,
+        'caja_actual': caja_actual,
+    }
+    
+    return render(request, 'caja_list.html', context)
+
+
+@login_required
+def caja_abrir(request):
+    """Abrir caja del día con denominaciones"""
+    from datetime import date
+    
+    # Verificar si ya existe una caja para hoy
+    caja_existente = Caja.objects.filter(fecha=date.today()).first()
+    if caja_existente:
+        messages.warning(request, 'Ya existe una caja abierta para hoy.')
+        return redirect('caja_ver', caja_id=caja_existente.id)
+    
+    if request.method == 'POST':
+        try:
+            # Crear la caja
+            caja = Caja.objects.create(
+                fecha=date.today(),
+                saldo_inicial=0,  # Se calculará automáticamente
+                usuario_apertura=request.user
+            )
+            
+            # Procesar denominaciones
+            denominaciones_creadas = []
+            total_calculado = 0
+            
+            for valor in Denominacion.VALOR_CHOICES:
+                cantidad = request.POST.get(f'denominacion_{valor[0]}', 0)
+                try:
+                    cantidad = int(cantidad)
+                    if cantidad > 0:
+                        denominacion = Denominacion.objects.create(
+                            caja=caja,
+                            valor=valor[0],
+                            cantidad=cantidad
+                        )
+                        denominaciones_creadas.append(denominacion)
+                        total_calculado += valor[0] * cantidad
+                except ValueError:
+                    continue
+            
+            # Calcular saldo inicial basado en denominaciones
+            caja.calcular_saldo_inicial_denominaciones()
+            caja.save()
+            
+            messages.success(request, f'Caja abierta con saldo inicial de Gs. {caja.saldo_inicial:,}')
+            return redirect('caja_ver', caja_id=caja.id)
+            
+        except Exception as e:
+            messages.error(request, f'Error al abrir la caja: {str(e)}')
+    
+    # Preparar denominaciones para el formulario
+    denominaciones = []
+    for valor, label in Denominacion.VALOR_CHOICES:
+        denominaciones.append({
+            'valor': valor,
+            'label': label,
+            'cantidad': 0
+        })
+    
+    context = {
+        'fecha_actual': date.today(),
+        'denominaciones': denominaciones,
+    }
+    return render(request, 'caja_abrir.html', context)
+
+
+@login_required
+def caja_ver(request, caja_id):
+    """Ver detalles de una caja"""
+    caja = get_object_or_404(Caja, id=caja_id)
+    
+    # Obtener movimientos
+    movimientos = caja.movimientos.select_related('usuario').order_by('-fecha')
+    
+    # Obtener gastos
+    gastos = caja.gastos.select_related('usuario').order_by('-fecha')
+    
+    # Obtener denominaciones
+    denominaciones = caja.denominaciones.all().order_by('-valor')
+    
+    # Calcular totales
+    total_ingresos = movimientos.filter(tipo='ingreso').aggregate(total=Sum('monto'))['total'] or 0
+    total_egresos = movimientos.filter(tipo='egreso').aggregate(total=Sum('monto'))['total'] or 0
+    total_gastos = gastos.aggregate(total=Sum('monto'))['total'] or 0
+    
+    # Agrupar movimientos por categoría
+    movimientos_por_categoria = movimientos.values('categoria').annotate(
+        total=Sum('monto'),
+        cantidad=Count('id')
+    ).order_by('-total')
+    
+    context = {
+        'caja': caja,
+        'movimientos': movimientos,
+        'gastos': gastos,
+        'denominaciones': denominaciones,
+        'total_ingresos': total_ingresos,
+        'total_egresos': total_egresos,
+        'total_gastos': total_gastos,
+        'movimientos_por_categoria': movimientos_por_categoria,
+    }
+    
+    return render(request, 'caja_ver.html', context)
+
+
+@login_required
+def caja_cerrar(request, caja_id):
+    """Cerrar caja con arqueo"""
+    caja = get_object_or_404(Caja, id=caja_id)
+    
+    if caja.cerrada:
+        messages.warning(request, 'Esta caja ya está cerrada.')
+        return redirect('caja_ver', caja_id=caja.id)
+    
+    if request.method == 'POST':
+        saldo_real = request.POST.get('saldo_real', 0)
+        observaciones = request.POST.get('observaciones', '')
+        
+        try:
+            saldo_real = int(saldo_real)
+            caja.cerrar_caja(saldo_real, request.user, observaciones)
+            messages.success(request, 'Caja cerrada exitosamente.')
+            return redirect('caja_ver', caja_id=caja.id)
+        except ValueError:
+            messages.error(request, 'El saldo real debe ser un número válido.')
+    
+    # Calcular saldo final esperado
+    caja.calcular_saldo_final()
+    
+    context = {
+        'caja': caja,
+    }
+    
+    return render(request, 'caja_cerrar.html', context)
+
+
+@login_required
+def gasto_crear(request, caja_id):
+    """Crear un nuevo gasto"""
+    caja = get_object_or_404(Caja, id=caja_id)
+    
+    if caja.cerrada:
+        messages.error(request, 'No se pueden agregar gastos a una caja cerrada.')
+        return redirect('caja_ver', caja_id=caja.id)
+    
+    if request.method == 'POST':
+        categoria = request.POST.get('categoria')
+        descripcion = request.POST.get('descripcion')
+        monto = request.POST.get('monto')
+        comprobante = request.POST.get('comprobante', '')
+        observacion = request.POST.get('observacion', '')
+        
+        try:
+            monto = int(monto)
+            if monto <= 0:
+                raise ValueError("El monto debe ser mayor a 0")
+            
+            gasto = Gasto.objects.create(
+                caja=caja,
+                categoria=categoria,
+                descripcion=descripcion,
+                monto=monto,
+                comprobante=comprobante,
+                observacion=observacion,
+                usuario=request.user
+            )
+            
+            messages.success(request, f'Gasto registrado: {descripcion} - Gs. {monto:,}')
+            return redirect('caja_ver', caja_id=caja.id)
+            
+        except ValueError as e:
+            messages.error(request, f'Error: {str(e)}')
+    
+    context = {
+        'caja': caja,
+        'categorias': Gasto.CATEGORIA_CHOICES,
+    }
+    
+    return render(request, 'gasto_crear.html', context)
+
+
+@login_required
+def gasto_editar(request, gasto_id):
+    """Editar un gasto"""
+    gasto = get_object_or_404(Gasto, id=gasto_id)
+    
+    if gasto.caja.cerrada:
+        messages.error(request, 'No se pueden editar gastos de una caja cerrada.')
+        return redirect('caja_ver', caja_id=gasto.caja.id)
+    
+    if request.method == 'POST':
+        categoria = request.POST.get('categoria')
+        descripcion = request.POST.get('descripcion')
+        monto = request.POST.get('monto')
+        comprobante = request.POST.get('comprobante', '')
+        observacion = request.POST.get('observacion', '')
+        
+        try:
+            monto = int(monto)
+            if monto <= 0:
+                raise ValueError("El monto debe ser mayor a 0")
+            
+            gasto.categoria = categoria
+            gasto.descripcion = descripcion
+            gasto.monto = monto
+            gasto.comprobante = comprobante
+            gasto.observacion = observacion
+            gasto.save()
+            
+            messages.success(request, 'Gasto actualizado exitosamente.')
+            return redirect('caja_ver', caja_id=gasto.caja.id)
+            
+        except ValueError as e:
+            messages.error(request, f'Error: {str(e)}')
+    
+    context = {
+        'gasto': gasto,
+        'categorias': Gasto.CATEGORIA_CHOICES,
+    }
+    
+    return render(request, 'gasto_editar.html', context)
+
+
+@login_required
+def gasto_eliminar(request, gasto_id):
+    """Eliminar un gasto"""
+    gasto = get_object_or_404(Gasto, id=gasto_id)
+    
+    if gasto.caja.cerrada:
+        messages.error(request, 'No se pueden eliminar gastos de una caja cerrada.')
+        return redirect('caja_ver', caja_id=gasto.caja.id)
+    
+    if request.method == 'POST':
+        caja_id = gasto.caja.id
+        gasto.delete()
+        messages.success(request, 'Gasto eliminado exitosamente.')
+        return redirect('caja_ver', caja_id=caja_id)
+    
+    context = {
+        'gasto': gasto,
+    }
+    
+    return render(request, 'gasto_eliminar.html', context)
+
+
+@login_required
+def movimiento_crear(request, caja_id):
+    """Crear un movimiento manual de caja"""
+    caja = get_object_or_404(Caja, id=caja_id)
+    
+    if caja.cerrada:
+        messages.error(request, 'No se pueden agregar movimientos a una caja cerrada.')
+        return redirect('caja_ver', caja_id=caja.id)
+    
+    if request.method == 'POST':
+        tipo = request.POST.get('tipo')
+        categoria = request.POST.get('categoria')
+        monto = request.POST.get('monto')
+        descripcion = request.POST.get('descripcion')
+        referencia = request.POST.get('referencia', '')
+        observacion = request.POST.get('observacion', '')
+        
+        try:
+            monto = int(monto)
+            if monto <= 0:
+                raise ValueError("El monto debe ser mayor a 0")
+            
+            movimiento = MovimientoCaja.registrar_movimiento(
+                caja=caja,
+                tipo=tipo,
+                categoria=categoria,
+                monto=monto,
+                descripcion=descripcion,
+                usuario=request.user,
+                referencia=referencia,
+                observacion=observacion
+            )
+            
+            messages.success(request, f'Movimiento registrado: {descripcion} - Gs. {monto:,}')
+            return redirect('caja_ver', caja_id=caja.id)
+            
+        except ValueError as e:
+            messages.error(request, f'Error: {str(e)}')
+    
+    context = {
+        'caja': caja,
+        'tipos': MovimientoCaja.TIPO_CHOICES,
+        'categorias': MovimientoCaja.CATEGORIA_CHOICES,
+    }
+    
+    return render(request, 'movimiento_crear.html', context)
+
+
+@login_required
+def reporte_caja(request):
+    """Reporte de caja por período"""
+    from datetime import datetime, timedelta
+    
+    # Parámetros de filtro
+    fecha_inicio = request.GET.get('fecha_inicio', (datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d'))
+    fecha_fin = request.GET.get('fecha_fin', datetime.now().strftime('%Y-%m-%d'))
+    
+    try:
+        fecha_inicio_dt = datetime.strptime(fecha_inicio, '%Y-%m-%d').date()
+        fecha_fin_dt = datetime.strptime(fecha_fin, '%Y-%m-%d').date()
+    except ValueError:
+        fecha_inicio_dt = (datetime.now() - timedelta(days=30)).date()
+        fecha_fin_dt = datetime.now().date()
+    
+    # Obtener cajas del período
+    cajas = Caja.objects.filter(
+        fecha__gte=fecha_inicio_dt,
+        fecha__lte=fecha_fin_dt
+    ).select_related('usuario_apertura', 'usuario_cierre').order_by('-fecha')
+    
+    # Estadísticas generales
+    total_cajas = cajas.count()
+    cajas_abiertas = cajas.filter(cerrada=False).count()
+    cajas_cerradas = cajas.filter(cerrada=True).count()
+    
+    # Totales financieros
+    total_saldo_inicial = cajas.aggregate(total=Sum('saldo_inicial'))['total'] or 0
+    total_saldo_final = cajas.aggregate(total=Sum('saldo_final'))['total'] or 0
+    total_saldo_real = cajas.aggregate(total=Sum('saldo_real'))['total'] or 0
+    total_diferencia = cajas.aggregate(total=Sum('diferencia'))['total'] or 0
+    
+    # Obtener todos los movimientos del período
+    movimientos = MovimientoCaja.objects.filter(
+        caja__fecha__gte=fecha_inicio_dt,
+        caja__fecha__lte=fecha_fin_dt
+    ).select_related('caja', 'usuario')
+    
+    # Estadísticas por categoría
+    stats_por_categoria = movimientos.values('categoria').annotate(
+        total=Sum('monto'),
+        cantidad=Count('id')
+    ).order_by('-total')
+    
+    # Estadísticas por tipo
+    stats_por_tipo = movimientos.values('tipo').annotate(
+        total=Sum('monto'),
+        cantidad=Count('id')
+    ).order_by('-total')
+    
+    # Top gastos
+    top_gastos = Gasto.objects.filter(
+        caja__fecha__gte=fecha_inicio_dt,
+        caja__fecha__lte=fecha_fin_dt
+    ).select_related('caja', 'usuario').order_by('-monto')[:10]
+    
+    context = {
+        'cajas': cajas,
+        'fecha_inicio': fecha_inicio,
+        'fecha_fin': fecha_fin,
+        
+        # Estadísticas
+        'total_cajas': total_cajas,
+        'cajas_abiertas': cajas_abiertas,
+        'cajas_cerradas': cajas_cerradas,
+        'total_saldo_inicial': total_saldo_inicial,
+        'total_saldo_final': total_saldo_final,
+        'total_saldo_real': total_saldo_real,
+        'total_diferencia': total_diferencia,
+        
+        # Datos para análisis
+        'stats_por_categoria': stats_por_categoria,
+        'stats_por_tipo': stats_por_tipo,
+        'top_gastos': top_gastos,
+    }
+    
+    return render(request, 'reporte_caja.html', context)
+
+
+
+
+# ============================================================================
+
+@login_required
+def caja_list(request):
+    """Lista de cajas"""
+    cajas = Caja.objects.select_related('usuario_apertura', 'usuario_cierre').order_by('-fecha')
+    
+    # Estadísticas generales
+    total_cajas = cajas.count()
+    cajas_abiertas = cajas.filter(cerrada=False).count()
+    cajas_cerradas = cajas.filter(cerrada=True).count()
+    
+    # Caja actual (hoy)
+    from datetime import date
+    caja_actual = cajas.filter(fecha=date.today()).first()
+    
+    context = {
+        'cajas': cajas,
+        'total_cajas': total_cajas,
+        'cajas_abiertas': cajas_abiertas,
+        'cajas_cerradas': cajas_cerradas,
+        'caja_actual': caja_actual,
+    }
+    
+    return render(request, 'caja_list.html', context)
+
+
+@login_required
+def caja_abrir(request):
+    """Abrir caja del día con denominaciones"""
+    from datetime import date
+    
+    # Verificar si ya existe una caja para hoy
+    caja_existente = Caja.objects.filter(fecha=date.today()).first()
+    if caja_existente:
+        messages.warning(request, 'Ya existe una caja abierta para hoy.')
+        return redirect('caja_ver', caja_id=caja_existente.id)
+    
+    if request.method == 'POST':
+        try:
+            # Crear la caja
+            caja = Caja.objects.create(
+                fecha=date.today(),
+                saldo_inicial=0,  # Se calculará automáticamente
+                usuario_apertura=request.user
+            )
+            
+            # Procesar denominaciones
+            denominaciones_creadas = []
+            total_calculado = 0
+            
+            for valor in Denominacion.VALOR_CHOICES:
+                cantidad = request.POST.get(f'denominacion_{valor[0]}', 0)
+                try:
+                    cantidad = int(cantidad)
+                    if cantidad > 0:
+                        denominacion = Denominacion.objects.create(
+                            caja=caja,
+                            valor=valor[0],
+                            cantidad=cantidad
+                        )
+                        denominaciones_creadas.append(denominacion)
+                        total_calculado += valor[0] * cantidad
+                except ValueError:
+                    continue
+            
+            # Calcular saldo inicial basado en denominaciones
+            caja.calcular_saldo_inicial_denominaciones()
+            caja.save()
+            
+            messages.success(request, f'Caja abierta con saldo inicial de Gs. {caja.saldo_inicial:,}')
+            return redirect('caja_ver', caja_id=caja.id)
+            
+        except Exception as e:
+            messages.error(request, f'Error al abrir la caja: {str(e)}')
+    
+    # Preparar denominaciones para el formulario
+    denominaciones = []
+    for valor, label in Denominacion.VALOR_CHOICES:
+        denominaciones.append({
+            'valor': valor,
+            'label': label,
+            'cantidad': 0
+        })
+    
+    context = {
+        'fecha_actual': date.today(),
+        'denominaciones': denominaciones,
+    }
+    return render(request, 'caja_abrir.html', context)
+
+
+@login_required
+def caja_ver(request, caja_id):
+    """Ver detalles de una caja"""
+    caja = get_object_or_404(Caja, id=caja_id)
+    
+    # Obtener movimientos
+    movimientos = caja.movimientos.select_related('usuario').order_by('-fecha')
+    
+    # Obtener gastos
+    gastos = caja.gastos.select_related('usuario').order_by('-fecha')
+    
+    # Obtener denominaciones
+    denominaciones = caja.denominaciones.all().order_by('-valor')
+    
+    # Calcular totales
+    total_ingresos = movimientos.filter(tipo='ingreso').aggregate(total=Sum('monto'))['total'] or 0
+    total_egresos = movimientos.filter(tipo='egreso').aggregate(total=Sum('monto'))['total'] or 0
+    total_gastos = gastos.aggregate(total=Sum('monto'))['total'] or 0
+    
+    # Agrupar movimientos por categoría
+    movimientos_por_categoria = movimientos.values('categoria').annotate(
+        total=Sum('monto'),
+        cantidad=Count('id')
+    ).order_by('-total')
+    
+    context = {
+        'caja': caja,
+        'movimientos': movimientos,
+        'gastos': gastos,
+        'denominaciones': denominaciones,
+        'total_ingresos': total_ingresos,
+        'total_egresos': total_egresos,
+        'total_gastos': total_gastos,
+        'movimientos_por_categoria': movimientos_por_categoria,
+    }
+    
+    return render(request, 'caja_ver.html', context)
+
+
+@login_required
+def caja_cerrar(request, caja_id):
+    """Cerrar caja con arqueo"""
+    caja = get_object_or_404(Caja, id=caja_id)
+    
+    if caja.cerrada:
+        messages.warning(request, 'Esta caja ya está cerrada.')
+        return redirect('caja_ver', caja_id=caja.id)
+    
+    if request.method == 'POST':
+        saldo_real = request.POST.get('saldo_real', 0)
+        observaciones = request.POST.get('observaciones', '')
+        
+        try:
+            saldo_real = int(saldo_real)
+            caja.cerrar_caja(saldo_real, request.user, observaciones)
+            messages.success(request, 'Caja cerrada exitosamente.')
+            return redirect('caja_ver', caja_id=caja.id)
+        except ValueError:
+            messages.error(request, 'El saldo real debe ser un número válido.')
+    
+    # Calcular saldo final esperado
+    caja.calcular_saldo_final()
+    
+    context = {
+        'caja': caja,
+    }
+    
+    return render(request, 'caja_cerrar.html', context)
+
+
+@login_required
+def gasto_crear(request, caja_id):
+    """Crear un nuevo gasto"""
+    caja = get_object_or_404(Caja, id=caja_id)
+    
+    if caja.cerrada:
+        messages.error(request, 'No se pueden agregar gastos a una caja cerrada.')
+        return redirect('caja_ver', caja_id=caja.id)
+    
+    if request.method == 'POST':
+        categoria = request.POST.get('categoria')
+        descripcion = request.POST.get('descripcion')
+        monto = request.POST.get('monto')
+        comprobante = request.POST.get('comprobante', '')
+        observacion = request.POST.get('observacion', '')
+        
+        try:
+            monto = int(monto)
+            if monto <= 0:
+                raise ValueError("El monto debe ser mayor a 0")
+            
+            gasto = Gasto.objects.create(
+                caja=caja,
+                categoria=categoria,
+                descripcion=descripcion,
+                monto=monto,
+                comprobante=comprobante,
+                observacion=observacion,
+                usuario=request.user
+            )
+            
+            messages.success(request, f'Gasto registrado: {descripcion} - Gs. {monto:,}')
+            return redirect('caja_ver', caja_id=caja.id)
+            
+        except ValueError as e:
+            messages.error(request, f'Error: {str(e)}')
+    
+    context = {
+        'caja': caja,
+        'categorias': Gasto.CATEGORIA_CHOICES,
+    }
+    
+    return render(request, 'gasto_crear.html', context)
+
+
+@login_required
+def gasto_editar(request, gasto_id):
+    """Editar un gasto"""
+    gasto = get_object_or_404(Gasto, id=gasto_id)
+    
+    if gasto.caja.cerrada:
+        messages.error(request, 'No se pueden editar gastos de una caja cerrada.')
+        return redirect('caja_ver', caja_id=gasto.caja.id)
+    
+    if request.method == 'POST':
+        categoria = request.POST.get('categoria')
+        descripcion = request.POST.get('descripcion')
+        monto = request.POST.get('monto')
+        comprobante = request.POST.get('comprobante', '')
+        observacion = request.POST.get('observacion', '')
+        
+        try:
+            monto = int(monto)
+            if monto <= 0:
+                raise ValueError("El monto debe ser mayor a 0")
+            
+            gasto.categoria = categoria
+            gasto.descripcion = descripcion
+            gasto.monto = monto
+            gasto.comprobante = comprobante
+            gasto.observacion = observacion
+            gasto.save()
+            
+            messages.success(request, 'Gasto actualizado exitosamente.')
+            return redirect('caja_ver', caja_id=gasto.caja.id)
+            
+        except ValueError as e:
+            messages.error(request, f'Error: {str(e)}')
+    
+    context = {
+        'gasto': gasto,
+        'categorias': Gasto.CATEGORIA_CHOICES,
+    }
+    
+    return render(request, 'gasto_editar.html', context)
+
+
+@login_required
+def gasto_eliminar(request, gasto_id):
+    """Eliminar un gasto"""
+    gasto = get_object_or_404(Gasto, id=gasto_id)
+    
+    if gasto.caja.cerrada:
+        messages.error(request, 'No se pueden eliminar gastos de una caja cerrada.')
+        return redirect('caja_ver', caja_id=gasto.caja.id)
+    
+    if request.method == 'POST':
+        caja_id = gasto.caja.id
+        gasto.delete()
+        messages.success(request, 'Gasto eliminado exitosamente.')
+        return redirect('caja_ver', caja_id=caja_id)
+    
+    context = {
+        'gasto': gasto,
+    }
+    
+    return render(request, 'gasto_eliminar.html', context)
+
+
+@login_required
+def movimiento_crear(request, caja_id):
+    """Crear un movimiento manual de caja"""
+    caja = get_object_or_404(Caja, id=caja_id)
+    
+    if caja.cerrada:
+        messages.error(request, 'No se pueden agregar movimientos a una caja cerrada.')
+        return redirect('caja_ver', caja_id=caja.id)
+    
+    if request.method == 'POST':
+        tipo = request.POST.get('tipo')
+        categoria = request.POST.get('categoria')
+        monto = request.POST.get('monto')
+        descripcion = request.POST.get('descripcion')
+        referencia = request.POST.get('referencia', '')
+        observacion = request.POST.get('observacion', '')
+        
+        try:
+            monto = int(monto)
+            if monto <= 0:
+                raise ValueError("El monto debe ser mayor a 0")
+            
+            movimiento = MovimientoCaja.registrar_movimiento(
+                caja=caja,
+                tipo=tipo,
+                categoria=categoria,
+                monto=monto,
+                descripcion=descripcion,
+                usuario=request.user,
+                referencia=referencia,
+                observacion=observacion
+            )
+            
+            messages.success(request, f'Movimiento registrado: {descripcion} - Gs. {monto:,}')
+            return redirect('caja_ver', caja_id=caja.id)
+            
+        except ValueError as e:
+            messages.error(request, f'Error: {str(e)}')
+    
+    context = {
+        'caja': caja,
+        'tipos': MovimientoCaja.TIPO_CHOICES,
+        'categorias': MovimientoCaja.CATEGORIA_CHOICES,
+    }
+    
+    return render(request, 'movimiento_crear.html', context)
+
+
+@login_required
+def reporte_caja(request):
+    """Reporte de caja por período"""
+    from datetime import datetime, timedelta
+    
+    # Parámetros de filtro
+    fecha_inicio = request.GET.get('fecha_inicio', (datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d'))
+    fecha_fin = request.GET.get('fecha_fin', datetime.now().strftime('%Y-%m-%d'))
+    
+    try:
+        fecha_inicio_dt = datetime.strptime(fecha_inicio, '%Y-%m-%d').date()
+        fecha_fin_dt = datetime.strptime(fecha_fin, '%Y-%m-%d').date()
+    except ValueError:
+        fecha_inicio_dt = (datetime.now() - timedelta(days=30)).date()
+        fecha_fin_dt = datetime.now().date()
+    
+    # Obtener cajas del período
+    cajas = Caja.objects.filter(
+        fecha__gte=fecha_inicio_dt,
+        fecha__lte=fecha_fin_dt
+    ).select_related('usuario_apertura', 'usuario_cierre').order_by('-fecha')
+    
+    # Estadísticas generales
+    total_cajas = cajas.count()
+    cajas_abiertas = cajas.filter(cerrada=False).count()
+    cajas_cerradas = cajas.filter(cerrada=True).count()
+    
+    # Totales financieros
+    total_saldo_inicial = cajas.aggregate(total=Sum('saldo_inicial'))['total'] or 0
+    total_saldo_final = cajas.aggregate(total=Sum('saldo_final'))['total'] or 0
+    total_saldo_real = cajas.aggregate(total=Sum('saldo_real'))['total'] or 0
+    total_diferencia = cajas.aggregate(total=Sum('diferencia'))['total'] or 0
+    
+    # Obtener todos los movimientos del período
+    movimientos = MovimientoCaja.objects.filter(
+        caja__fecha__gte=fecha_inicio_dt,
+        caja__fecha__lte=fecha_fin_dt
+    ).select_related('caja', 'usuario')
+    
+    # Estadísticas por categoría
+    stats_por_categoria = movimientos.values('categoria').annotate(
+        total=Sum('monto'),
+        cantidad=Count('id')
+    ).order_by('-total')
+    
+    # Estadísticas por tipo
+    stats_por_tipo = movimientos.values('tipo').annotate(
+        total=Sum('monto'),
+        cantidad=Count('id')
+    ).order_by('-total')
+    
+    # Top gastos
+    top_gastos = Gasto.objects.filter(
+        caja__fecha__gte=fecha_inicio_dt,
+        caja__fecha__lte=fecha_fin_dt
+    ).select_related('caja', 'usuario').order_by('-monto')[:10]
+    
+    context = {
+        'cajas': cajas,
+        'fecha_inicio': fecha_inicio,
+        'fecha_fin': fecha_fin,
+        
+        # Estadísticas
+        'total_cajas': total_cajas,
+        'cajas_abiertas': cajas_abiertas,
+        'cajas_cerradas': cajas_cerradas,
+        'total_saldo_inicial': total_saldo_inicial,
+        'total_saldo_final': total_saldo_final,
+        'total_saldo_real': total_saldo_real,
+        'total_diferencia': total_diferencia,
+        
+        # Datos para análisis
+        'stats_por_categoria': stats_por_categoria,
+        'stats_por_tipo': stats_por_tipo,
+        'top_gastos': top_gastos,
+    }
+    
+    return render(request, 'reporte_caja.html', context)
+
+
+
+
+# ============================================================================
+
+@login_required
+def caja_list(request):
+    """Lista de cajas"""
+    cajas = Caja.objects.select_related('usuario_apertura', 'usuario_cierre').order_by('-fecha')
+    
+    # Estadísticas generales
+    total_cajas = cajas.count()
+    cajas_abiertas = cajas.filter(cerrada=False).count()
+    cajas_cerradas = cajas.filter(cerrada=True).count()
+    
+    # Caja actual (hoy)
+    from datetime import date
+    caja_actual = cajas.filter(fecha=date.today()).first()
+    
+    context = {
+        'cajas': cajas,
+        'total_cajas': total_cajas,
+        'cajas_abiertas': cajas_abiertas,
+        'cajas_cerradas': cajas_cerradas,
+        'caja_actual': caja_actual,
+    }
+    
+    return render(request, 'caja_list.html', context)
+
+
+@login_required
+def caja_abrir(request):
+    """Abrir caja del día con denominaciones"""
+    from datetime import date
+    
+    # Verificar si ya existe una caja para hoy
+    caja_existente = Caja.objects.filter(fecha=date.today()).first()
+    if caja_existente:
+        messages.warning(request, 'Ya existe una caja abierta para hoy.')
+        return redirect('caja_ver', caja_id=caja_existente.id)
+    
+    if request.method == 'POST':
+        try:
+            # Crear la caja
+            caja = Caja.objects.create(
+                fecha=date.today(),
+                saldo_inicial=0,  # Se calculará automáticamente
+                usuario_apertura=request.user
+            )
+            
+            # Procesar denominaciones
+            denominaciones_creadas = []
+            total_calculado = 0
+            
+            for valor in Denominacion.VALOR_CHOICES:
+                cantidad = request.POST.get(f'denominacion_{valor[0]}', 0)
+                try:
+                    cantidad = int(cantidad)
+                    if cantidad > 0:
+                        denominacion = Denominacion.objects.create(
+                            caja=caja,
+                            valor=valor[0],
+                            cantidad=cantidad
+                        )
+                        denominaciones_creadas.append(denominacion)
+                        total_calculado += valor[0] * cantidad
+                except ValueError:
+                    continue
+            
+            # Calcular saldo inicial basado en denominaciones
+            caja.calcular_saldo_inicial_denominaciones()
+            caja.save()
+            
+            messages.success(request, f'Caja abierta con saldo inicial de Gs. {caja.saldo_inicial:,}')
+            return redirect('caja_ver', caja_id=caja.id)
+            
+        except Exception as e:
+            messages.error(request, f'Error al abrir la caja: {str(e)}')
+    
+    # Preparar denominaciones para el formulario
+    denominaciones = []
+    for valor, label in Denominacion.VALOR_CHOICES:
+        denominaciones.append({
+            'valor': valor,
+            'label': label,
+            'cantidad': 0
+        })
+    
+    context = {
+        'fecha_actual': date.today(),
+        'denominaciones': denominaciones,
+    }
+    return render(request, 'caja_abrir.html', context)
+
+
+@login_required
+def caja_ver(request, caja_id):
+    """Ver detalles de una caja"""
+    caja = get_object_or_404(Caja, id=caja_id)
+    
+    # Obtener movimientos
+    movimientos = caja.movimientos.select_related('usuario').order_by('-fecha')
+    
+    # Obtener gastos
+    gastos = caja.gastos.select_related('usuario').order_by('-fecha')
+    
+    # Obtener denominaciones
+    denominaciones = caja.denominaciones.all().order_by('-valor')
+    
+    # Calcular totales
+    total_ingresos = movimientos.filter(tipo='ingreso').aggregate(total=Sum('monto'))['total'] or 0
+    total_egresos = movimientos.filter(tipo='egreso').aggregate(total=Sum('monto'))['total'] or 0
+    total_gastos = gastos.aggregate(total=Sum('monto'))['total'] or 0
+    
+    # Agrupar movimientos por categoría
+    movimientos_por_categoria = movimientos.values('categoria').annotate(
+        total=Sum('monto'),
+        cantidad=Count('id')
+    ).order_by('-total')
+    
+    context = {
+        'caja': caja,
+        'movimientos': movimientos,
+        'gastos': gastos,
+        'denominaciones': denominaciones,
+        'total_ingresos': total_ingresos,
+        'total_egresos': total_egresos,
+        'total_gastos': total_gastos,
+        'movimientos_por_categoria': movimientos_por_categoria,
+    }
+    
+    return render(request, 'caja_ver.html', context)
+
+
+@login_required
+def caja_cerrar(request, caja_id):
+    """Cerrar caja con arqueo"""
+    caja = get_object_or_404(Caja, id=caja_id)
+    
+    if caja.cerrada:
+        messages.warning(request, 'Esta caja ya está cerrada.')
+        return redirect('caja_ver', caja_id=caja.id)
+    
+    if request.method == 'POST':
+        saldo_real = request.POST.get('saldo_real', 0)
+        observaciones = request.POST.get('observaciones', '')
+        
+        try:
+            saldo_real = int(saldo_real)
+            caja.cerrar_caja(saldo_real, request.user, observaciones)
+            messages.success(request, 'Caja cerrada exitosamente.')
+            return redirect('caja_ver', caja_id=caja.id)
+        except ValueError:
+            messages.error(request, 'El saldo real debe ser un número válido.')
+    
+    # Calcular saldo final esperado
+    caja.calcular_saldo_final()
+    
+    context = {
+        'caja': caja,
+    }
+    
+    return render(request, 'caja_cerrar.html', context)
+
+
+@login_required
+def gasto_crear(request, caja_id):
+    """Crear un nuevo gasto"""
+    caja = get_object_or_404(Caja, id=caja_id)
+    
+    if caja.cerrada:
+        messages.error(request, 'No se pueden agregar gastos a una caja cerrada.')
+        return redirect('caja_ver', caja_id=caja.id)
+    
+    if request.method == 'POST':
+        categoria = request.POST.get('categoria')
+        descripcion = request.POST.get('descripcion')
+        monto = request.POST.get('monto')
+        comprobante = request.POST.get('comprobante', '')
+        observacion = request.POST.get('observacion', '')
+        
+        try:
+            monto = int(monto)
+            if monto <= 0:
+                raise ValueError("El monto debe ser mayor a 0")
+            
+            gasto = Gasto.objects.create(
+                caja=caja,
+                categoria=categoria,
+                descripcion=descripcion,
+                monto=monto,
+                comprobante=comprobante,
+                observacion=observacion,
+                usuario=request.user
+            )
+            
+            messages.success(request, f'Gasto registrado: {descripcion} - Gs. {monto:,}')
+            return redirect('caja_ver', caja_id=caja.id)
+            
+        except ValueError as e:
+            messages.error(request, f'Error: {str(e)}')
+    
+    context = {
+        'caja': caja,
+        'categorias': Gasto.CATEGORIA_CHOICES,
+    }
+    
+    return render(request, 'gasto_crear.html', context)
+
+
+@login_required
+def gasto_editar(request, gasto_id):
+    """Editar un gasto"""
+    gasto = get_object_or_404(Gasto, id=gasto_id)
+    
+    if gasto.caja.cerrada:
+        messages.error(request, 'No se pueden editar gastos de una caja cerrada.')
+        return redirect('caja_ver', caja_id=gasto.caja.id)
+    
+    if request.method == 'POST':
+        categoria = request.POST.get('categoria')
+        descripcion = request.POST.get('descripcion')
+        monto = request.POST.get('monto')
+        comprobante = request.POST.get('comprobante', '')
+        observacion = request.POST.get('observacion', '')
+        
+        try:
+            monto = int(monto)
+            if monto <= 0:
+                raise ValueError("El monto debe ser mayor a 0")
+            
+            gasto.categoria = categoria
+            gasto.descripcion = descripcion
+            gasto.monto = monto
+            gasto.comprobante = comprobante
+            gasto.observacion = observacion
+            gasto.save()
+            
+            messages.success(request, 'Gasto actualizado exitosamente.')
+            return redirect('caja_ver', caja_id=gasto.caja.id)
+            
+        except ValueError as e:
+            messages.error(request, f'Error: {str(e)}')
+    
+    context = {
+        'gasto': gasto,
+        'categorias': Gasto.CATEGORIA_CHOICES,
+    }
+    
+    return render(request, 'gasto_editar.html', context)
+
+
+@login_required
+def gasto_eliminar(request, gasto_id):
+    """Eliminar un gasto"""
+    gasto = get_object_or_404(Gasto, id=gasto_id)
+    
+    if gasto.caja.cerrada:
+        messages.error(request, 'No se pueden eliminar gastos de una caja cerrada.')
+        return redirect('caja_ver', caja_id=gasto.caja.id)
+    
+    if request.method == 'POST':
+        caja_id = gasto.caja.id
+        gasto.delete()
+        messages.success(request, 'Gasto eliminado exitosamente.')
+        return redirect('caja_ver', caja_id=caja_id)
+    
+    context = {
+        'gasto': gasto,
+    }
+    
+    return render(request, 'gasto_eliminar.html', context)
+
+
+@login_required
+def movimiento_crear(request, caja_id):
+    """Crear un movimiento manual de caja"""
+    caja = get_object_or_404(Caja, id=caja_id)
+    
+    if caja.cerrada:
+        messages.error(request, 'No se pueden agregar movimientos a una caja cerrada.')
+        return redirect('caja_ver', caja_id=caja.id)
+    
+    if request.method == 'POST':
+        tipo = request.POST.get('tipo')
+        categoria = request.POST.get('categoria')
+        monto = request.POST.get('monto')
+        descripcion = request.POST.get('descripcion')
+        referencia = request.POST.get('referencia', '')
+        observacion = request.POST.get('observacion', '')
+        
+        try:
+            monto = int(monto)
+            if monto <= 0:
+                raise ValueError("El monto debe ser mayor a 0")
+            
+            movimiento = MovimientoCaja.registrar_movimiento(
+                caja=caja,
+                tipo=tipo,
+                categoria=categoria,
+                monto=monto,
+                descripcion=descripcion,
+                usuario=request.user,
+                referencia=referencia,
+                observacion=observacion
+            )
+            
+            messages.success(request, f'Movimiento registrado: {descripcion} - Gs. {monto:,}')
+            return redirect('caja_ver', caja_id=caja.id)
+            
+        except ValueError as e:
+            messages.error(request, f'Error: {str(e)}')
+    
+    context = {
+        'caja': caja,
+        'tipos': MovimientoCaja.TIPO_CHOICES,
+        'categorias': MovimientoCaja.CATEGORIA_CHOICES,
+    }
+    
+    return render(request, 'movimiento_crear.html', context)
+
+
+@login_required
+def reporte_caja(request):
+    """Reporte de caja por período"""
+    from datetime import datetime, timedelta
+    
+    # Parámetros de filtro
+    fecha_inicio = request.GET.get('fecha_inicio', (datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d'))
+    fecha_fin = request.GET.get('fecha_fin', datetime.now().strftime('%Y-%m-%d'))
+    
+    try:
+        fecha_inicio_dt = datetime.strptime(fecha_inicio, '%Y-%m-%d').date()
+        fecha_fin_dt = datetime.strptime(fecha_fin, '%Y-%m-%d').date()
+    except ValueError:
+        fecha_inicio_dt = (datetime.now() - timedelta(days=30)).date()
+        fecha_fin_dt = datetime.now().date()
+    
+    # Obtener cajas del período
+    cajas = Caja.objects.filter(
+        fecha__gte=fecha_inicio_dt,
+        fecha__lte=fecha_fin_dt
+    ).select_related('usuario_apertura', 'usuario_cierre').order_by('-fecha')
+    
+    # Estadísticas generales
+    total_cajas = cajas.count()
+    cajas_abiertas = cajas.filter(cerrada=False).count()
+    cajas_cerradas = cajas.filter(cerrada=True).count()
+    
+    # Totales financieros
+    total_saldo_inicial = cajas.aggregate(total=Sum('saldo_inicial'))['total'] or 0
+    total_saldo_final = cajas.aggregate(total=Sum('saldo_final'))['total'] or 0
+    total_saldo_real = cajas.aggregate(total=Sum('saldo_real'))['total'] or 0
+    total_diferencia = cajas.aggregate(total=Sum('diferencia'))['total'] or 0
+    
+    # Obtener todos los movimientos del período
+    movimientos = MovimientoCaja.objects.filter(
+        caja__fecha__gte=fecha_inicio_dt,
+        caja__fecha__lte=fecha_fin_dt
+    ).select_related('caja', 'usuario')
+    
+    # Estadísticas por categoría
+    stats_por_categoria = movimientos.values('categoria').annotate(
+        total=Sum('monto'),
+        cantidad=Count('id')
+    ).order_by('-total')
+    
+    # Estadísticas por tipo
+    stats_por_tipo = movimientos.values('tipo').annotate(
+        total=Sum('monto'),
+        cantidad=Count('id')
+    ).order_by('-total')
+    
+    # Top gastos
+    top_gastos = Gasto.objects.filter(
+        caja__fecha__gte=fecha_inicio_dt,
+        caja__fecha__lte=fecha_fin_dt
+    ).select_related('caja', 'usuario').order_by('-monto')[:10]
+    
+    context = {
+        'cajas': cajas,
+        'fecha_inicio': fecha_inicio,
+        'fecha_fin': fecha_fin,
+        
+        # Estadísticas
+        'total_cajas': total_cajas,
+        'cajas_abiertas': cajas_abiertas,
+        'cajas_cerradas': cajas_cerradas,
+        'total_saldo_inicial': total_saldo_inicial,
+        'total_saldo_final': total_saldo_final,
+        'total_saldo_real': total_saldo_real,
+        'total_diferencia': total_diferencia,
+        
+        # Datos para análisis
+        'stats_por_categoria': stats_por_categoria,
+        'stats_por_tipo': stats_por_tipo,
+        'top_gastos': top_gastos,
+    }
+    
+    return render(request, 'reporte_caja.html', context)
+
+
+
+
+# ============================================================================
+
+@login_required
+def caja_list(request):
+    """Lista de cajas"""
+    cajas = Caja.objects.select_related('usuario_apertura', 'usuario_cierre').order_by('-fecha')
+    
+    # Estadísticas generales
+    total_cajas = cajas.count()
+    cajas_abiertas = cajas.filter(cerrada=False).count()
+    cajas_cerradas = cajas.filter(cerrada=True).count()
+    
+    # Caja actual (hoy)
+    from datetime import date
+    caja_actual = cajas.filter(fecha=date.today()).first()
+    
+    context = {
+        'cajas': cajas,
+        'total_cajas': total_cajas,
+        'cajas_abiertas': cajas_abiertas,
+        'cajas_cerradas': cajas_cerradas,
+        'caja_actual': caja_actual,
+    }
+    
+    return render(request, 'caja_list.html', context)
+
+
+@login_required
+def caja_abrir(request):
+    """Abrir caja del día con denominaciones"""
+    from datetime import date
+    
+    # Verificar si ya existe una caja para hoy
+    caja_existente = Caja.objects.filter(fecha=date.today()).first()
+    if caja_existente:
+        messages.warning(request, 'Ya existe una caja abierta para hoy.')
+        return redirect('caja_ver', caja_id=caja_existente.id)
+    
+    if request.method == 'POST':
+        try:
+            # Crear la caja
+            caja = Caja.objects.create(
+                fecha=date.today(),
+                saldo_inicial=0,  # Se calculará automáticamente
+                usuario_apertura=request.user
+            )
+            
+            # Procesar denominaciones
+            denominaciones_creadas = []
+            total_calculado = 0
+            
+            for valor in Denominacion.VALOR_CHOICES:
+                cantidad = request.POST.get(f'denominacion_{valor[0]}', 0)
+                try:
+                    cantidad = int(cantidad)
+                    if cantidad > 0:
+                        denominacion = Denominacion.objects.create(
+                            caja=caja,
+                            valor=valor[0],
+                            cantidad=cantidad
+                        )
+                        denominaciones_creadas.append(denominacion)
+                        total_calculado += valor[0] * cantidad
+                except ValueError:
+                    continue
+            
+            # Calcular saldo inicial basado en denominaciones
+            caja.calcular_saldo_inicial_denominaciones()
+            caja.save()
+            
+            messages.success(request, f'Caja abierta con saldo inicial de Gs. {caja.saldo_inicial:,}')
+            return redirect('caja_ver', caja_id=caja.id)
+            
+        except Exception as e:
+            messages.error(request, f'Error al abrir la caja: {str(e)}')
+    
+    # Preparar denominaciones para el formulario
+    denominaciones = []
+    for valor, label in Denominacion.VALOR_CHOICES:
+        denominaciones.append({
+            'valor': valor,
+            'label': label,
+            'cantidad': 0
+        })
+    
+    context = {
+        'fecha_actual': date.today(),
+        'denominaciones': denominaciones,
+    }
+    return render(request, 'caja_abrir.html', context)
+
+
+@login_required
+def caja_ver(request, caja_id):
+    """Ver detalles de una caja"""
+    caja = get_object_or_404(Caja, id=caja_id)
+    
+    # Obtener movimientos
+    movimientos = caja.movimientos.select_related('usuario').order_by('-fecha')
+    
+    # Obtener gastos
+    gastos = caja.gastos.select_related('usuario').order_by('-fecha')
+    
+    # Obtener denominaciones
+    denominaciones = caja.denominaciones.all().order_by('-valor')
+    
+    # Calcular totales
+    total_ingresos = movimientos.filter(tipo='ingreso').aggregate(total=Sum('monto'))['total'] or 0
+    total_egresos = movimientos.filter(tipo='egreso').aggregate(total=Sum('monto'))['total'] or 0
+    total_gastos = gastos.aggregate(total=Sum('monto'))['total'] or 0
+    
+    # Agrupar movimientos por categoría
+    movimientos_por_categoria = movimientos.values('categoria').annotate(
+        total=Sum('monto'),
+        cantidad=Count('id')
+    ).order_by('-total')
+    
+    context = {
+        'caja': caja,
+        'movimientos': movimientos,
+        'gastos': gastos,
+        'denominaciones': denominaciones,
+        'total_ingresos': total_ingresos,
+        'total_egresos': total_egresos,
+        'total_gastos': total_gastos,
+        'movimientos_por_categoria': movimientos_por_categoria,
+    }
+    
+    return render(request, 'caja_ver.html', context)
+
+
+@login_required
+def caja_cerrar(request, caja_id):
+    """Cerrar caja con arqueo"""
+    caja = get_object_or_404(Caja, id=caja_id)
+    
+    if caja.cerrada:
+        messages.warning(request, 'Esta caja ya está cerrada.')
+        return redirect('caja_ver', caja_id=caja.id)
+    
+    if request.method == 'POST':
+        saldo_real = request.POST.get('saldo_real', 0)
+        observaciones = request.POST.get('observaciones', '')
+        
+        try:
+            saldo_real = int(saldo_real)
+            caja.cerrar_caja(saldo_real, request.user, observaciones)
+            messages.success(request, 'Caja cerrada exitosamente.')
+            return redirect('caja_ver', caja_id=caja.id)
+        except ValueError:
+            messages.error(request, 'El saldo real debe ser un número válido.')
+    
+    # Calcular saldo final esperado
+    caja.calcular_saldo_final()
+    
+    context = {
+        'caja': caja,
+    }
+    
+    return render(request, 'caja_cerrar.html', context)
+
+
+@login_required
+def gasto_crear(request, caja_id):
+    """Crear un nuevo gasto"""
+    caja = get_object_or_404(Caja, id=caja_id)
+    
+    if caja.cerrada:
+        messages.error(request, 'No se pueden agregar gastos a una caja cerrada.')
+        return redirect('caja_ver', caja_id=caja.id)
+    
+    if request.method == 'POST':
+        categoria = request.POST.get('categoria')
+        descripcion = request.POST.get('descripcion')
+        monto = request.POST.get('monto')
+        comprobante = request.POST.get('comprobante', '')
+        observacion = request.POST.get('observacion', '')
+        
+        try:
+            monto = int(monto)
+            if monto <= 0:
+                raise ValueError("El monto debe ser mayor a 0")
+            
+            gasto = Gasto.objects.create(
+                caja=caja,
+                categoria=categoria,
+                descripcion=descripcion,
+                monto=monto,
+                comprobante=comprobante,
+                observacion=observacion,
+                usuario=request.user
+            )
+            
+            messages.success(request, f'Gasto registrado: {descripcion} - Gs. {monto:,}')
+            return redirect('caja_ver', caja_id=caja.id)
+            
+        except ValueError as e:
+            messages.error(request, f'Error: {str(e)}')
+    
+    context = {
+        'caja': caja,
+        'categorias': Gasto.CATEGORIA_CHOICES,
+    }
+    
+    return render(request, 'gasto_crear.html', context)
+
+
+@login_required
+def gasto_editar(request, gasto_id):
+    """Editar un gasto"""
+    gasto = get_object_or_404(Gasto, id=gasto_id)
+    
+    if gasto.caja.cerrada:
+        messages.error(request, 'No se pueden editar gastos de una caja cerrada.')
+        return redirect('caja_ver', caja_id=gasto.caja.id)
+    
+    if request.method == 'POST':
+        categoria = request.POST.get('categoria')
+        descripcion = request.POST.get('descripcion')
+        monto = request.POST.get('monto')
+        comprobante = request.POST.get('comprobante', '')
+        observacion = request.POST.get('observacion', '')
+        
+        try:
+            monto = int(monto)
+            if monto <= 0:
+                raise ValueError("El monto debe ser mayor a 0")
+            
+            gasto.categoria = categoria
+            gasto.descripcion = descripcion
+            gasto.monto = monto
+            gasto.comprobante = comprobante
+            gasto.observacion = observacion
+            gasto.save()
+            
+            messages.success(request, 'Gasto actualizado exitosamente.')
+            return redirect('caja_ver', caja_id=gasto.caja.id)
+            
+        except ValueError as e:
+            messages.error(request, f'Error: {str(e)}')
+    
+    context = {
+        'gasto': gasto,
+        'categorias': Gasto.CATEGORIA_CHOICES,
+    }
+    
+    return render(request, 'gasto_editar.html', context)
+
+
+@login_required
+def gasto_eliminar(request, gasto_id):
+    """Eliminar un gasto"""
+    gasto = get_object_or_404(Gasto, id=gasto_id)
+    
+    if gasto.caja.cerrada:
+        messages.error(request, 'No se pueden eliminar gastos de una caja cerrada.')
+        return redirect('caja_ver', caja_id=gasto.caja.id)
+    
+    if request.method == 'POST':
+        caja_id = gasto.caja.id
+        gasto.delete()
+        messages.success(request, 'Gasto eliminado exitosamente.')
+        return redirect('caja_ver', caja_id=caja_id)
+    
+    context = {
+        'gasto': gasto,
+    }
+    
+    return render(request, 'gasto_eliminar.html', context)
+
+
+@login_required
+def movimiento_crear(request, caja_id):
+    """Crear un movimiento manual de caja"""
+    caja = get_object_or_404(Caja, id=caja_id)
+    
+    if caja.cerrada:
+        messages.error(request, 'No se pueden agregar movimientos a una caja cerrada.')
+        return redirect('caja_ver', caja_id=caja.id)
+    
+    if request.method == 'POST':
+        tipo = request.POST.get('tipo')
+        categoria = request.POST.get('categoria')
+        monto = request.POST.get('monto')
+        descripcion = request.POST.get('descripcion')
+        referencia = request.POST.get('referencia', '')
+        observacion = request.POST.get('observacion', '')
+        
+        try:
+            monto = int(monto)
+            if monto <= 0:
+                raise ValueError("El monto debe ser mayor a 0")
+            
+            movimiento = MovimientoCaja.registrar_movimiento(
+                caja=caja,
+                tipo=tipo,
+                categoria=categoria,
+                monto=monto,
+                descripcion=descripcion,
+                usuario=request.user,
+                referencia=referencia,
+                observacion=observacion
+            )
+            
+            messages.success(request, f'Movimiento registrado: {descripcion} - Gs. {monto:,}')
+            return redirect('caja_ver', caja_id=caja.id)
+            
+        except ValueError as e:
+            messages.error(request, f'Error: {str(e)}')
+    
+    context = {
+        'caja': caja,
+        'tipos': MovimientoCaja.TIPO_CHOICES,
+        'categorias': MovimientoCaja.CATEGORIA_CHOICES,
+    }
+    
+    return render(request, 'movimiento_crear.html', context)
+
+
+@login_required
+def reporte_caja(request):
+    """Reporte de caja por período"""
+    from datetime import datetime, timedelta
+    
+    # Parámetros de filtro
+    fecha_inicio = request.GET.get('fecha_inicio', (datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d'))
+    fecha_fin = request.GET.get('fecha_fin', datetime.now().strftime('%Y-%m-%d'))
+    
+    try:
+        fecha_inicio_dt = datetime.strptime(fecha_inicio, '%Y-%m-%d').date()
+        fecha_fin_dt = datetime.strptime(fecha_fin, '%Y-%m-%d').date()
+    except ValueError:
+        fecha_inicio_dt = (datetime.now() - timedelta(days=30)).date()
+        fecha_fin_dt = datetime.now().date()
+    
+    # Obtener cajas del período
+    cajas = Caja.objects.filter(
+        fecha__gte=fecha_inicio_dt,
+        fecha__lte=fecha_fin_dt
+    ).select_related('usuario_apertura', 'usuario_cierre').order_by('-fecha')
+    
+    # Estadísticas generales
+    total_cajas = cajas.count()
+    cajas_abiertas = cajas.filter(cerrada=False).count()
+    cajas_cerradas = cajas.filter(cerrada=True).count()
+    
+    # Totales financieros
+    total_saldo_inicial = cajas.aggregate(total=Sum('saldo_inicial'))['total'] or 0
+    total_saldo_final = cajas.aggregate(total=Sum('saldo_final'))['total'] or 0
+    total_saldo_real = cajas.aggregate(total=Sum('saldo_real'))['total'] or 0
+    total_diferencia = cajas.aggregate(total=Sum('diferencia'))['total'] or 0
+    
+    # Obtener todos los movimientos del período
+    movimientos = MovimientoCaja.objects.filter(
+        caja__fecha__gte=fecha_inicio_dt,
+        caja__fecha__lte=fecha_fin_dt
+    ).select_related('caja', 'usuario')
+    
+    # Estadísticas por categoría
+    stats_por_categoria = movimientos.values('categoria').annotate(
+        total=Sum('monto'),
+        cantidad=Count('id')
+    ).order_by('-total')
+    
+    # Estadísticas por tipo
+    stats_por_tipo = movimientos.values('tipo').annotate(
+        total=Sum('monto'),
+        cantidad=Count('id')
+    ).order_by('-total')
+    
+    # Top gastos
+    top_gastos = Gasto.objects.filter(
+        caja__fecha__gte=fecha_inicio_dt,
+        caja__fecha__lte=fecha_fin_dt
+    ).select_related('caja', 'usuario').order_by('-monto')[:10]
+    
+    context = {
+        'cajas': cajas,
+        'fecha_inicio': fecha_inicio,
+        'fecha_fin': fecha_fin,
+        
+        # Estadísticas
+        'total_cajas': total_cajas,
+        'cajas_abiertas': cajas_abiertas,
+        'cajas_cerradas': cajas_cerradas,
+        'total_saldo_inicial': total_saldo_inicial,
+        'total_saldo_final': total_saldo_final,
+        'total_saldo_real': total_saldo_real,
+        'total_diferencia': total_diferencia,
+        
+        # Datos para análisis
+        'stats_por_categoria': stats_por_categoria,
+        'stats_por_tipo': stats_por_tipo,
+        'top_gastos': top_gastos,
+    }
+    
+    return render(request, 'reporte_caja.html', context)
+
+
+
+
+# ============================================================================
+
+@login_required
+def caja_list(request):
+    """Lista de cajas"""
+    cajas = Caja.objects.select_related('usuario_apertura', 'usuario_cierre').order_by('-fecha')
+    
+    # Estadísticas generales
+    total_cajas = cajas.count()
+    cajas_abiertas = cajas.filter(cerrada=False).count()
+    cajas_cerradas = cajas.filter(cerrada=True).count()
+    
+    # Caja actual (hoy)
+    from datetime import date
+    caja_actual = cajas.filter(fecha=date.today()).first()
+    
+    context = {
+        'cajas': cajas,
+        'total_cajas': total_cajas,
+        'cajas_abiertas': cajas_abiertas,
+        'cajas_cerradas': cajas_cerradas,
+        'caja_actual': caja_actual,
+    }
+    
+    return render(request, 'caja_list.html', context)
+
+
+@login_required
+def caja_abrir(request):
+    """Abrir caja del día con denominaciones"""
+    from datetime import date
+    
+    # Verificar si ya existe una caja para hoy
+    caja_existente = Caja.objects.filter(fecha=date.today()).first()
+    if caja_existente:
+        messages.warning(request, 'Ya existe una caja abierta para hoy.')
+        return redirect('caja_ver', caja_id=caja_existente.id)
+    
+    if request.method == 'POST':
+        try:
+            # Crear la caja
+            caja = Caja.objects.create(
+                fecha=date.today(),
+                saldo_inicial=0,  # Se calculará automáticamente
+                usuario_apertura=request.user
+            )
+            
+            # Procesar denominaciones
+            denominaciones_creadas = []
+            total_calculado = 0
+            
+            for valor in Denominacion.VALOR_CHOICES:
+                cantidad = request.POST.get(f'denominacion_{valor[0]}', 0)
+                try:
+                    cantidad = int(cantidad)
+                    if cantidad > 0:
+                        denominacion = Denominacion.objects.create(
+                            caja=caja,
+                            valor=valor[0],
+                            cantidad=cantidad
+                        )
+                        denominaciones_creadas.append(denominacion)
+                        total_calculado += valor[0] * cantidad
+                except ValueError:
+                    continue
+            
+            # Calcular saldo inicial basado en denominaciones
+            caja.calcular_saldo_inicial_denominaciones()
+            caja.save()
+            
+            messages.success(request, f'Caja abierta con saldo inicial de Gs. {caja.saldo_inicial:,}')
+            return redirect('caja_ver', caja_id=caja.id)
+            
+        except Exception as e:
+            messages.error(request, f'Error al abrir la caja: {str(e)}')
+    
+    # Preparar denominaciones para el formulario
+    denominaciones = []
+    for valor, label in Denominacion.VALOR_CHOICES:
+        denominaciones.append({
+            'valor': valor,
+            'label': label,
+            'cantidad': 0
+        })
+    
+    context = {
+        'fecha_actual': date.today(),
+        'denominaciones': denominaciones,
+    }
+    return render(request, 'caja_abrir.html', context)
+
+
+@login_required
+def caja_ver(request, caja_id):
+    """Ver detalles de una caja"""
+    caja = get_object_or_404(Caja, id=caja_id)
+    
+    # Obtener movimientos
+    movimientos = caja.movimientos.select_related('usuario').order_by('-fecha')
+    
+    # Obtener gastos
+    gastos = caja.gastos.select_related('usuario').order_by('-fecha')
+    
+    # Obtener denominaciones
+    denominaciones = caja.denominaciones.all().order_by('-valor')
+    
+    # Calcular totales
+    total_ingresos = movimientos.filter(tipo='ingreso').aggregate(total=Sum('monto'))['total'] or 0
+    total_egresos = movimientos.filter(tipo='egreso').aggregate(total=Sum('monto'))['total'] or 0
+    total_gastos = gastos.aggregate(total=Sum('monto'))['total'] or 0
+    
+    # Agrupar movimientos por categoría
+    movimientos_por_categoria = movimientos.values('categoria').annotate(
+        total=Sum('monto'),
+        cantidad=Count('id')
+    ).order_by('-total')
+    
+    context = {
+        'caja': caja,
+        'movimientos': movimientos,
+        'gastos': gastos,
+        'denominaciones': denominaciones,
+        'total_ingresos': total_ingresos,
+        'total_egresos': total_egresos,
+        'total_gastos': total_gastos,
+        'movimientos_por_categoria': movimientos_por_categoria,
+    }
+    
+    return render(request, 'caja_ver.html', context)
+
+
+@login_required
+def caja_cerrar(request, caja_id):
+    """Cerrar caja con arqueo"""
+    caja = get_object_or_404(Caja, id=caja_id)
+    
+    if caja.cerrada:
+        messages.warning(request, 'Esta caja ya está cerrada.')
+        return redirect('caja_ver', caja_id=caja.id)
+    
+    if request.method == 'POST':
+        saldo_real = request.POST.get('saldo_real', 0)
+        observaciones = request.POST.get('observaciones', '')
+        
+        try:
+            saldo_real = int(saldo_real)
+            caja.cerrar_caja(saldo_real, request.user, observaciones)
+            messages.success(request, 'Caja cerrada exitosamente.')
+            return redirect('caja_ver', caja_id=caja.id)
+        except ValueError:
+            messages.error(request, 'El saldo real debe ser un número válido.')
+    
+    # Calcular saldo final esperado
+    caja.calcular_saldo_final()
+    
+    context = {
+        'caja': caja,
+    }
+    
+    return render(request, 'caja_cerrar.html', context)
+
+
+@login_required
+def gasto_crear(request, caja_id):
+    """Crear un nuevo gasto"""
+    caja = get_object_or_404(Caja, id=caja_id)
+    
+    if caja.cerrada:
+        messages.error(request, 'No se pueden agregar gastos a una caja cerrada.')
+        return redirect('caja_ver', caja_id=caja.id)
+    
+    if request.method == 'POST':
+        categoria = request.POST.get('categoria')
+        descripcion = request.POST.get('descripcion')
+        monto = request.POST.get('monto')
+        comprobante = request.POST.get('comprobante', '')
+        observacion = request.POST.get('observacion', '')
+        
+        try:
+            monto = int(monto)
+            if monto <= 0:
+                raise ValueError("El monto debe ser mayor a 0")
+            
+            gasto = Gasto.objects.create(
+                caja=caja,
+                categoria=categoria,
+                descripcion=descripcion,
+                monto=monto,
+                comprobante=comprobante,
+                observacion=observacion,
+                usuario=request.user
+            )
+            
+            messages.success(request, f'Gasto registrado: {descripcion} - Gs. {monto:,}')
+            return redirect('caja_ver', caja_id=caja.id)
+            
+        except ValueError as e:
+            messages.error(request, f'Error: {str(e)}')
+    
+    context = {
+        'caja': caja,
+        'categorias': Gasto.CATEGORIA_CHOICES,
+    }
+    
+    return render(request, 'gasto_crear.html', context)
+
+
+@login_required
+def gasto_editar(request, gasto_id):
+    """Editar un gasto"""
+    gasto = get_object_or_404(Gasto, id=gasto_id)
+    
+    if gasto.caja.cerrada:
+        messages.error(request, 'No se pueden editar gastos de una caja cerrada.')
+        return redirect('caja_ver', caja_id=gasto.caja.id)
+    
+    if request.method == 'POST':
+        categoria = request.POST.get('categoria')
+        descripcion = request.POST.get('descripcion')
+        monto = request.POST.get('monto')
+        comprobante = request.POST.get('comprobante', '')
+        observacion = request.POST.get('observacion', '')
+        
+        try:
+            monto = int(monto)
+            if monto <= 0:
+                raise ValueError("El monto debe ser mayor a 0")
+            
+            gasto.categoria = categoria
+            gasto.descripcion = descripcion
+            gasto.monto = monto
+            gasto.comprobante = comprobante
+            gasto.observacion = observacion
+            gasto.save()
+            
+            messages.success(request, 'Gasto actualizado exitosamente.')
+            return redirect('caja_ver', caja_id=gasto.caja.id)
+            
+        except ValueError as e:
+            messages.error(request, f'Error: {str(e)}')
+    
+    context = {
+        'gasto': gasto,
+        'categorias': Gasto.CATEGORIA_CHOICES,
+    }
+    
+    return render(request, 'gasto_editar.html', context)
+
+
+@login_required
+def gasto_eliminar(request, gasto_id):
+    """Eliminar un gasto"""
+    gasto = get_object_or_404(Gasto, id=gasto_id)
+    
+    if gasto.caja.cerrada:
+        messages.error(request, 'No se pueden eliminar gastos de una caja cerrada.')
+        return redirect('caja_ver', caja_id=gasto.caja.id)
+    
+    if request.method == 'POST':
+        caja_id = gasto.caja.id
+        gasto.delete()
+        messages.success(request, 'Gasto eliminado exitosamente.')
+        return redirect('caja_ver', caja_id=caja_id)
+    
+    context = {
+        'gasto': gasto,
+    }
+    
+    return render(request, 'gasto_eliminar.html', context)
+
+
+@login_required
+def movimiento_crear(request, caja_id):
+    """Crear un movimiento manual de caja"""
+    caja = get_object_or_404(Caja, id=caja_id)
+    
+    if caja.cerrada:
+        messages.error(request, 'No se pueden agregar movimientos a una caja cerrada.')
+        return redirect('caja_ver', caja_id=caja.id)
+    
+    if request.method == 'POST':
+        tipo = request.POST.get('tipo')
+        categoria = request.POST.get('categoria')
+        monto = request.POST.get('monto')
+        descripcion = request.POST.get('descripcion')
+        referencia = request.POST.get('referencia', '')
+        observacion = request.POST.get('observacion', '')
+        
+        try:
+            monto = int(monto)
+            if monto <= 0:
+                raise ValueError("El monto debe ser mayor a 0")
+            
+            movimiento = MovimientoCaja.registrar_movimiento(
+                caja=caja,
+                tipo=tipo,
+                categoria=categoria,
+                monto=monto,
+                descripcion=descripcion,
+                usuario=request.user,
+                referencia=referencia,
+                observacion=observacion
+            )
+            
+            messages.success(request, f'Movimiento registrado: {descripcion} - Gs. {monto:,}')
+            return redirect('caja_ver', caja_id=caja.id)
+            
+        except ValueError as e:
+            messages.error(request, f'Error: {str(e)}')
+    
+    context = {
+        'caja': caja,
+        'tipos': MovimientoCaja.TIPO_CHOICES,
+        'categorias': MovimientoCaja.CATEGORIA_CHOICES,
+    }
+    
+    return render(request, 'movimiento_crear.html', context)
+
+
+@login_required
+def reporte_caja(request):
+    """Reporte de caja por período"""
+    from datetime import datetime, timedelta
+    
+    # Parámetros de filtro
+    fecha_inicio = request.GET.get('fecha_inicio', (datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d'))
+    fecha_fin = request.GET.get('fecha_fin', datetime.now().strftime('%Y-%m-%d'))
+    
+    try:
+        fecha_inicio_dt = datetime.strptime(fecha_inicio, '%Y-%m-%d').date()
+        fecha_fin_dt = datetime.strptime(fecha_fin, '%Y-%m-%d').date()
+    except ValueError:
+        fecha_inicio_dt = (datetime.now() - timedelta(days=30)).date()
+        fecha_fin_dt = datetime.now().date()
+    
+    # Obtener cajas del período
+    cajas = Caja.objects.filter(
+        fecha__gte=fecha_inicio_dt,
+        fecha__lte=fecha_fin_dt
+    ).select_related('usuario_apertura', 'usuario_cierre').order_by('-fecha')
+    
+    # Estadísticas generales
+    total_cajas = cajas.count()
+    cajas_abiertas = cajas.filter(cerrada=False).count()
+    cajas_cerradas = cajas.filter(cerrada=True).count()
+    
+    # Totales financieros
+    total_saldo_inicial = cajas.aggregate(total=Sum('saldo_inicial'))['total'] or 0
+    total_saldo_final = cajas.aggregate(total=Sum('saldo_final'))['total'] or 0
+    total_saldo_real = cajas.aggregate(total=Sum('saldo_real'))['total'] or 0
+    total_diferencia = cajas.aggregate(total=Sum('diferencia'))['total'] or 0
+    
+    # Obtener todos los movimientos del período
+    movimientos = MovimientoCaja.objects.filter(
+        caja__fecha__gte=fecha_inicio_dt,
+        caja__fecha__lte=fecha_fin_dt
+    ).select_related('caja', 'usuario')
+    
+    # Estadísticas por categoría
+    stats_por_categoria = movimientos.values('categoria').annotate(
+        total=Sum('monto'),
+        cantidad=Count('id')
+    ).order_by('-total')
+    
+    # Estadísticas por tipo
+    stats_por_tipo = movimientos.values('tipo').annotate(
+        total=Sum('monto'),
+        cantidad=Count('id')
+    ).order_by('-total')
+    
+    # Top gastos
+    top_gastos = Gasto.objects.filter(
+        caja__fecha__gte=fecha_inicio_dt,
+        caja__fecha__lte=fecha_fin_dt
+    ).select_related('caja', 'usuario').order_by('-monto')[:10]
+    
+    context = {
+        'cajas': cajas,
+        'fecha_inicio': fecha_inicio,
+        'fecha_fin': fecha_fin,
+        
+        # Estadísticas
+        'total_cajas': total_cajas,
+        'cajas_abiertas': cajas_abiertas,
+        'cajas_cerradas': cajas_cerradas,
+        'total_saldo_inicial': total_saldo_inicial,
+        'total_saldo_final': total_saldo_final,
+        'total_saldo_real': total_saldo_real,
+        'total_diferencia': total_diferencia,
+        
+        # Datos para análisis
+        'stats_por_categoria': stats_por_categoria,
+        'stats_por_tipo': stats_por_tipo,
+        'top_gastos': top_gastos,
+    }
+    
+    return render(request, 'reporte_caja.html', context)
+
+
+
+
+# ============================================================================
+# PAGOS
+# ============================================================================
+
+@login_required
+def pagos_dashboard(request):
+    """Dashboard principal del módulo de pagos"""
+    # Obtener estadísticas de pagos
+    total_pagos_clientes = Pago.objects.filter(factura__tipo='venta').count()
+    total_pagos_proveedores = Pago.objects.filter(factura__tipo='compra').count()
+    
+    # Pagos recientes
+    pagos_recientes = Pago.objects.select_related('factura', 'usuario').order_by('-fecha')[:10]
+    
+    # Facturas pendientes
+    facturas_pendientes_clientes = Factura.objects.filter(
+        tipo='venta', 
+        estado='pendiente'
+    ).select_related('cliente').order_by('-fecha')[:5]
+    
+    facturas_pendientes_proveedores = Factura.objects.filter(
+        tipo='compra', 
+        estado='pendiente'
+    ).select_related('proveedor').order_by('-fecha')[:5]
+    
+    # Caja activa
+    caja_activa = Caja.obtener_caja_activa()
+    
+    context = {
+        'total_pagos_clientes': total_pagos_clientes,
+        'total_pagos_proveedores': total_pagos_proveedores,
+        'pagos_recientes': pagos_recientes,
+        'facturas_pendientes_clientes': facturas_pendientes_clientes,
+        'facturas_pendientes_proveedores': facturas_pendientes_proveedores,
+        'caja_activa': caja_activa,
+    }
+    
+    return render(request, 'pagos_dashboard.html', context)
+
+@login_required
+def pagos_clientes_list(request):
+    """Lista de pagos de clientes (facturas de venta)"""
+    # Obtener facturas de venta con pagos
+    facturas_venta = Factura.objects.filter(
+        tipo='venta'
+    ).select_related('cliente').prefetch_related('pagos').order_by('-fecha')
+    
+    # Filtros
+    q = request.GET.get('q', '')
+    estado = request.GET.get('estado', '')
+    desde = request.GET.get('desde', '')
+    hasta = request.GET.get('hasta', '')
+    
+    if q:
+        facturas_venta = facturas_venta.filter(
+            Q(cliente__nombre__icontains=q) | 
+            Q(numero__icontains=q) |
+            Q(cliente__ruc__icontains=q)
+        )
+    
+    if estado:
+        facturas_venta = facturas_venta.filter(estado=estado)
+    
+    if desde:
+        facturas_venta = facturas_venta.filter(fecha__date__gte=desde)
+    
+    if hasta:
+        facturas_venta = facturas_venta.filter(fecha__date__lte=hasta)
+    
+    # Paginación
+    from django.core.paginator import Paginator
+    paginator = Paginator(facturas_venta, 20)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'facturas': page_obj,
+        'tipo': 'venta',
+        'titulo': 'Pagos de Clientes',
+        'subtitulo': 'Facturas de Venta - Gestión de Cobros',
+    }
+    
+    return render(request, 'pagos_list.html', context)
+
+@login_required
+def pagos_proveedores_list(request):
+    """Lista de pagos a proveedores (facturas de compra)"""
+    # Obtener facturas de compra con pagos
+    facturas_compra = Factura.objects.filter(
+        tipo='compra'
+    ).select_related('proveedor').prefetch_related('pagos').order_by('-fecha')
+    
+    # Filtros
+    q = request.GET.get('q', '')
+    estado = request.GET.get('estado', '')
+    desde = request.GET.get('desde', '')
+    hasta = request.GET.get('hasta', '')
+    
+    if q:
+        facturas_compra = facturas_compra.filter(
+            Q(proveedor__nombre__icontains=q) | 
+            Q(numero__icontains=q) |
+            Q(proveedor__ruc__icontains=q)
+        )
+    
+    if estado:
+        facturas_compra = facturas_compra.filter(estado=estado)
+    
+    if desde:
+        facturas_compra = facturas_compra.filter(fecha__date__gte=desde)
+    
+    if hasta:
+        facturas_compra = facturas_compra.filter(fecha__date__lte=hasta)
+    
+    # Paginación
+    from django.core.paginator import Paginator
+    paginator = Paginator(facturas_compra, 20)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'facturas': page_obj,
+        'tipo': 'compra',
+        'titulo': 'Pagos a Proveedores',
+        'subtitulo': 'Facturas de Compra - Gestión de Pagos',
+    }
+    
+    return render(request, 'pagos_list.html', context)
 
 
 

@@ -272,6 +272,12 @@
                   <p>Control de Caja</p>
                 </a>
               </li>
+              <li class="nav-item">
+                <a href="{% url 'pagos_dashboard' %}" class="nav-link {% if 'pagos' in request.resolver_match.url_name %}active{% endif %}">
+                  <i class="nav-icon bi bi-credit-card"></i>
+                  <p>Pagos</p>
+                </a>
+              </li>
               <li class="nav-header">ADMINISTRACIÓN</li>
               <li class="nav-item">
                 <a href="{% url 'configuracion_panel' %}" class="nav-link {% if 'configuracion' in request.resolver_match.url_name %}active{% endif %}">

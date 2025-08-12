@@ -39,10 +39,11 @@ urlpatterns = [
     path('stock/movimientos/', views.stock_movimientos, name='stock_movimientos'),
     
     # Pagos
+    path('facturas/<int:pk>/pagos/', views.factura_pagos, name='factura_pagos'),
+    path('pagos/', views.pagos_dashboard, name='pagos_dashboard'),
+    path('pagos/clientes/', views.pagos_clientes_list, name='pagos_clientes_list'),
+    path('pagos/proveedores/', views.pagos_proveedores_list, name='pagos_proveedores_list'),
     path('pagos/crear/<int:factura_id>/', views.pago_crear, name='pago_crear'),
-    path('pagos/<int:pk>/eliminar/', views.pago_eliminar, name='pago_eliminar'),
-    
-    # Pagos Múltiples
     path('pagos/multiple/crear/', views.pago_multiple_crear, name='pago_multiple_crear'),
     path('pagos/<int:pago_id>/asignar/', views.pago_asignar_facturas, name='pago_asignar_facturas'),
     path('pagos/<int:pago_id>/ver/', views.pago_ver, name='pago_ver'),

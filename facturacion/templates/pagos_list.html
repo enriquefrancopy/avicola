@@ -1,0 +1,427 @@
+{% extends 'base.html' %}
+{% load humanize custom_filters %}
+
+{% block title %}{{ titulo }} - Avícola CVA{% endblock %}
+
+{% block page_title %}{{ titulo }}{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'pagos_dashboard' %}">Pagos</a></li>
+<li class="breadcrumb-item active">{{ titulo }}</li>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+  <div class="card shadow">
+    <div class="card-header {% if tipo == 'venta' %}bg-success text-white{% else %}bg-warning text-white{% endif %}">
+      <div class="d-flex justify-content-between align-items-center">
+        <h4 class="mb-0">
+          <i class="bi {% if tipo == 'venta' %}bi-person-check{% else %}bi-truck{% endif %}"></i> 
+          {{ titulo }}
+        </h4>
+        <div class="d-flex ms-auto justify-content-end">
+          <button class="btn btn-outline-light me-2" type="button" data-bs-toggle="collapse" data-bs-target="#filtros-pagos" aria-expanded="false">
+            <i class="bi bi-funnel"></i> Filtros
+          </button>
+          <a href="{% url 'pagos_dashboard' %}" class="btn btn-outline-light">
+            <i class="bi bi-arrow-left"></i> Volver
+          </a>
+        </div>
+      </div>
+      
+      <p class="mb-0 mt-2">{{ subtitulo }}</p>
+    </div>
+    
+    <div class="card-body">
+      <!-- Filtros -->
+      <div class="collapse mb-3" id="filtros-pagos">
+        <div class="card card-body bg-light border {% if tipo == 'venta' %}border-success{% else %}border-warning{% endif %}">
+          <form class="row g-3" method="get">
+            <div class="col-md-4">
+              <input type="text" name="q" class="form-control" 
+                     placeholder="{% if tipo == 'venta' %}Buscar por cliente o número de factura...{% else %}Buscar por proveedor o número de factura...{% endif %}" 
+                     value="{{ request.GET.q }}">
+            </div>
+            <div class="col-md-2">
+              <select name="estado" class="form-select">
+                <option value="">Todos los estados</option>
+                <option value="pendiente" {% if request.GET.estado == 'pendiente' %}selected{% endif %}>Pendiente</option>
+                <option value="pagada" {% if request.GET.estado == 'pagada' %}selected{% endif %}>Pagada</option>
+                <option value="anulada" {% if request.GET.estado == 'anulada' %}selected{% endif %}>Anulada</option>
+              </select>
+            </div>
+            <div class="col-md-2">
+              <div class="input-group">
+                <input type="text" name="desde" class="form-control" id="fecha-desde" placeholder="Desde" value="{{ request.GET.desde }}" readonly>
+                <button class="btn btn-outline-secondary" type="button" onclick="abrirCalendario('fecha-desde')">
+                  <i class="bi bi-calendar3"></i>
+                </button>
+              </div>
+            </div>
+            <div class="col-md-2">
+              <div class="input-group">
+                <input type="text" name="hasta" class="form-control" id="fecha-hasta" placeholder="Hasta" value="{{ request.GET.hasta }}" readonly>
+                <button class="btn btn-outline-secondary" type="button" onclick="abrirCalendario('fecha-hasta')">
+                  <i class="bi bi-calendar3"></i>
+                </button>
+              </div>
+            </div>
+            <div class="col-md-2">
+              <button type="submit" class="btn btn-outline-primary w-100"><i class="bi bi-search"></i> Buscar</button>
+            </div>
+          </form>
+        </div>
+      </div>
+      
+      <!-- Información de resultados -->
+      <div class="row mb-3">
+        <div class="col-md-6">
+          <small class="text-muted">
+            Mostrando {{ facturas.count }} facturas
+          </small>
+        </div>
+        <div class="col-md-6 d-flex justify-content-end">
+          <small class="text-muted">
+            {% if request.GET.q or request.GET.estado or request.GET.desde or request.GET.hasta %}
+              <i class="bi bi-funnel-fill"></i> Filtros activos
+            {% endif %}
+          </small>
+        </div>
+      </div>
+
+      <div class="table-responsive">
+        <table class="table table-striped table-hover table-bordered">
+          <thead class="table-dark">
+            <tr>
+              <th style="width: 80px;">ID</th>
+              <th style="width: 150px;">Fecha</th>
+              <th style="width: auto;">{% if tipo == 'venta' %}Cliente{% else %}Proveedor{% endif %}</th>
+              <th style="width: 120px;" class="text-center">Estado</th>
+              <th style="width: 150px;" class="text-end">Total</th>
+              <th style="width: 150px;" class="text-end">Pagado</th>
+              <th style="width: 150px;" class="text-end">Saldo</th>
+              <th style="width: 200px;" class="text-center">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for factura in facturas %}
+            <tr class="align-middle">
+              <td style="width: 80px;">
+                <span class="badge bg-secondary">#{{ factura.id }}</span>
+              </td>
+              <td style="width: 150px;">
+                <i class="bi bi-calendar3 text-muted me-1"></i>
+                {{ factura.fecha|date:'d/m/Y H:i' }}
+              </td>
+              <td style="width: auto;">
+                {% if tipo == 'venta' %}
+                  <i class="bi bi-person text-primary me-1"></i>
+                  {{ factura.cliente }}
+                {% else %}
+                  <i class="bi bi-truck text-danger me-1"></i>
+                  {{ factura.proveedor }}
+                {% endif %}
+              </td>
+              <td style="width: 120px;" class="text-center">
+                <span class="badge bg-{% if factura.estado == 'pagada' %}success{% elif factura.estado == 'anulada' %}danger{% else %}warning{% endif %}">
+                  {{ factura.get_estado_display }}
+                </span>
+              </td>
+              <td style="width: 150px;" class="text-end">
+                {% if factura.total > 0 %}
+                  <span class="fw-bold">Gs. {{ factura.total|floatformat:0|intcomma_dot }}</span>
+                {% else %}
+                  <span class="text-muted">—</span>
+                {% endif %}
+              </td>
+              <td style="width: 150px;" class="text-end">
+                {% if factura.total_pagado > 0 %}
+                  <span class="text-success">Gs. {{ factura.total_pagado|floatformat:0|intcomma_dot }}</span>
+                {% else %}
+                  <span class="text-muted">—</span>
+                {% endif %}
+              </td>
+              <td style="width: 150px;" class="text-end">
+                {% if factura.saldo_pendiente > 0 %}
+                  <span class="text-danger fw-bold">Gs. {{ factura.saldo_pendiente|floatformat:0|intcomma_dot }}</span>
+                {% else %}
+                  <span class="text-success">—</span>
+                {% endif %}
+              </td>
+              <td style="width: 200px;" class="text-center">
+                <div class="btn-group" role="group">
+                  <a href="{% url 'factura_ver' factura.pk %}" class="btn btn-outline-info btn-sm" title="Ver detalles">
+                    <i class="bi bi-eye"></i>
+                  </a>
+                  {% if factura.saldo_pendiente > 0 %}
+                    <a href="{% url 'factura_pagos' factura.pk %}" 
+                       class="btn {% if tipo == 'venta' %}btn-success{% else %}btn-warning{% endif %} btn-sm" 
+                       title="{% if tipo == 'venta' %}Cobrar factura{% else %}Pagar factura{% endif %}">
+                      <i class="bi {% if tipo == 'venta' %}bi-cash-coin{% else %}bi-credit-card{% endif %}"></i>
+                    </a>
+                  {% endif %}
+                </div>
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="8" class="text-center py-4">
+                <i class="bi bi-inbox text-muted" style="font-size: 2rem;"></i>
+                <p class="text-muted mt-2">No hay facturas registradas.</p>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Paginación -->
+      {% if facturas.has_other_pages %}
+      <nav aria-label="Paginación" class="mt-4">
+        <ul class="pagination justify-content-center">
+          {% if facturas.has_previous %}
+            <li class="page-item">
+              <a class="page-link" href="?{% if request.GET.q %}q={{ request.GET.q }}&{% endif %}{% if request.GET.estado %}estado={{ request.GET.estado }}&{% endif %}{% if request.GET.desde %}desde={{ request.GET.desde }}&{% endif %}{% if request.GET.hasta %}hasta={{ request.GET.hasta }}&{% endif %}page={{ facturas.previous_page_number }}" title="Página anterior">
+                <i class="bi bi-chevron-left"></i>
+              </a>
+            </li>
+          {% else %}
+            <li class="page-item disabled">
+              <span class="page-link"><i class="bi bi-chevron-left"></i></span>
+            </li>
+          {% endif %}
+
+          {% for num in facturas.paginator.page_range %}
+            {% if facturas.number == num %}
+              <li class="page-item active">
+                <span class="page-link">{{ num }}</span>
+              </li>
+            {% elif num > facturas.number|add:'-3' and num < facturas.number|add:'3' %}
+              <li class="page-item">
+                <a class="page-link" href="?{% if request.GET.q %}q={{ request.GET.q }}&{% endif %}{% if request.GET.estado %}estado={{ request.GET.estado }}&{% endif %}{% if request.GET.desde %}desde={{ request.GET.desde }}&{% endif %}{% if request.GET.hasta %}hasta={{ request.GET.hasta }}&{% endif %}page={{ num }}">{{ num }}</a>
+              </li>
+            {% endif %}
+          {% endfor %}
+
+          {% if facturas.has_next %}
+            <li class="page-item">
+              <a class="page-link" href="?{% if request.GET.q %}q={{ request.GET.q }}&{% endif %}{% if request.GET.estado %}estado={{ request.GET.estado }}&{% endif %}{% if request.GET.desde %}desde={{ request.GET.desde }}&{% endif %}{% if request.GET.hasta %}hasta={{ request.GET.hasta }}&{% endif %}page={{ facturas.next_page_number }}" title="Página siguiente">
+                <i class="bi bi-chevron-right"></i>
+              </a>
+            </li>
+          {% else %}
+            <li class="page-item disabled">
+              <span class="page-link"><i class="bi bi-chevron-right"></i></span>
+            </li>
+          {% endif %}
+        </ul>
+        <div class="text-center mt-2">
+          <small class="text-muted">
+            Página {{ facturas.number }} de {{ facturas.paginator.num_pages }}
+          </small>
+        </div>
+      </nav>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Modal Calendario -->
+<div class="modal fade" id="modalCalendario" tabindex="-1">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Seleccionar Fecha</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body text-center">
+        <div class="row mb-3">
+          <div class="col-6">
+            <label for="anio" class="form-label">Año</label>
+            <select class="form-select" id="anio">
+              <option value="2020">2020</option>
+              <option value="2021">2021</option>
+              <option value="2022">2022</option>
+              <option value="2023">2023</option>
+              <option value="2024" selected>2024</option>
+              <option value="2025">2025</option>
+            </select>
+          </div>
+          <div class="col-6">
+            <label for="mes" class="form-label">Mes</label>
+            <select class="form-select" id="mes">
+              <option value="1">Enero</option>
+              <option value="2">Febrero</option>
+              <option value="3">Marzo</option>
+              <option value="4">Abril</option>
+              <option value="5">Mayo</option>
+              <option value="6">Junio</option>
+              <option value="7">Julio</option>
+              <option value="8">Agosto</option>
+              <option value="9">Septiembre</option>
+              <option value="10">Octubre</option>
+              <option value="11">Noviembre</option>
+              <option value="12">Diciembre</option>
+            </select>
+          </div>
+        </div>
+        <div id="calendario-dias" class="mb-3">
+          <!-- Los días se generarán con JavaScript -->
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-primary" onclick="seleccionarFecha()">Seleccionar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.table tbody tr:hover {
+  background-color: rgba(0,123,255,0.1) !important;
+  cursor: pointer;
+}
+
+.table tbody tr:hover .btn-group .btn {
+  transform: scale(1.05);
+  transition: transform 0.2s ease;
+}
+
+.badge {
+  font-size: 0.8em;
+}
+
+.btn-group .btn {
+  transition: all 0.2s ease;
+}
+
+.btn-group .btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.table th {
+  border-top: none;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.table td {
+  vertical-align: middle;
+  font-size: 0.9rem;
+}
+</style>
+
+<script>
+// Variables globales para el calendario
+let campoFechaActual = '';
+let diaSeleccionado = 1;
+
+// Función para abrir el calendario
+function abrirCalendario(campoId) {
+  campoFechaActual = campoId;
+  
+  // Obtener fecha actual o fecha del campo
+  const campo = document.getElementById(campoId);
+  let fecha = new Date();
+  
+  if (campo.value) {
+    const partes = campo.value.split('-');
+    if (partes.length === 3) {
+      fecha = new Date(partes[0], partes[1] - 1, partes[2]);
+    }
+  }
+  
+  // Establecer año y mes en los selects
+  document.getElementById('anio').value = fecha.getFullYear();
+  document.getElementById('mes').value = fecha.getMonth() + 1;
+  diaSeleccionado = fecha.getDate();
+  
+  // Generar calendario
+  generarCalendario();
+  
+  // Mostrar modal
+  const modal = new bootstrap.Modal(document.getElementById('modalCalendario'));
+  modal.show();
+}
+
+// Función para generar el calendario
+function generarCalendario() {
+  const anio = parseInt(document.getElementById('anio').value);
+  const mes = parseInt(document.getElementById('mes').value);
+  
+  const primerDia = new Date(anio, mes - 1, 1);
+  const ultimoDia = new Date(anio, mes, 0);
+  const diasEnMes = ultimoDia.getDate();
+  const diaSemanaInicio = primerDia.getDay();
+  
+  let html = '<div class="row">';
+  
+  // Días de la semana
+  const diasSemana = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+  diasSemana.forEach(dia => {
+    html += `<div class="col text-center"><small class="text-muted">${dia}</small></div>`;
+  });
+  html += '</div>';
+  
+  // Días del mes
+  html += '<div class="row">';
+  
+  // Espacios vacíos al inicio
+  for (let i = 0; i < diaSemanaInicio; i++) {
+    html += '<div class="col text-center p-1"></div>';
+  }
+  
+  // Días del mes
+  for (let dia = 1; dia <= diasEnMes; dia++) {
+    const esSeleccionado = dia === diaSeleccionado;
+    const esHoy = new Date().toDateString() === new Date(anio, mes - 1, dia).toDateString();
+    
+    let clases = 'col text-center p-1';
+    if (esSeleccionado) {
+      clases += ' bg-primary text-white rounded';
+    } else if (esHoy) {
+      clases += ' bg-light border';
+    }
+    
+    html += `<div class="${clases}" onclick="seleccionarDia(${dia})" style="cursor: pointer;">${dia}</div>`;
+    
+    // Nueva fila cada 7 días
+    if ((diaSemanaInicio + dia) % 7 === 0) {
+      html += '</div><div class="row">';
+    }
+  }
+  
+  html += '</div>';
+  
+  document.getElementById('calendario-dias').innerHTML = html;
+}
+
+// Función para seleccionar un día
+function seleccionarDia(dia) {
+  diaSeleccionado = dia;
+  generarCalendario();
+}
+
+// Función para seleccionar la fecha
+function seleccionarFecha() {
+  const anio = document.getElementById('anio').value;
+  const mes = document.getElementById('mes').value.padStart(2, '0');
+  const dia = diaSeleccionado.toString().padStart(2, '0');
+  
+  const fecha = `${anio}-${mes}-${dia}`;
+  document.getElementById(campoFechaActual).value = fecha;
+  
+  // Cerrar modal
+  const modal = bootstrap.Modal.getInstance(document.getElementById('modalCalendario'));
+  modal.hide();
+}
+
+// Eventos para cambiar año y mes
+document.addEventListener('DOMContentLoaded', function() {
+  document.getElementById('anio').addEventListener('change', generarCalendario);
+  document.getElementById('mes').addEventListener('change', generarCalendario);
+});
+</script>
+{% endblock %}
