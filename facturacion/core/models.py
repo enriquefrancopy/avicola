@@ -540,6 +540,21 @@ class Caja(models.Model):
         self.fecha_cierre = timezone.now()
         self.observaciones = observaciones
         self.save()
+    
+    @classmethod
+    def obtener_caja_activa(cls, fecha=None):
+        """
+        Obtener la caja activa para una fecha específica o el día actual
+        """
+        if fecha is None:
+            fecha = timezone.now().date()
+        
+        caja = cls.objects.filter(
+            fecha=fecha,
+            cerrada=False
+        ).first()
+        
+        return caja
 
 
 class MovimientoCaja(models.Model):

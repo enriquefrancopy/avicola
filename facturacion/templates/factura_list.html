@@ -141,6 +141,16 @@
                   <a href="{% url 'factura_ver' factura.pk %}" class="btn btn-outline-info btn-sm" title="Ver detalles">
                     <i class="bi bi-eye"></i>
                   </a>
+                  {% if factura.tipo == 'venta' and factura.saldo_pendiente > 0 %}
+                    <a href="{% url 'factura_pagos' factura.pk %}" class="btn btn-success btn-sm" title="Cobrar factura">
+                      <i class="bi bi-cash-coin"></i>
+                    </a>
+                  {% endif %}
+                  {% if factura.tipo == 'compra' and factura.saldo_pendiente > 0 %}
+                    <a href="{% url 'factura_pagos' factura.pk %}" class="btn btn-warning btn-sm" title="Pagar factura">
+                      <i class="bi bi-credit-card"></i>
+                    </a>
+                  {% endif %}
                 </div>
               </td>
             </tr>

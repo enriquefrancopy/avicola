@@ -811,6 +811,10 @@ def factura_pagos(request, pk):
     """Ver y gestionar pagos de una factura"""
     factura = get_object_or_404(Factura, pk=pk)
     pagos = factura.pagos.all()
+    
+    # Obtener caja activa del día
+    caja_activa = Caja.obtener_caja_activa()
+    
     if request.method == 'POST':
         form = PagoForm(request.POST, factura=factura)
         if form.is_valid():
@@ -830,7 +834,15 @@ def factura_pagos(request, pk):
             # Actualizar estado de la factura
             factura.actualizar_estado()
             
-            messages.success(request, 'Pago registrado correctamente.')
+            # Mensaje informativo sobre la caja
+            if caja_activa:
+                if factura.tipo == 'venta':
+                    messages.success(request, f'Pago registrado correctamente. Se ha creado automáticamente un ingreso en la caja del día.')
+                else:
+                    messages.success(request, f'Pago registrado correctamente. Se ha creado automáticamente un egreso en la caja del día.')
+            else:
+                messages.success(request, 'Pago registrado correctamente.')
+            
             return redirect('factura_pagos', pk=pk)
     else:
         form = PagoForm(factura=factura)
@@ -838,7 +850,8 @@ def factura_pagos(request, pk):
     return render(request, 'factura_pagos.html', {
         'factura': factura,
         'pagos': pagos,
-        'form': form
+        'form': form,
+        'caja_activa': caja_activa
     })
 
 @login_required
@@ -889,6 +902,10 @@ def stock_movimientos(request):
 def pago_crear(request, factura_id):
     """Crear un nuevo pago"""
     factura = get_object_or_404(Factura, pk=factura_id)
+    
+    # Obtener caja activa del día
+    caja_activa = Caja.obtener_caja_activa()
+    
     if request.method == 'POST':
         form = PagoForm(request.POST, factura=factura)
         if form.is_valid():
@@ -908,7 +925,15 @@ def pago_crear(request, factura_id):
             # Actualizar estado de la factura
             factura.actualizar_estado()
             
-            messages.success(request, 'Pago registrado correctamente.')
+            # Mensaje informativo sobre la caja
+            if caja_activa:
+                if factura.tipo == 'venta':
+                    messages.success(request, f'Pago registrado correctamente. Se ha creado automáticamente un ingreso en la caja del día.')
+                else:
+                    messages.success(request, f'Pago registrado correctamente. Se ha creado automáticamente un egreso en la caja del día.')
+            else:
+                messages.success(request, 'Pago registrado correctamente.')
+            
             return redirect('factura_pagos', pk=factura_id)
     else:
         form = PagoForm(factura=factura)
@@ -916,7 +941,8 @@ def pago_crear(request, factura_id):
     return render(request, 'factura_pagos.html', {
         'factura': factura,
         'pagos': factura.pagos.all(),
-        'form': form
+        'form': form,
+        'caja_activa': caja_activa
     })
 
 @login_required

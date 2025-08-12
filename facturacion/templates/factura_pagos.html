@@ -97,6 +97,25 @@
             </div>
           {% endif %}
           
+          <!-- Información de integración con caja -->
+          {% if caja_activa %}
+            <div class="alert alert-success">
+              <i class="bi bi-cash-stack"></i> 
+              <strong>Integración con Caja:</strong> Este pago se registrará automáticamente en la caja del día ({{ caja_activa.fecha|date:"d/m/Y" }}) como 
+              {% if factura.tipo == 'venta' %}
+                <strong>ingreso</strong>.
+              {% else %}
+                <strong>egreso</strong>.
+              {% endif %}
+            </div>
+          {% else %}
+            <div class="alert alert-warning">
+              <i class="bi bi-exclamation-triangle"></i> 
+              <strong>Sin Caja Activa:</strong> No hay una caja abierta para el día de hoy. El pago se registrará pero no se creará movimiento de caja automático.
+              <br><small>Para activar la integración automática, abra una caja desde el módulo "Control de Caja".</small>
+            </div>
+          {% endif %}
+          
           <form method="post">
             {% csrf_token %}
             <div class="row">
