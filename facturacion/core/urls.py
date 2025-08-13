@@ -1,6 +1,6 @@
 from django.urls import path
 from django.contrib.auth.views import LoginView, LogoutView
-from . import views, views_pagos
+from . import views, views_pagos, views_caja
 
 urlpatterns = [
     # Authentication URLs
@@ -97,10 +97,10 @@ urlpatterns = [
     path('asignacion-proveedor/<int:asignacion_id>/eliminar/', views.asignacion_proveedor_eliminar, name='asignacion_proveedor_eliminar'),
 
     # MÓDULO DE CONTROL DE CAJA
-    path('caja/', views.caja_list, name='caja_list'),
-    path('caja/abrir/', views.caja_abrir, name='caja_abrir'),
-    path('caja/<int:caja_id>/', views.caja_ver, name='caja_ver'),
-    path('caja/<int:caja_id>/cerrar/', views.caja_cerrar, name='caja_cerrar'),
+    path('caja/', views_caja.caja_list, name='caja_list'),
+    path('caja/abrir/', views_caja.caja_abrir, name='caja_abrir'),
+    path('caja/<int:caja_id>/', views_caja.caja_ver, name='caja_ver'),
+    path('caja/<int:caja_id>/cerrar/', views_caja.caja_cerrar, name='caja_cerrar'),
     path('caja/<int:caja_id>/gasto/crear/', views.gasto_crear, name='gasto_crear'),
     path('caja/<int:caja_id>/movimiento/crear/', views.movimiento_crear, name='movimiento_crear'),
     path('gasto/<int:gasto_id>/editar/', views.gasto_editar, name='gasto_editar'),

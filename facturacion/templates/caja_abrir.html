@@ -30,6 +30,20 @@
             <strong>Información:</strong> Estás abriendo la caja para el día de hoy ({{ fecha_actual|date:"d/m/Y" }}).
           </div>
           
+          {% if ultimo_saldo > 0 %}
+          <div class="alert alert-success">
+            <i class="bi bi-cash-stack"></i>
+            <strong>Último Saldo de Cierre:</strong> Gs. {{ ultimo_saldo|floatformat:0|intcomma_dot }}
+            <br><small>Este es el saldo final de la última caja cerrada. Puedes usar este monto como referencia para el saldo inicial de hoy.</small>
+          </div>
+          {% else %}
+          <div class="alert alert-warning">
+            <i class="bi bi-exclamation-triangle"></i>
+            <strong>Sin Saldo Anterior:</strong> No hay registros de cajas cerradas anteriores.
+            <br><small>Esta será la primera apertura de caja en el sistema.</small>
+          </div>
+          {% endif %}
+          
           <div class="alert alert-info">
             <i class="bi bi-info-circle"></i>
             <strong>Instrucciones:</strong> Completa las cantidades de cada denominación para calcular automáticamente el saldo inicial.
@@ -40,6 +54,11 @@
               <h5 class="mb-3">
                 <i class="bi bi-cash-stack"></i> Denominaciones de Billetes y Monedas
               </h5>
+              {% if ultimo_saldo > 0 %}
+              <button type="button" class="btn btn-outline-primary btn-sm mb-3" id="sugerir-saldo">
+                <i class="bi bi-magic"></i> Sugerir Denominaciones (Gs. {{ ultimo_saldo|floatformat:0|intcomma_dot }})
+              </button>
+              {% endif %}
             </div>
           </div>
           
@@ -141,6 +160,52 @@ document.addEventListener('DOMContentLoaded', function() {
   
   // Calcular totales iniciales
   calcularTotales();
+  
+  // Función para sugerir denominaciones basadas en el último saldo
+  function sugerirDenominaciones() {
+    const ultimoSaldo = {{ ultimo_saldo|default:0 }};
+    if (ultimoSaldo <= 0) return;
+    
+    // Limpiar todos los inputs primero
+    denominacionInputs.forEach(input => {
+      input.value = 0;
+    });
+    
+    let saldoRestante = ultimoSaldo;
+    const denominaciones = [
+      { valor: 100000, input: document.getElementById('denominacion_100000') },
+      { valor: 50000, input: document.getElementById('denominacion_50000') },
+      { valor: 20000, input: document.getElementById('denominacion_20000') },
+      { valor: 10000, input: document.getElementById('denominacion_10000') },
+      { valor: 5000, input: document.getElementById('denominacion_5000') },
+      { valor: 2000, input: document.getElementById('denominacion_2000') },
+      { valor: 1000, input: document.getElementById('denominacion_1000') },
+      { valor: 500, input: document.getElementById('denominacion_500') },
+      { valor: 100, input: document.getElementById('denominacion_100') },
+      { valor: 50, input: document.getElementById('denominacion_50') },
+    ];
+    
+    // Distribuir el saldo en denominaciones
+    denominaciones.forEach(denom => {
+      if (denom.input && saldoRestante >= denom.valor) {
+        const cantidad = Math.floor(saldoRestante / denom.valor);
+        denom.input.value = cantidad;
+        saldoRestante -= cantidad * denom.valor;
+      }
+    });
+    
+    // Recalcular totales
+    calcularTotales();
+    
+    // Mostrar mensaje de confirmación
+    alert(`Se han sugerido denominaciones para Gs. ${formatNumber(ultimoSaldo)}. Puedes ajustar las cantidades según sea necesario.`);
+  }
+  
+  // Event listener para el botón de sugerir
+  const btnSugerir = document.getElementById('sugerir-saldo');
+  if (btnSugerir) {
+    btnSugerir.addEventListener('click', sugerirDenominaciones);
+  }
   
   // Validar que al menos una denominación tenga cantidad
   document.querySelector('form').addEventListener('submit', function(e) {

@@ -562,6 +562,19 @@ class Caja(models.Model):
             ).order_by('-fecha').first()
         
         return caja
+    
+    @classmethod
+    def obtener_ultimo_saldo_cierre(cls):
+        """
+        Obtener el saldo final de la última caja cerrada
+        """
+        ultima_caja_cerrada = cls.objects.filter(
+            cerrada=True
+        ).order_by('-fecha').first()
+        
+        if ultima_caja_cerrada:
+            return ultima_caja_cerrada.saldo_final
+        return 0
 
 
 class MovimientoCaja(models.Model):
