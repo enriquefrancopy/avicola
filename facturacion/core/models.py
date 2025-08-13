@@ -549,10 +549,17 @@ class Caja(models.Model):
         if fecha is None:
             fecha = timezone.now().date()
         
+        # Buscar caja activa para la fecha específica
         caja = cls.objects.filter(
             fecha=fecha,
             cerrada=False
         ).first()
+        
+        # Si no hay caja para hoy, buscar la caja más reciente abierta
+        if not caja:
+            caja = cls.objects.filter(
+                cerrada=False
+            ).order_by('-fecha').first()
         
         return caja
 

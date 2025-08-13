@@ -91,10 +91,10 @@
               <strong>Pago Parcial Permitido:</strong> Puede pagar cualquier monto hasta el saldo pendiente de Gs. {{ factura.saldo_pendiente|floatformat:0|intcomma_dot }}
             </div>
           {% else %}
-            <div class="alert alert-warning">
-              <i class="bi bi-exclamation-triangle"></i> 
-              <strong>Pago Completo Requerido:</strong> Para clientes solo se permiten pagos por el monto total pendiente de Gs. {{ factura.saldo_pendiente|floatformat:0|intcomma_dot }}
-            </div>
+                         <div class="alert alert-warning">
+               <i class="bi bi-exclamation-triangle"></i> 
+               <strong>Pago Completo Requerido:</strong> Para clientes solo se permiten pagos por el monto total de la factura de Gs. {{ factura.total|floatformat:0|intcomma_dot }}
+             </div>
           {% endif %}
           
           <!-- Información de integración con caja -->

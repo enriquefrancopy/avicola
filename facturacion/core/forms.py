@@ -311,7 +311,7 @@ class PagoForm(forms.ModelForm):
             else:
                 # Para clientes: solo pagos completos
                 self.fields['monto_total'].widget.attrs.update({
-                    'value': self.factura.saldo_pendiente,
+                    'value': self.factura.total,
                     'readonly': 'readonly'
                 })
                 self.fields['monto_total'].help_text = 'Pago completo requerido para clientes'
@@ -322,10 +322,10 @@ class PagoForm(forms.ModelForm):
                 # Mostrar campo de monto del billete para clientes
                 self.fields['monto_billete'].required = True
                 self.fields['monto_billete'].widget.attrs.update({
-                    'min': self.factura.saldo_pendiente,
-                    'placeholder': f'Mínimo: Gs. {self.factura.saldo_pendiente:,}'
+                    'min': self.factura.total,
+                    'placeholder': f'Mínimo: Gs. {self.factura.total:,}'
                 })
-                self.fields['monto_billete'].help_text = f'Ingrese el monto del billete (mínimo: Gs. {self.factura.saldo_pendiente:,})'
+                self.fields['monto_billete'].help_text = f'Ingrese el monto del billete (mínimo: Gs. {self.factura.total:,})'
     
     def clean_monto_total(self):
         monto = self.cleaned_data.get('monto_total')
@@ -333,11 +333,14 @@ class PagoForm(forms.ModelForm):
             raise forms.ValidationError('El monto debe ser mayor a 0')
         
         if self.factura:
-            if not self.factura.validar_monto_pago(monto):
-                if self.factura.tipo == 'compra':
+            if self.factura.tipo == 'compra':
+                # Para proveedores: validar contra saldo pendiente
+                if not self.factura.validar_monto_pago(monto):
                     raise forms.ValidationError(f'El monto debe ser menor o igual al saldo pendiente (Gs. {self.factura.saldo_pendiente:,})')
-                else:
-                    raise forms.ValidationError(f'Para clientes solo se permiten pagos completos. Monto requerido: Gs. {self.factura.saldo_pendiente:,}')
+            else:
+                # Para clientes: validar contra total de la factura
+                if monto != self.factura.total:
+                    raise forms.ValidationError(f'Para clientes solo se permiten pagos completos. Monto requerido: Gs. {self.factura.total:,}')
         
         return monto
     
