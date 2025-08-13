@@ -834,14 +834,23 @@ def factura_pagos(request, pk):
             # Actualizar estado de la factura
             factura.actualizar_estado()
             
-            # Mensaje informativo sobre la caja
+            # Mensaje informativo con detalles del pago
+            monto_billete = form.cleaned_data.get('monto_billete')
+            vuelto = form.cleaned_data.get('vuelto', 0)
+            
+            if factura.tipo == 'venta' and monto_billete:
+                mensaje = f'Pago registrado correctamente. Monto recibido: Gs. {monto_billete:,}, Vuelto: Gs. {vuelto:,}'
+            else:
+                mensaje = 'Pago registrado correctamente.'
+            
+            # Agregar información sobre la caja
             if caja_activa:
                 if factura.tipo == 'venta':
-                    messages.success(request, f'Pago registrado correctamente. Se ha creado automáticamente un ingreso en la caja del día.')
+                    mensaje += f' Se ha creado automáticamente un ingreso en la caja del día.'
                 else:
-                    messages.success(request, f'Pago registrado correctamente. Se ha creado automáticamente un egreso en la caja del día.')
-            else:
-                messages.success(request, 'Pago registrado correctamente.')
+                    mensaje += f' Se ha creado automáticamente un egreso en la caja del día.'
+            
+            messages.success(request, mensaje)
             
             return redirect('factura_pagos', pk=pk)
     else:

@@ -270,6 +270,17 @@ DetalleFacturaFormSet = forms.inlineformset_factory(
 )
 
 class PagoForm(forms.ModelForm):
+    # Campo adicional para el monto del billete (solo para clientes)
+    monto_billete = forms.IntegerField(
+        required=False,
+        widget=forms.NumberInput(attrs={
+            'class': 'form-control',
+            'min': '1',
+            'placeholder': 'Monto del billete recibido'
+        }),
+        help_text='Ingrese el monto del billete para calcular el vuelto'
+    )
+    
     class Meta:
         model = Pago
         fields = ['monto_total', 'tipo', 'referencia', 'observacion']
@@ -293,6 +304,10 @@ class PagoForm(forms.ModelForm):
                     'placeholder': f'Máximo: Gs. {self.factura.saldo_pendiente:,}'
                 })
                 self.fields['monto_total'].help_text = f'Pago parcial permitido. Saldo pendiente: Gs. {self.factura.saldo_pendiente:,}'
+                
+                # Ocultar campo de monto del billete para proveedores
+                self.fields['monto_billete'].widget = forms.HiddenInput()
+                self.fields['monto_billete'].required = False
             else:
                 # Para clientes: solo pagos completos
                 self.fields['monto_total'].widget.attrs.update({
@@ -300,6 +315,17 @@ class PagoForm(forms.ModelForm):
                     'readonly': 'readonly'
                 })
                 self.fields['monto_total'].help_text = 'Pago completo requerido para clientes'
+                
+                # Preseleccionar tipo como efectivo para clientes
+                self.fields['tipo'].initial = 'efectivo'
+                
+                # Mostrar campo de monto del billete para clientes
+                self.fields['monto_billete'].required = True
+                self.fields['monto_billete'].widget.attrs.update({
+                    'min': self.factura.saldo_pendiente,
+                    'placeholder': f'Mínimo: Gs. {self.factura.saldo_pendiente:,}'
+                })
+                self.fields['monto_billete'].help_text = f'Ingrese el monto del billete (mínimo: Gs. {self.factura.saldo_pendiente:,})'
     
     def clean_monto_total(self):
         monto = self.cleaned_data.get('monto_total')
@@ -314,6 +340,32 @@ class PagoForm(forms.ModelForm):
                     raise forms.ValidationError(f'Para clientes solo se permiten pagos completos. Monto requerido: Gs. {self.factura.saldo_pendiente:,}')
         
         return monto
+    
+    def clean_monto_billete(self):
+        monto_billete = self.cleaned_data.get('monto_billete')
+        monto_total = self.cleaned_data.get('monto_total')
+        
+        # Solo validar para facturas de venta (clientes)
+        if self.factura and self.factura.tipo == 'venta':
+            if not monto_billete:
+                raise forms.ValidationError('Debe ingresar el monto del billete para calcular el vuelto')
+            
+            if monto_billete < monto_total:
+                raise forms.ValidationError(f'El monto del billete debe ser mayor o igual al monto a pagar (Gs. {monto_total:,})')
+        
+        return monto_billete
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        monto_billete = cleaned_data.get('monto_billete')
+        monto_total = cleaned_data.get('monto_total')
+        
+        # Calcular vuelto para facturas de venta
+        if self.factura and self.factura.tipo == 'venta' and monto_billete and monto_total:
+            vuelto = monto_billete - monto_total
+            cleaned_data['vuelto'] = vuelto
+        
+        return cleaned_data
 
 class PagoMultipleForm(forms.ModelForm):
     """Formulario para crear un pago que puede asignarse a múltiples facturas"""
