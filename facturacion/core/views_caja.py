@@ -84,8 +84,9 @@ def caja_ver(request, caja_id):
     # Obtener gastos
     gastos = caja.gastos.select_related('usuario').order_by('-fecha')
     
-    # Obtener denominaciones
-    denominaciones = caja.denominaciones.all().order_by('-valor')
+    # Obtener denominaciones de apertura y cierre
+    denominaciones_apertura = caja.denominaciones.filter(es_cierre=False).order_by('-valor')
+    denominaciones_cierre = caja.denominaciones.filter(es_cierre=True).order_by('-valor')
     
     # Calcular totales
     total_ingresos = movimientos.filter(tipo='ingreso').aggregate(total=Sum('monto'))['total'] or 0
@@ -102,7 +103,8 @@ def caja_ver(request, caja_id):
         'caja': caja,
         'movimientos': movimientos,
         'gastos': gastos,
-        'denominaciones': denominaciones,
+        'denominaciones_apertura': denominaciones_apertura,
+        'denominaciones_cierre': denominaciones_cierre,
         'total_ingresos': total_ingresos,
         'total_egresos': total_egresos,
         'total_gastos': total_gastos,
@@ -113,7 +115,7 @@ def caja_ver(request, caja_id):
 
 @login_required
 def caja_cerrar(request, caja_id):
-    """Cerrar caja con arqueo"""
+    """Cerrar caja con arqueo y denominaciones"""
     caja = get_object_or_404(Caja, id=caja_id)
     
     if caja.cerrada:
@@ -121,22 +123,66 @@ def caja_cerrar(request, caja_id):
         return redirect('caja_ver', caja_id=caja.id)
     
     if request.method == 'POST':
-        saldo_real = request.POST.get('saldo_real', 0)
         observaciones = request.POST.get('observaciones', '')
         
-        try:
-            saldo_real = int(saldo_real)
-            caja.cerrar_caja(saldo_real, request.user, observaciones)
-            messages.success(request, 'Caja cerrada exitosamente.')
-            return redirect('caja_ver', caja_id=caja.id)
-        except ValueError:
-            messages.error(request, 'El saldo real debe ser un número válido.')
+        # Verificar si se están usando denominaciones o saldo directo
+        usar_denominaciones = request.POST.get('usar_denominaciones') == 'on'
+        
+        if usar_denominaciones:
+            try:
+                # Procesar denominaciones de cierre
+                denominaciones_cierre = {}
+                for valor in Denominacion.VALOR_CHOICES:
+                    cantidad = request.POST.get(f'denominacion_cierre_{valor[0]}', 0)
+                    try:
+                        cantidad = int(cantidad)
+                        if cantidad > 0:
+                            denominaciones_cierre[valor[0]] = cantidad
+                    except ValueError:
+                        continue
+                
+                # Crear denominaciones de cierre
+                for valor, cantidad in denominaciones_cierre.items():
+                    Denominacion.objects.create(
+                        caja=caja,
+                        valor=valor,
+                        cantidad=cantidad,
+                        es_cierre=True
+                    )
+                
+                # Cerrar caja con denominaciones
+                saldo_real = caja.cerrar_caja_con_denominaciones(denominaciones_cierre, request.user, observaciones)
+                messages.success(request, f'Caja cerrada exitosamente con saldo real de Gs. {saldo_real:,}')
+                return redirect('caja_ver', caja_id=caja.id)
+                
+            except Exception as e:
+                messages.error(request, f'Error al cerrar la caja: {str(e)}')
+        else:
+            # Método tradicional con saldo directo
+            saldo_real = request.POST.get('saldo_real', 0)
+            try:
+                saldo_real = int(saldo_real)
+                caja.cerrar_caja(saldo_real, request.user, observaciones)
+                messages.success(request, 'Caja cerrada exitosamente.')
+                return redirect('caja_ver', caja_id=caja.id)
+            except ValueError:
+                messages.error(request, 'El saldo real debe ser un número válido.')
     
     # Calcular saldo final esperado
     caja.calcular_saldo_final()
     
+    # Preparar denominaciones para el formulario
+    denominaciones = []
+    for valor, label in Denominacion.VALOR_CHOICES:
+        denominaciones.append({
+            'valor': valor,
+            'label': label,
+            'cantidad': 0
+        })
+    
     context = {
         'caja': caja,
+        'denominaciones': denominaciones,
     }
     
     return render(request, 'caja_cerrar.html', context)

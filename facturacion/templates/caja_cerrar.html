@@ -14,7 +14,7 @@
 
 {% block content %}
 <div class="row justify-content-center">
-  <div class="col-md-6">
+  <div class="col-md-8">
     <div class="card">
       <div class="card-header">
         <h3 class="card-title">
@@ -28,13 +28,17 @@
             <i class="bi bi-info-circle"></i> Resumen de la Caja
           </h5>
           <div class="row">
-            <div class="col-md-6">
+            <div class="col-md-4">
               <strong>Saldo Inicial:</strong><br>
               <span class="text-primary fs-4">Gs. {{ caja.saldo_inicial|intcomma_dot }}</span>
             </div>
-            <div class="col-md-6">
+            <div class="col-md-4">
               <strong>Saldo Final Esperado:</strong><br>
               <span class="text-success fs-4">Gs. {{ caja.saldo_final|intcomma_dot }}</span>
+            </div>
+            <div class="col-md-4">
+              <strong>Diferencia:</strong><br>
+              <span class="text-warning fs-4">Gs. {{ caja.saldo_final|add:"-"|add:caja.saldo_inicial|intcomma_dot }}</span>
             </div>
           </div>
         </div>
@@ -47,7 +51,21 @@
             <strong>Importante:</strong> Una vez cerrada la caja, no podrás realizar más modificaciones.
           </div>
           
+          <!-- Opción de método de cierre -->
           <div class="form-group mb-3">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="usar_denominaciones" name="usar_denominaciones">
+              <label class="form-check-label" for="usar_denominaciones">
+                <strong>Usar Denominaciones de Cierre</strong>
+              </label>
+              <div class="form-text">
+                Marca esta opción para contar el dinero por denominaciones (más preciso)
+              </div>
+            </div>
+          </div>
+          
+          <!-- Método tradicional -->
+          <div id="metodo-tradicional" class="form-group mb-3">
             <label for="saldo_real" class="form-label">
               <strong>Saldo Real (Arqueo de Caja)</strong>
             </label>
@@ -60,6 +78,59 @@
                    required>
             <div class="form-text">
               Ingresa el monto real contado en caja
+            </div>
+          </div>
+          
+          <!-- Método con denominaciones -->
+          <div id="metodo-denominaciones" class="mb-3" style="display: none;">
+            <div class="alert alert-success">
+              <h5 class="mb-2">
+                <i class="bi bi-cash-stack"></i> Denominaciones de Cierre
+              </h5>
+              <p class="mb-0">Cuenta el dinero por denominaciones para un arqueo más preciso.</p>
+            </div>
+            
+            <div class="row">
+              {% for denominacion in denominaciones %}
+              <div class="col-md-3 col-6 mb-3">
+                <div class="form-group">
+                  <label for="denominacion_cierre_{{ denominacion.valor }}" class="form-label">
+                    <strong>{{ denominacion.label }}</strong>
+                  </label>
+                  <input type="number" 
+                         class="form-control denominacion-cierre-input" 
+                         id="denominacion_cierre_{{ denominacion.valor }}" 
+                         name="denominacion_cierre_{{ denominacion.valor }}" 
+                         value="0" 
+                         min="0" 
+                         data-valor="{{ denominacion.valor }}"
+                         placeholder="0">
+                  <div class="form-text">
+                    Cantidad: <span class="subtotal-denominacion-cierre" id="subtotal_cierre_{{ denominacion.valor }}">Gs. 0</span>
+                  </div>
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+            
+            <div class="row mt-3">
+              <div class="col-12">
+                <div class="alert alert-success">
+                  <h5 class="mb-2">
+                    <i class="bi bi-calculator"></i> Resumen del Saldo Real
+                  </h5>
+                  <div class="row">
+                    <div class="col-md-6">
+                      <strong>Total Calculado:</strong>
+                      <span class="text-success fs-4" id="total-calculado-cierre">Gs. 0</span>
+                    </div>
+                    <div class="col-md-6">
+                      <strong>Total en Números:</strong>
+                      <span class="text-primary fs-4" id="total-numeros-cierre">0</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
           
@@ -97,8 +168,59 @@ document.addEventListener('DOMContentLoaded', function() {
     return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
   }
   
-  // Formatear el input de saldo real
+  // Elementos del DOM
+  const checkboxDenominaciones = document.getElementById('usar_denominaciones');
+  const metodoTradicional = document.getElementById('metodo-tradicional');
+  const metodoDenominaciones = document.getElementById('metodo-denominaciones');
   const saldoRealInput = document.getElementById('saldo_real');
+  
+  // Toggle entre métodos
+  checkboxDenominaciones.addEventListener('change', function() {
+    if (this.checked) {
+      metodoTradicional.style.display = 'none';
+      metodoDenominaciones.style.display = 'block';
+      saldoRealInput.removeAttribute('required');
+    } else {
+      metodoTradicional.style.display = 'block';
+      metodoDenominaciones.style.display = 'none';
+      saldoRealInput.setAttribute('required', 'required');
+    }
+  });
+  
+  // Función para calcular totales de denominaciones de cierre
+  function calcularTotalesCierre() {
+    let total = 0;
+    const inputs = document.querySelectorAll('.denominacion-cierre-input');
+    
+    inputs.forEach(input => {
+      const cantidad = parseInt(input.value) || 0;
+      const valor = parseInt(input.dataset.valor);
+      const subtotal = cantidad * valor;
+      
+      // Actualizar subtotal de cada denominación
+      const subtotalElement = document.getElementById(`subtotal_cierre_${valor}`);
+      if (subtotalElement) {
+        subtotalElement.textContent = `Gs. ${formatNumber(subtotal)}`;
+      }
+      
+      total += subtotal;
+    });
+    
+    // Actualizar totales
+    document.getElementById('total-calculado-cierre').textContent = `Gs. ${formatNumber(total)}`;
+    document.getElementById('total-numeros-cierre').textContent = formatNumber(total);
+  }
+  
+  // Event listeners para inputs de denominaciones de cierre
+  const denominacionCierreInputs = document.querySelectorAll('.denominacion-cierre-input');
+  denominacionCierreInputs.forEach(input => {
+    input.addEventListener('input', calcularTotalesCierre);
+  });
+  
+  // Calcular totales iniciales
+  calcularTotalesCierre();
+  
+  // Formatear el input de saldo real
   saldoRealInput.addEventListener('input', function() {
     const value = this.value;
     if (value) {
@@ -107,14 +229,31 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
   
-  // Validar que el saldo real sea un número válido
+  // Validar formulario
   document.querySelector('form').addEventListener('submit', function(e) {
-    const saldoReal = parseFloat(saldoRealInput.value);
-    if (isNaN(saldoReal) || saldoReal < 0) {
-      e.preventDefault();
-      alert('El saldo real debe ser un número válido mayor o igual a 0.');
-      saldoRealInput.focus();
-      return false;
+    if (checkboxDenominaciones.checked) {
+      // Validar que al menos una denominación tenga cantidad
+      let tieneDenominaciones = false;
+      denominacionCierreInputs.forEach(input => {
+        if (parseInt(input.value) > 0) {
+          tieneDenominaciones = true;
+        }
+      });
+      
+      if (!tieneDenominaciones) {
+        e.preventDefault();
+        alert('Debes ingresar al menos una denominación con cantidad mayor a 0.');
+        return false;
+      }
+    } else {
+      // Validar saldo real tradicional
+      const saldoReal = parseFloat(saldoRealInput.value);
+      if (isNaN(saldoReal) || saldoReal < 0) {
+        e.preventDefault();
+        alert('El saldo real debe ser un número válido mayor o igual a 0.');
+        saldoRealInput.focus();
+        return false;
+      }
     }
   });
 });

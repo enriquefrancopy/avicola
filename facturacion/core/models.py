@@ -473,15 +473,17 @@ class Denominacion(models.Model):
     valor = models.IntegerField(choices=VALOR_CHOICES)
     cantidad = models.IntegerField(default=0)
     caja = models.ForeignKey('Caja', on_delete=models.CASCADE, related_name='denominaciones')
+    es_cierre = models.BooleanField(default=False, help_text='Indica si es denominación de cierre')
     
     class Meta:
         verbose_name = 'Denominación'
         verbose_name_plural = 'Denominaciones'
-        unique_together = ['valor', 'caja']
+        unique_together = ['valor', 'caja', 'es_cierre']
         ordering = ['-valor']
     
     def __str__(self):
-        return f"{self.get_valor_display()} - {self.cantidad} unidades"
+        tipo = "Cierre" if self.es_cierre else "Apertura"
+        return f"{self.get_valor_display()} - {self.cantidad} unidades ({tipo})"
     
     @property
     def subtotal(self):
@@ -511,11 +513,19 @@ class Caja(models.Model):
         return f"Caja {self.fecha.strftime('%d/%m/%Y')} - {'Cerrada' if self.cerrada else 'Abierta'}"
     
     def calcular_saldo_inicial_denominaciones(self):
-        """Calcular el saldo inicial basado en las denominaciones"""
+        """Calcular el saldo inicial basado en las denominaciones de apertura"""
         total = 0
-        for denominacion in self.denominaciones.all():
+        for denominacion in self.denominaciones.filter(es_cierre=False):
             total += denominacion.subtotal
         self.saldo_inicial = total
+        return total
+    
+    def calcular_saldo_real_denominaciones(self):
+        """Calcular el saldo real basado en las denominaciones de cierre"""
+        total = 0
+        for denominacion in self.denominaciones.filter(es_cierre=True):
+            total += denominacion.subtotal
+        self.saldo_real = total
         return total
     
     def calcular_saldo_final(self):
@@ -540,6 +550,25 @@ class Caja(models.Model):
         self.fecha_cierre = timezone.now()
         self.observaciones = observaciones
         self.save()
+    
+    def cerrar_caja_con_denominaciones(self, denominaciones_cierre, usuario_cierre, observaciones=''):
+        """Cerrar la caja con denominaciones de cierre"""
+        # Calcular saldo real basado en denominaciones
+        saldo_real = 0
+        for valor, cantidad in denominaciones_cierre.items():
+            if cantidad > 0:
+                saldo_real += valor * cantidad
+        
+        self.saldo_real = saldo_real
+        self.calcular_saldo_final()
+        self.calcular_diferencia()
+        self.cerrada = True
+        self.usuario_cierre = usuario_cierre
+        self.fecha_cierre = timezone.now()
+        self.observaciones = observaciones
+        self.save()
+        
+        return saldo_real
     
     @classmethod
     def obtener_caja_activa(cls, fecha=None):

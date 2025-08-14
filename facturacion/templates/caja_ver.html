@@ -110,8 +110,8 @@
         </div>
         {% endif %}
         
-        <!-- Denominaciones -->
-        {% if denominaciones %}
+        <!-- Denominaciones de Apertura -->
+        {% if denominaciones_apertura %}
         <div class="row mt-3">
           <div class="col-12">
             <div class="card">
@@ -122,12 +122,40 @@
               </div>
               <div class="card-body">
                 <div class="row">
-                  {% for denominacion in denominaciones %}
+                  {% for denominacion in denominaciones_apertura %}
                   <div class="col-md-2 col-4 mb-2">
                     <div class="text-center">
                       <div class="fw-bold">{{ denominacion.get_valor_display }}</div>
                       <div class="text-muted">{{ denominacion.cantidad }} unidades</div>
                       <div class="text-success">Gs. {{ denominacion.subtotal|intcomma_dot }}</div>
+                    </div>
+                  </div>
+                  {% endfor %}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        {% endif %}
+        
+        <!-- Denominaciones de Cierre -->
+        {% if denominaciones_cierre %}
+        <div class="row mt-3">
+          <div class="col-12">
+            <div class="card">
+              <div class="card-header">
+                <h5 class="card-title">
+                  <i class="bi bi-lock"></i> Denominaciones de Cierre
+                </h5>
+              </div>
+              <div class="card-body">
+                <div class="row">
+                  {% for denominacion in denominaciones_cierre %}
+                  <div class="col-md-2 col-4 mb-2">
+                    <div class="text-center">
+                      <div class="fw-bold">{{ denominacion.get_valor_display }}</div>
+                      <div class="text-muted">{{ denominacion.cantidad }} unidades</div>
+                      <div class="text-info">Gs. {{ denominacion.subtotal|intcomma_dot }}</div>
                     </div>
                   </div>
                   {% endfor %}
