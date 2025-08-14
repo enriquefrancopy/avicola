@@ -353,7 +353,8 @@ class PagoForm(forms.ModelForm):
             if not monto_billete:
                 raise forms.ValidationError('Debe ingresar el monto del billete para calcular el vuelto')
             
-            if monto_billete < monto_total:
+            # Validar que monto_total no sea None antes de comparar
+            if monto_total is not None and monto_billete < monto_total:
                 raise forms.ValidationError(f'El monto del billete debe ser mayor o igual al monto a pagar (Gs. {monto_total:,})')
         
         return monto_billete
@@ -364,7 +365,8 @@ class PagoForm(forms.ModelForm):
         monto_total = cleaned_data.get('monto_total')
         
         # Calcular vuelto para facturas de venta
-        if self.factura and self.factura.tipo == 'venta' and monto_billete and monto_total:
+        if (self.factura and self.factura.tipo == 'venta' and 
+            monto_billete is not None and monto_total is not None):
             vuelto = monto_billete - monto_total
             cleaned_data['vuelto'] = vuelto
         
