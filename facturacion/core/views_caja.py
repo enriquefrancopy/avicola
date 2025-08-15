@@ -57,13 +57,17 @@ def caja_abrir(request):
     # Obtener el último saldo de cierre
     ultimo_saldo = Caja.obtener_ultimo_saldo_cierre()
     
+    # Obtener denominaciones de la última caja cerrada
+    denominaciones_ultimo_cierre = Caja.obtener_denominaciones_ultimo_cierre()
+    
     # Preparar denominaciones para el formulario
     denominaciones = []
     for valor, label in Denominacion.VALOR_CHOICES:
+        cantidad = denominaciones_ultimo_cierre.get(valor, 0)
         denominaciones.append({
             'valor': valor,
             'label': label,
-            'cantidad': 0
+            'cantidad': cantidad
         })
     
     context = {

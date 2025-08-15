@@ -47,6 +47,9 @@
           <div class="alert alert-info">
             <i class="bi bi-info-circle"></i>
             <strong>Instrucciones:</strong> Completa las cantidades de cada denominación para calcular automáticamente el saldo inicial.
+            {% if ultimo_saldo > 0 %}
+            <br><small class="text-success"><i class="bi bi-check-circle"></i> Las denominaciones se han pre-llenado con las de la última caja cerrada.</small>
+            {% endif %}
           </div>
           
           <div class="row">
@@ -73,7 +76,7 @@
                        class="form-control denominacion-input" 
                        id="denominacion_{{ denominacion.valor }}" 
                        name="denominacion_{{ denominacion.valor }}" 
-                       value="0" 
+                       value="{{ denominacion.cantidad }}" 
                        min="0" 
                        data-valor="{{ denominacion.valor }}"
                        placeholder="0">

@@ -604,6 +604,20 @@ class Caja(models.Model):
         if ultima_caja_cerrada:
             return ultima_caja_cerrada.saldo_final
         return 0
+    
+    @classmethod
+    def obtener_denominaciones_ultimo_cierre(cls):
+        """
+        Obtener las denominaciones de cierre de la última caja cerrada
+        """
+        ultima_caja_cerrada = cls.objects.filter(
+            cerrada=True
+        ).order_by('-fecha').first()
+        
+        if ultima_caja_cerrada:
+            denominaciones = ultima_caja_cerrada.denominaciones.filter(es_cierre=True)
+            return {denominacion.valor: denominacion.cantidad for denominacion in denominaciones}
+        return {}
 
 
 class MovimientoCaja(models.Model):
