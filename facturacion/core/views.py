@@ -819,9 +819,16 @@ def factura_pagos(request, pk):
         form = PagoForm(request.POST, factura=factura)
         if form.is_valid():
             pago = form.save(commit=False)
-            pago.factura = factura
             pago.usuario = request.user
             pago.save()
+            
+            # Crear la relación PagoFactura
+            from .models import PagoFactura
+            PagoFactura.objects.create(
+                pago=pago,
+                factura=factura,
+                monto=pago.monto_total
+            )
             
             # Actualizar saldo del proveedor o cliente según el tipo de factura
             if factura.tipo == 'compra' and factura.proveedor:
@@ -1187,9 +1194,16 @@ def pago_crear(request, factura_id):
         form = PagoForm(request.POST, factura=factura)
         if form.is_valid():
             pago = form.save(commit=False)
-            pago.factura = factura
             pago.usuario = request.user
             pago.save()
+            
+            # Crear la relación PagoFactura
+            from .models import PagoFactura
+            PagoFactura.objects.create(
+                pago=pago,
+                factura=factura,
+                monto=pago.monto_total
+            )
             
             # Actualizar saldo del proveedor o cliente según el tipo de factura
             if factura.tipo == 'compra' and factura.proveedor:
