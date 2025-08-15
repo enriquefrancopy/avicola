@@ -162,7 +162,8 @@ def dashboard_data(request):
                 total_dia = Factura.objects.filter(
                     fecha__gte=fecha_dia_inicio,
                     fecha__lte=fecha_dia_fin,
-                    tipo='venta'
+                    tipo='venta',
+                    estado='pagada'
                 ).aggregate(total=Sum('total'))['total'] or 0
                 
                 ventas_diarias.append({
@@ -193,7 +194,8 @@ def dashboard_data(request):
             total_mes = Factura.objects.filter(
                 fecha__gte=inicio_mes,
                 fecha__lte=fin_mes,
-                tipo='venta'
+                tipo='venta',
+                estado='pagada'
             ).aggregate(total=Sum('total'))['total'] or 0
             
             meses_data.append({

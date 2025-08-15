@@ -25,7 +25,7 @@ class Producto(models.Model):
 
 class Proveedor(models.Model):
     nombre = models.CharField(max_length=200)
-    rif = models.CharField(max_length=20, unique=True)
+    ruc = models.CharField(max_length=20, unique=True)
     direccion = models.TextField()
     telefono = models.CharField(max_length=20)
     email = models.EmailField()
@@ -39,11 +39,11 @@ class Proveedor(models.Model):
         ordering = ['nombre']
 
     def __str__(self):
-        return f'{self.nombre} ({self.rif})'
+        return f'{self.nombre} ({self.ruc})'
 
 class Cliente(models.Model):
     nombre = models.CharField(max_length=200)
-    rif = models.CharField(max_length=20, unique=True)
+    ruc = models.CharField(max_length=20, unique=True)
     direccion = models.TextField()
     telefono = models.CharField(max_length=20)
     email = models.EmailField()
@@ -57,7 +57,7 @@ class Cliente(models.Model):
         ordering = ['nombre']
 
     def __str__(self):
-        return f'{self.nombre} ({self.rif})'
+        return f'{self.nombre} ({self.ruc})'
 
 class Factura(models.Model):
     TIPO_CHOICES = [

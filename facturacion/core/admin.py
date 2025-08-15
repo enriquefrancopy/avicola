@@ -14,15 +14,15 @@ class ProductoAdmin(admin.ModelAdmin):
 
 @admin.register(Proveedor)
 class ProveedorAdmin(admin.ModelAdmin):
-    list_display = ['nombre', 'rif', 'telefono', 'email', 'saldo', 'activo']
+    list_display = ['nombre', 'ruc', 'telefono', 'email', 'saldo', 'activo']
     list_filter = ['activo']
-    search_fields = ['nombre', 'rif', 'email']
+    search_fields = ['nombre', 'ruc', 'email']
 
 @admin.register(Cliente)
 class ClienteAdmin(admin.ModelAdmin):
-    list_display = ['nombre', 'rif', 'telefono', 'email', 'saldo', 'activo']
+    list_display = ['nombre', 'ruc', 'telefono', 'email', 'saldo', 'activo']
     list_filter = ['activo']
-    search_fields = ['nombre', 'rif', 'email']
+    search_fields = ['nombre', 'ruc', 'email']
 
 @admin.register(Factura)
 class FacturaAdmin(admin.ModelAdmin):

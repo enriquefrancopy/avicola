@@ -122,10 +122,10 @@ class ProductoCrearForm(forms.ModelForm):
 class ProveedorForm(forms.ModelForm):
     class Meta:
         model = Proveedor
-        fields = ['nombre', 'rif', 'direccion', 'telefono', 'email', 'activo']
+        fields = ['nombre', 'ruc', 'direccion', 'telefono', 'email', 'activo']
         widgets = {
             'nombre': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Nombre del proveedor'}),
-            'rif': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'RUC del proveedor'}),
+            'ruc': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'RUC del proveedor'}),
             'direccion': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Dirección completa'}),
             'telefono': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Número de teléfono'}),
             'email': forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'correo@ejemplo.com'}),
@@ -137,22 +137,22 @@ class ProveedorForm(forms.ModelForm):
             raise forms.ValidationError('El nombre del proveedor es requerido')
         return nombre.strip()
     
-    def clean_rif(self):
-        rif = self.cleaned_data.get('rif')
-        if not rif or rif.strip() == '':
+    def clean_ruc(self):
+        ruc = self.cleaned_data.get('ruc')
+        if not ruc or ruc.strip() == '':
             raise forms.ValidationError('El RUC es requerido')
         
         # Verificar duplicados solo si no es una edición del mismo proveedor
         if self.instance and self.instance.pk:
             # Es una edición, excluir el proveedor actual
-            if Proveedor.objects.filter(rif=rif).exclude(pk=self.instance.pk).exists():
+            if Proveedor.objects.filter(ruc=ruc).exclude(pk=self.instance.pk).exists():
                 raise forms.ValidationError('Ya existe un proveedor con este RUC')
         else:
             # Es una creación nueva
-            if Proveedor.objects.filter(rif=rif).exists():
+            if Proveedor.objects.filter(ruc=ruc).exists():
                 raise forms.ValidationError('Ya existe un proveedor con este RUC')
         
-        return rif.strip()
+        return ruc.strip()
     
     def clean_direccion(self):
         direccion = self.cleaned_data.get('direccion')
@@ -175,10 +175,10 @@ class ProveedorForm(forms.ModelForm):
 class ClienteForm(forms.ModelForm):
     class Meta:
         model = Cliente
-        fields = ['nombre', 'rif', 'direccion', 'telefono', 'email', 'activo']
+        fields = ['nombre', 'ruc', 'direccion', 'telefono', 'email', 'activo']
         widgets = {
             'nombre': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Nombre del cliente'}),
-            'rif': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'RUC del cliente'}),
+            'ruc': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'RUC del cliente'}),
             'direccion': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Dirección completa'}),
             'telefono': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Número de teléfono'}),
             'email': forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'correo@ejemplo.com'}),
@@ -190,22 +190,22 @@ class ClienteForm(forms.ModelForm):
             raise forms.ValidationError('El nombre del cliente es requerido')
         return nombre.strip()
     
-    def clean_rif(self):
-        rif = self.cleaned_data.get('rif')
-        if not rif or rif.strip() == '':
+    def clean_ruc(self):
+        ruc = self.cleaned_data.get('ruc')
+        if not ruc or ruc.strip() == '':
             raise forms.ValidationError('El RUC es requerido')
         
         # Verificar duplicados solo si no es una edición del mismo cliente
         if self.instance and self.instance.pk:
             # Es una edición, excluir el cliente actual
-            if Cliente.objects.filter(rif=rif).exclude(pk=self.instance.pk).exists():
+            if Cliente.objects.filter(ruc=ruc).exclude(pk=self.instance.pk).exists():
                 raise forms.ValidationError('Ya existe un cliente con este RUC')
         else:
             # Es una creación nueva
-            if Cliente.objects.filter(rif=rif).exists():
+            if Cliente.objects.filter(ruc=ruc).exists():
                 raise forms.ValidationError('Ya existe un cliente con este RUC')
         
-        return rif.strip()
+        return ruc.strip()
     
     def clean_direccion(self):
         direccion = self.cleaned_data.get('direccion')
