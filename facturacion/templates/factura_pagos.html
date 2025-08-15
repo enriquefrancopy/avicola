@@ -116,11 +116,27 @@
             </div>
           {% endif %}
           
-           <form method="post">
-             {% csrf_token %}
-             
-             <!-- Campo oculto para monto_total -->
-             {{ form.monto_total }}
+                       <form method="post">
+              {% csrf_token %}
+              
+              <!-- Campo monto_total -->
+              <div class="row mb-3">
+                <div class="col-md-6">
+                  <label for="{{ form.monto_total.id_for_label }}" class="form-label">
+                    <strong>Monto a Pagar</strong>
+                  </label>
+                  <div class="input-group">
+                    <span class="input-group-text">Gs.</span>
+                    {{ form.monto_total }}
+                  </div>
+                  {% if form.monto_total.errors %}
+                    <div class="text-danger small">{{ form.monto_total.errors.0 }}</div>
+                  {% endif %}
+                  {% if form.monto_total.help_text %}
+                    <small class="text-muted">{{ form.monto_total.help_text }}</small>
+                  {% endif %}
+                </div>
+              </div>
              
              <div class="row">
                <div class="col-md-3">

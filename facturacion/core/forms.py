@@ -299,6 +299,7 @@ class PagoForm(forms.ModelForm):
             # Configurar el monto máximo según el tipo de factura
             if self.factura.tipo == 'compra':
                 # Para proveedores: pagos parciales permitidos
+                self.fields['monto_total'].initial = self.factura.saldo_pendiente
                 self.fields['monto_total'].widget.attrs.update({
                     'max': self.factura.saldo_pendiente,
                     'placeholder': f'Máximo: Gs. {self.factura.saldo_pendiente:,}'
@@ -310,8 +311,8 @@ class PagoForm(forms.ModelForm):
                 self.fields['monto_billete'].required = False
             else:
                 # Para clientes: solo pagos completos
+                self.fields['monto_total'].initial = self.factura.total
                 self.fields['monto_total'].widget.attrs.update({
-                    'value': self.factura.total,
                     'readonly': 'readonly'
                 })
                 self.fields['monto_total'].help_text = 'Pago completo requerido para clientes'
