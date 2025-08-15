@@ -118,6 +118,10 @@
           
            <form method="post">
              {% csrf_token %}
+             
+             <!-- Campo oculto para monto_total -->
+             {{ form.monto_total }}
+             
              <div class="row">
                <div class="col-md-3">
                  <label for="{{ form.monto_billete.id_for_label }}" class="form-label">Monto del Billete (required)</label>
@@ -143,10 +147,16 @@
                <div class="col-md-3">
                  <label for="{{ form.tipo.id_for_label }}" class="form-label">Tipo de Pago (required)</label>
                  {{ form.tipo }}
+                 {% if form.tipo.errors %}
+                   <div class="text-danger small">{{ form.tipo.errors.0 }}</div>
+                 {% endif %}
                </div>
                <div class="col-md-3">
                  <label for="{{ form.referencia.id_for_label }}" class="form-label">Referencia</label>
                  {{ form.referencia }}
+                 {% if form.referencia.errors %}
+                   <div class="text-danger small">{{ form.referencia.errors.0 }}</div>
+                 {% endif %}
                </div>
              </div>
              

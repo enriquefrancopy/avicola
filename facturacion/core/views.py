@@ -853,6 +853,16 @@ def factura_pagos(request, pk):
             messages.success(request, mensaje)
             
             return redirect('factura_pagos', pk=pk)
+        else:
+            # Mostrar errores del formulario
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f'Error en {field}: {error}')
+            # También mostrar errores de campos específicos
+            for field_name, field in form.fields.items():
+                if field_name in form.errors:
+                    for error in form.errors[field_name]:
+                        messages.error(request, f'Error en {field_name}: {error}')
     else:
         form = PagoForm(factura=factura)
     
