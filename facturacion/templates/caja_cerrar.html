@@ -149,11 +149,67 @@
             <a href="{% url 'caja_ver' caja.id %}" class="btn btn-outline-secondary">
               <i class="bi bi-arrow-left"></i> Volver
             </a>
-            <button type="submit" class="btn btn-danger">
+            <button type="button" class="btn btn-danger" id="btnCerrarCaja" data-bs-toggle="modal" data-bs-target="#modalConfirmarCierre">
               <i class="bi bi-lock"></i> Cerrar Caja
             </button>
           </div>
         </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal de Confirmación de Cierre -->
+<div class="modal fade" id="modalConfirmarCierre" tabindex="-1" aria-labelledby="modalConfirmarCierreLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title" id="modalConfirmarCierreLabel">
+          <i class="bi bi-exclamation-triangle"></i> Confirmar Cierre de Caja
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="alert alert-warning">
+          <i class="bi bi-exclamation-triangle"></i>
+          <strong>¡Atención!</strong> Esta acción no se puede deshacer. Una vez cerrada la caja, no podrás realizar más modificaciones.
+        </div>
+        
+        <div class="row">
+          <div class="col-md-6">
+            <h6><i class="bi bi-info-circle"></i> Resumen de Cierre</h6>
+            <ul class="list-unstyled">
+              <li><strong>Fecha:</strong> {{ caja.fecha|date:"d/m/Y" }}</li>
+              <li><strong>Saldo Inicial:</strong> Gs. {{ caja.saldo_inicial|intcomma_dot }}</li>
+              <li><strong>Saldo Final Esperado:</strong> Gs. {{ caja.saldo_final|intcomma_dot }}</li>
+              <li><strong>Método de Cierre:</strong> <span id="metodo-cierre-modal">Tradicional</span></li>
+            </ul>
+          </div>
+          <div class="col-md-6">
+            <h6><i class="bi bi-calculator"></i> Saldo Real</h6>
+            <div id="saldo-real-modal">
+              <p><strong>Saldo Real:</strong> <span id="saldo-real-valor">Gs. {{ caja.saldo_final|intcomma_dot }}</span></p>
+            </div>
+            <div id="denominaciones-modal" style="display: none;">
+              <p><strong>Total por Denominaciones:</strong> <span id="total-denominaciones-valor">Gs. 0</span></p>
+            </div>
+          </div>
+        </div>
+        
+        <div class="form-check mt-3">
+          <input class="form-check-input" type="checkbox" id="confirmarCierre" required>
+          <label class="form-check-label" for="confirmarCierre">
+            Confirmo que he verificado todos los datos y deseo cerrar la caja
+          </label>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          <i class="bi bi-x-circle"></i> Cancelar
+        </button>
+        <button type="button" class="btn btn-danger" id="btnConfirmarCierre" disabled>
+          <i class="bi bi-lock"></i> Confirmar Cierre
+        </button>
       </div>
     </div>
   </div>
@@ -229,8 +285,19 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
   
-  // Validar formulario
-  document.querySelector('form').addEventListener('submit', function(e) {
+  // Validar formulario y manejar modal
+  const btnConfirmarCierre = document.getElementById('btnConfirmarCierre');
+  const confirmarCierreCheckbox = document.getElementById('confirmarCierre');
+  const modal = document.getElementById('modalConfirmarCierre');
+  
+  // Habilitar/deshabilitar botón de confirmación
+  confirmarCierreCheckbox.addEventListener('change', function() {
+    btnConfirmarCierre.disabled = !this.checked;
+  });
+  
+  // Actualizar información del modal cuando se abre
+  modal.addEventListener('show.bs.modal', function() {
+    // Validar datos antes de mostrar el modal
     if (checkboxDenominaciones.checked) {
       // Validar que al menos una denominación tenga cantidad
       let tieneDenominaciones = false;
@@ -241,18 +308,51 @@ document.addEventListener('DOMContentLoaded', function() {
       });
       
       if (!tieneDenominaciones) {
-        e.preventDefault();
         alert('Debes ingresar al menos una denominación con cantidad mayor a 0.');
         return false;
       }
+      
+      // Actualizar modal para denominaciones
+      document.getElementById('metodo-cierre-modal').textContent = 'Por Denominaciones';
+      document.getElementById('saldo-real-modal').style.display = 'none';
+      document.getElementById('denominaciones-modal').style.display = 'block';
+      document.getElementById('total-denominaciones-valor').textContent = 
+        document.getElementById('total-calculado-cierre').textContent;
     } else {
       // Validar saldo real tradicional
       const saldoReal = parseFloat(saldoRealInput.value);
       if (isNaN(saldoReal) || saldoReal < 0) {
-        e.preventDefault();
         alert('El saldo real debe ser un número válido mayor o igual a 0.');
         saldoRealInput.focus();
         return false;
+      }
+      
+      // Actualizar modal para método tradicional
+      document.getElementById('metodo-cierre-modal').textContent = 'Tradicional';
+      document.getElementById('saldo-real-modal').style.display = 'block';
+      document.getElementById('denominaciones-modal').style.display = 'none';
+      document.getElementById('saldo-real-valor').textContent = `Gs. ${formatNumber(saldoReal)}`;
+    }
+    
+    // Resetear checkbox de confirmación
+    confirmarCierreCheckbox.checked = false;
+    btnConfirmarCierre.disabled = true;
+  });
+  
+  // Manejar confirmación de cierre
+  btnConfirmarCierre.addEventListener('click', function() {
+    if (confirmarCierreCheckbox.checked) {
+      // Enviar formulario
+      document.querySelector('form').submit();
+    }
+  });
+  
+  // Cerrar modal con Escape o clic fuera
+  modal.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      const modalInstance = bootstrap.Modal.getInstance(modal);
+      if (modalInstance) {
+        modalInstance.hide();
       }
     }
   });
